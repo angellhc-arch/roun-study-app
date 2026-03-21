@@ -22,30 +22,31 @@
 html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; justify-content:center; font-family:'Nunito',sans-serif; }
 .phone-shell { width:390px; height:844px; background:var(--bg); border-radius:40px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.25); position:relative; display:flex; flex-direction:column; }
 
-/* 아이폰 실제 기기 — 항상 Safe Area 적용 */
+/* 아이폰 노치/Dynamic Island Safe Area 대응 */
 @media screen and (max-width: 500px) {
-  html, body {
-    background: #7B5CF5;  /* 헤더 색상으로 노치 영역 채우기 */
+  html {
+    background: #7B5CF5;
+  }
+  body {
+    padding-top: env(safe-area-inset-top, 44px);
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    background: #7B5CF5;
+    min-height: 100dvh;
+    box-sizing: border-box;
   }
   .phone-shell {
     width: 100vw;
-    min-height: 100dvh;
     height: auto;
+    min-height: calc(100dvh - env(safe-area-inset-top, 44px) - env(safe-area-inset-bottom, 20px));
     border-radius: 0;
     box-shadow: none;
-    padding-top: env(safe-area-inset-top, 44px);
-    padding-bottom: env(safe-area-inset-bottom, 20px);
-    box-sizing: border-box;
-  }
-  .header {
-    padding-top: 18px;
-  }
-  .bottom-nav {
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 20px));
   }
   .screen {
     flex: 1;
     overflow-y: auto;
+  }
+  .bottom-nav {
+    padding-bottom: 8px;
   }
   .dev-fab {
     bottom: calc(90px + env(safe-area-inset-bottom, 20px));
