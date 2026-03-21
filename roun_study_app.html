@@ -901,17 +901,17 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   <div class="hist-summary-row">
     <div class="hist-sum-card">
       <div class="hist-sum-icon">💰</div>
-      <div class="hist-sum-val">89,500원</div>
+      <div class="hist-sum-val" id="hist-total-reward">0원</div>
       <div class="hist-sum-label">총 누적 보상</div>
     </div>
     <div class="hist-sum-card">
       <div class="hist-sum-icon">🔥</div>
-      <div class="hist-sum-val">14일</div>
+      <div class="hist-sum-val" id="hist-best-streak">0일</div>
       <div class="hist-sum-label">최장 스트릭</div>
     </div>
     <div class="hist-sum-card">
       <div class="hist-sum-icon">📅</div>
-      <div class="hist-sum-val">38일</div>
+      <div class="hist-sum-val" id="hist-total-days">0일</div>
       <div class="hist-sum-label">총 달성일</div>
     </div>
   </div>
@@ -1044,7 +1044,16 @@ function calcTotalReward() {
   const s = calcSessions();
   let base = s>=7?5000:s===6?4000:s*500;
   let bonus = 0;
-  const mBonus=WE?1000:500, shBonus=WE?2000:1000;
+  const miracleStreak = calcMiracleStreak();
+  const mBonus = WE ? (miracleStreak >= 10 ? 2000 : 1000) : (miracleStreak >= 10 ? 1000 : 500);
+  const shBonus = WE?2000:1000;
+  // 미라클 배지 텍스트 동적 업데이트
+  const mBadge = document.getElementById('badge-miracle');
+  if(mBadge) mBadge.textContent = '+'+mBonus.toLocaleString()+'원'+(miracleStreak>=10?' 🔥':'');
+  const mSub = document.querySelector('#name-miracle')?.closest('.task-info')?.querySelector('.task-sub');
+  if(mSub) mSub.textContent = miracleStreak>=10
+    ? `🔥${miracleStreak}일 연속! +${mBonus.toLocaleString()}원`
+    : `6:15 이전 기상 +${mBonus.toLocaleString()}원 · 10일 연속 시 2배!`;
   if(tasks.miracle.done) bonus+=mBonus;
   if(tasks.shower.done)  bonus+=shBonus;
   const writeReward=WE?2000:1000;
@@ -1140,6 +1149,25 @@ const LEVEL_MILESTONE_BADGES = [
   { lv:90,  icon:'🌟', label:'Lv 90 · 전설',          bonus:'',          color:'#F9A8D4', bg:'#FDF2F8', textColor:'#831843' },
   { lv:100, icon:'👑', label:'Lv 100 · 전설의 로운',  bonus:'+100,000원',color:'#FFD700', bg:'#FFFBEB', textColor:'#78350F' },
 ];
+
+// 미라클모닝 연속 달성일 계산
+function calcMiracleStreak() {
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+  let streak = 0;
+  const d = new Date(today);
+  // 오늘 포함해서 연속 달성일 카운트
+  while(true) {
+    const key = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+    const rec = history[key];
+    if(rec && rec.completed && rec.completed.includes('miracle')) {
+      streak++;
+      d.setDate(d.getDate()-1);
+    } else { break; }
+  }
+  return streak;
+}
 
 function calcSessions() {
   let s=0;
@@ -1294,7 +1322,11 @@ function updateProgress() {
 }
 
 const POPUPS = {
-  miracle: ['🌅','미라클 모닝!', WE?'주말 기상! +1,000원':'6:15 이전 기상! +500원'],
+  miracle: ['🌅','미라클 모닝!', ()=>{
+    const s=calcMiracleStreak();
+    const bonus=WE?(s>=10?2000:1000):(s>=10?1000:500);
+    return s>=10?`🔥${s}일 연속! +${bonus.toLocaleString()}원 (연속 보너스!)`:`6:15 이전 기상! +${bonus.toLocaleString()}원 (10일 연속 시 2배!)`;
+  }],
   shower:  ['🚿','아침 샤워!', WE?'주말 샤워 +2,000원! 합계 3,000원!':'샤워 +1,000원! 미라클+샤워 합계 1,500원!'],
   math1:   ['📐','수학 1회 완료!','집중해서 풀었지? 대단해! 💪'],
   math2:   ['📐','수학 2회 완료!','오늘 수학 모두 끝! 최고야! 🎉'],
@@ -1386,7 +1418,8 @@ function showPopup(id) {
   const m=POPUPS[id]||['🎉','완료!','잘 했어!'];
   document.getElementById('popup-emoji').textContent=m[0];
   document.getElementById('popup-title').textContent=m[1];
-  document.getElementById('popup-msg').textContent=m[2];
+  // 메시지가 함수면 실행해서 동적 메시지 생성
+  document.getElementById('popup-msg').textContent=typeof m[2]==='function'?m[2]():m[2];
   document.getElementById('popup').classList.add('show');
 }
 function closePopup(e){ if(e.target.id==='popup') closePopupDirect(); }
@@ -1626,13 +1659,13 @@ const LEVEL_TITLES = (()=>{
 // 20 badges — 짱구 캐릭터 테마 (SVG 캐릭터 이모지 + 설명)
 const ALL_BADGES = [
   // 🔥 연속 달성 스트릭 — 짱구 테마
-  { id:'s10',  cat:'streak',  char:'shin_basic', name:'10일 연속!',     cond:'10일 연속 달성',   streak:10,  earned:true,  isNew:true  },
+  { id:'s10',  cat:'streak',  char:'shin_basic', name:'10일 연속!',     cond:'10일 연속 달성',   streak:10,  earned:false, isNew:false  },
   { id:'s30',  cat:'streak',  char:'shin_fire',  name:'30일 파이어',    cond:'30일 연속 달성',   streak:30,  earned:false },
   { id:'s50',  cat:'streak',  char:'shin_hero',  name:'50일 영웅',      cond:'50일 연속 달성',   streak:50,  earned:false },
   { id:'s100', cat:'streak',  char:'shin_king',  name:'100일의 왕',     cond:'100일 연속 달성',  streak:100, earned:false },
 
   // 📐 수학 횟수
-  { id:'m50',  cat:'subject', char:'🧮', name:'수학 새싹',      cond:'수학 50회 완료',   count:50,   earned:true,  isNew:false },
+  { id:'m50',  cat:'subject', char:'🧮', name:'수학 새싹',      cond:'수학 50회 완료',   count:50,   earned:false, isNew:false },
   { id:'m100', cat:'subject', char:'📐', name:'수학 백 번',     cond:'수학 100회 완료',  count:100,  earned:false },
   { id:'m200', cat:'subject', char:'🏅', name:'수학 달인',      cond:'수학 200회 완료',  count:200,  earned:false },
   { id:'m300', cat:'subject', char:'🥇', name:'수학 고수',      cond:'수학 300회 완료',  count:300,  earned:false },
@@ -1640,7 +1673,7 @@ const ALL_BADGES = [
   { id:'m500', cat:'subject', char:'💎', name:'수학 전설',      cond:'수학 500회 완료',  count:500,  earned:false },
 
   // 🎧 영어 횟수
-  { id:'e50',  cat:'subject', char:'🎧', name:'영어 새싹',      cond:'영어 50회 완료',   count:50,   earned:true,  isNew:false },
+  { id:'e50',  cat:'subject', char:'🎧', name:'영어 새싹',      cond:'영어 50회 완료',   count:50,   earned:false, isNew:false },
   { id:'e100', cat:'subject', char:'🌍', name:'영어 백 번',     cond:'영어 100회 완료',  count:100,  earned:false },
   { id:'e200', cat:'subject', char:'🗣️', name:'영어 달인',      cond:'영어 200회 완료',  count:200,  earned:false },
   { id:'e300', cat:'subject', char:'✈️', name:'영어 고수',      cond:'영어 300회 완료',  count:300,  earned:false },
@@ -1664,12 +1697,12 @@ const ALL_BADGES = [
   { id:'w500', cat:'subject', char:'🏆', name:'글쓰기 전설',    cond:'글쓰기 500회 완료',count:500,  earned:false },
 
   // 🏆 레벨 기념
-  { id:'lv3',  cat:'level',   char:'🥉', name:'레벨 3 달성',    cond:'레벨 3 달성',              earned:true,  isNew:false },
-  { id:'lv5',  cat:'level',   char:'🥈', name:'레벨 5 달성',    cond:'레벨 5 달성 (+3,000원)',   earned:false },
-  { id:'lv10', cat:'level',   char:'🥇', name:'레벨 10 전설',   cond:'레벨 10 달성 (+10,000원)', earned:false },
+  { id:'lv3',  cat:'level',   char:'🥉', name:'레벨 3 달성',    cond:'레벨 3 달성',              lv:3,   earned:false, isNew:false },
+  { id:'lv5',  cat:'level',   char:'🥈', name:'레벨 5 달성',    cond:'레벨 5 달성 (+3,000원)',   lv:5,   earned:false },
+  { id:'lv10', cat:'level',   char:'🥇', name:'레벨 10 전설',   cond:'레벨 10 달성 (+10,000원)', lv:10,  earned:false },
 
   // ⭐ 특별 미션
-  { id:'p1',   cat:'special', char:'🌅', name:'미라클 스타터',  cond:'미라클모닝 첫 달성',      earned:true,  isNew:false },
+  { id:'p1',   cat:'special', char:'🌅', name:'미라클 스타터',  cond:'미라클모닝 첫 달성',      earned:false, isNew:false },
   { id:'p2',   cat:'special', char:'🚿', name:'상쾌한 아침',    cond:'미라클모닝+샤워 10일',    earned:false },
   { id:'p3',   cat:'special', char:'💯', name:'올퍼펙트',       cond:'전 항목 완료 하루',        earned:false },
   { id:'p4',   cat:'special', char:'⚡', name:'추가 공부왕',    cond:'추가 공부 10회',           earned:false },
@@ -1919,9 +1952,124 @@ function renderLevelSection() {
   });
 }
 
-function initBadge(){ renderLevelSection(); renderBadges(); }
+function initBadge(){ calcBadgeEarned(); renderLevelSection(); renderBadges(); }
 
-function initHistory(){buildMonthTabs();renderHistory();}
+// 뱃지 달성 여부 계산 — 전날까지의 기록 기반
+function calcBadgeEarned() {
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+  const todayKey = today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
+
+  // 전날까지의 기록만 사용
+  const pastHistory = Object.fromEntries(
+    Object.entries(history).filter(([k]) => k < todayKey)
+  );
+
+  // 스트릭 계산 (어제까지)
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  const streak = calcStreak(pastHistory, yesterday);
+
+  // 과목별 총 횟수
+  const counts = { math:0, eng:0, read:0, write:0 };
+  Object.values(pastHistory).forEach(rec => {
+    if(!rec.completed) return;
+    if(rec.completed.includes('math1')) counts.math++;
+    if(rec.completed.includes('math2')) counts.math++;
+    if(rec.completed.includes('eng1'))  counts.eng++;
+    if(rec.completed.includes('eng2'))  counts.eng++;
+    if(rec.completed.includes('read1')) counts.read++;
+    if(rec.completed.includes('read2')) counts.read++;
+    if(rec.completed.includes('write')) counts.write++;
+  });
+
+  // 총 달성일
+  const totalDays = Object.values(pastHistory).filter(r=>r.sessions>=6).length;
+  // XP 레벨
+  const lv = Math.min(getXPLevel(state?.xp||0), 100);
+  // 미라클모닝 횟수
+  const miracleCount = Object.values(pastHistory).filter(r=>r.completed?.includes('miracle')).length;
+  // 올퍼펙트 (전 항목 완료) 횟수
+  const perfectCount = Object.values(pastHistory).filter(r=>r.sessions>=7&&r.completed?.includes('write')).length;
+  // 추가공부 총 횟수
+  const extraCount = Object.values(pastHistory).reduce((s,r)=>(s+(r.extraItems?.length||0)),0);
+
+  // 최장 스트릭
+  const bestStreak = calcBestStreak(pastHistory);
+
+  ALL_BADGES.forEach(b => {
+    let earned = false;
+    switch(b.cat) {
+      case 'streak':
+        earned = bestStreak >= (b.streak||0); break;
+      case 'subject':
+        if(b.id.startsWith('m')) earned = counts.math >= (b.count||0);
+        else if(b.id.startsWith('e')) earned = counts.eng >= (b.count||0);
+        else if(b.id.startsWith('r')) earned = counts.read >= (b.count||0);
+        else if(b.id.startsWith('w')) earned = counts.write >= (b.count||0);
+        break;
+      case 'level':
+        earned = lv >= (b.lv || parseInt(b.id.replace('lv',''))||999); break;
+      case 'special':
+        if(b.id==='p1') earned = miracleCount >= 1;
+        else if(b.id==='p2') earned = miracleCount >= 10;
+        else if(b.id==='p3') earned = perfectCount >= 1;
+        else if(b.id==='p4') earned = extraCount >= 10;
+        else if(b.id==='p5') earned = checkPerfectWeek(pastHistory);
+        break;
+    }
+    b.earned = earned;
+    b.isNew = false;
+  });
+}
+
+function calcBestStreak(history) {
+  const dates = Object.keys(history).filter(k=>history[k].sessions>=6).sort();
+  if(!dates.length) return 0;
+  let best=1, cur=1;
+  for(let i=1;i<dates.length;i++){
+    const prev = new Date(dates[i-1]);
+    const curr = new Date(dates[i]);
+    const diff = (curr-prev)/(1000*60*60*24);
+    if(diff===1) { cur++; best=Math.max(best,cur); }
+    else cur=1;
+  }
+  return best;
+}
+
+function checkPerfectWeek(history) {
+  // 한 주에 5일 연속 7회 달성 여부
+  const dates = Object.keys(history).filter(k=>history[k].sessions>=7).sort();
+  let consec=0;
+  for(let i=1;i<dates.length;i++){
+    const diff=(new Date(dates[i])-new Date(dates[i-1]))/(1000*60*60*24);
+    if(diff===1){ consec++; if(consec>=4) return true; }
+    else consec=0;
+  }
+  return false;
+}
+
+function updateHistorySummary() {
+  const state = loadState();
+  const history = state?.history || {};
+  const totalReward = calcTotalAccum(history);
+  const bestStreak = calcBestStreak(history);
+  const totalDays = Object.values(history).filter(r=>r.sessions>=6).length;
+  const el1=document.getElementById('hist-total-reward');
+  const el2=document.getElementById('hist-best-streak');
+  const el3=document.getElementById('hist-total-days');
+  if(el1) el1.textContent=totalReward.toLocaleString()+'원';
+  if(el2) el2.textContent=bestStreak+'일';
+  if(el3) el3.textContent=totalDays+'일';
+}
+
+function initHistory(){
+  updateHistorySummary();
+  buildMonthTabs();
+  renderHistory();
+}
+
+
 
 function updateStatsScreen() {
   const state = loadState();
@@ -1986,6 +2134,8 @@ function showScreen(name){
       if(fn) fn.textContent=state.flexName;
     }
   }
+  // 뱃지 달성 여부 초기 계산
+  calcBadgeEarned();
   restoreToday(state);
   applyDateSettings();
   const h=getTestDate().getHours();
@@ -2134,7 +2284,7 @@ function applyDevDate() {
 
   _testDate = d;
 
-  // 태스크 초기화
+  // 태스크 초기화 후 해당 날짜의 localStorage 기록 복원
   Object.keys(tasks).forEach(k=>{ tasks[k].done=false; });
   weeklyWriteBonusGiven=false; weeklyWriteBonusAmount=0;
   document.querySelectorAll('.task-check').forEach(el=>el.classList.remove('done'));
@@ -2144,7 +2294,11 @@ function applyDevDate() {
   document.querySelectorAll('.edit-panel').forEach(el=>el.classList.remove('show'));
   document.getElementById('extra-list').innerHTML='';
   extraItems=[]; extraIdCounter=0;
-  xp=240;
+
+  // localStorage에서 XP 복원 (하드코딩 제거)
+  const state = loadState();
+  xp = state?.xp || 0;
+  restoreToday(state);
 
   applyDateSettings();
   const h=d.getHours();
@@ -2162,6 +2316,8 @@ function resetAllData() {
   localStorage.removeItem(STORE_KEY);
   sessionStorage.clear();
   xp = 0;
+  // 뱃지 초기화
+  ALL_BADGES.forEach(b=>{ b.earned=false; b.isNew=false; });
   Object.keys(tasks).forEach(k=>{ tasks[k].done=false; });
   weeklyWriteBonusGiven=false; weeklyWriteBonusAmount=0;
   document.querySelectorAll('.task-check').forEach(el=>el.classList.remove('done'));
