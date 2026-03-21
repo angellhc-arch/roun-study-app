@@ -353,7 +353,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div class="username">로운이 📚</div>
       </div>
       <div style="display:flex;align-items:center;gap:7px">
-        <div class="streak-badge">🔥 <span>7</span>일</div>
+        <div class="streak-badge">🔥 <span id="streak-header-num">0</span>일</div>
         <div class="level-badge level-badge-sync">Lv<br>3</div>
       </div>
     </div>
@@ -485,6 +485,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <div class="task-sub" id="write-sub">핵심요약→핵심생각→예시→앞으로의생각 (5~6줄) · <span id="write-reward-hint">평일 +1,000원</span></div>
         </div>
         <div class="task-badge" id="badge-write" style="background:#EDE9FE;color:#5B21B6">오늘의 첫 미션!</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+35XP</span>
       </div>
     </div>
 
@@ -497,6 +498,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <div class="task-sub">6:15 이전 기상 +500원</div>
         </div>
         <div class="task-badge gold" id="badge-miracle">+500원</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+30XP</span>
       </div>
     </div>
 
@@ -509,60 +511,43 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <div class="task-sub">샤워 +1,000원 · 미라클모닝+샤워 합계 1,500원</div>
         </div>
         <div class="task-badge gold" id="badge-shower">+1,000원</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+20XP</span>
       </div>
     </div>
 
-    <!-- Math 1 -->
+    <!-- Reading 1 -->
     <div class="task-card">
-      <div class="task-row" onclick="toggleTask('math1')">
-        <div class="task-check" id="check-math1">✓</div>
+      <div class="task-row" onclick="toggleTask('read1')">
+        <div class="task-check" id="check-read1">✓</div>
         <div class="task-info">
-          <div class="task-name" id="name-math1">📐 수학 1회</div>
-          <div class="task-sub">최상위 문제집 · 40분</div>
+          <div class="task-name" id="name-read1">📖 독서 1회</div>
+          <div class="task-sub">소설/과학/역사/사회/철학 · 30분</div>
         </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <button class="subj-btn" onclick="openSubj('math1',event)">📋</button>
-          <div class="task-badge" id="badge-math1">1회</div>
-        </div>
-      </div>
-      <div class="subj-panel" id="subj-math1">
-        <div class="subj-panel-label">학습 내용 기록</div>
-        <div class="subj-pills">
-          <button class="spill on" onclick="pickSubj('math1','수학',this)">수학</button>
-          <button class="spill" onclick="pickSubj('math1','영어',this)">영어</button>
-          <button class="spill" onclick="pickSubj('math1','국어',this)">국어</button>
-          <button class="spill" onclick="pickSubj('math1','글쓰기',this)">글쓰기</button>
-          <button class="spill" onclick="pickSubj('math1','예습복습',this)">예습복습</button>
-          <button class="spill" onclick="pickSubj('math1','기타',this)">기타 입력</button>
-        </div>
-        <input class="custom-input" id="cinput-math1" placeholder="직접 입력...">
+        <div class="task-badge" id="badge-read1">1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+25XP</span>
       </div>
     </div>
 
-    <!-- Math 2 -->
+    <!-- Reading 2 (낮잠 대체 가능) -->
     <div class="task-card">
-      <div class="task-row" onclick="toggleTask('math2')">
-        <div class="task-check" id="check-math2">✓</div>
+      <div class="task-row" onclick="toggleTask('read2')">
+        <div class="task-check" id="check-read2">✓</div>
         <div class="task-info">
-          <div class="task-name" id="name-math2">📐 수학 2회</div>
-          <div class="task-sub">최상위 문제집 · 40분</div>
+          <div class="flex-name-row">
+            <div class="task-name" id="name-read2">📖 독서 2회</div>
+            <button class="edit-btn" onclick="toggleEditPanel('read2-edit',event)">변경</button>
+          </div>
+          <div class="task-sub" id="sub-read2">소설/과학/역사/사회/철학 · 30분</div>
         </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <button class="subj-btn" onclick="openSubj('math2',event)">📋</button>
-          <div class="task-badge" id="badge-math2">1회</div>
-        </div>
+        <div class="task-badge" id="badge-read2">1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+25XP</span>
       </div>
-      <div class="subj-panel" id="subj-math2">
-        <div class="subj-panel-label">학습 내용 기록</div>
+      <div class="edit-panel" id="read2-edit">
+        <div class="edit-panel-label">항목 선택</div>
         <div class="subj-pills">
-          <button class="spill on" onclick="pickSubj('math2','수학',this)">수학</button>
-          <button class="spill" onclick="pickSubj('math2','영어',this)">영어</button>
-          <button class="spill" onclick="pickSubj('math2','국어',this)">국어</button>
-          <button class="spill" onclick="pickSubj('math2','글쓰기',this)">글쓰기</button>
-          <button class="spill" onclick="pickSubj('math2','예습복습',this)">예습복습</button>
-          <button class="spill" onclick="pickSubj('math2','기타',this)">기타 입력</button>
+          <button class="spill on" onclick="setRead2('📖 독서 2회','소설/과학/역사/사회/철학 · 30분',this)">독서 2회</button>
+          <button class="spill" onclick="setRead2('😴 낮잠','낮잠 = 독서 1회 인정',this)">낮잠으로 대체</button>
         </div>
-        <input class="custom-input" id="cinput-math2" placeholder="직접 입력...">
       </div>
     </div>
 
@@ -577,6 +562,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div style="display:flex;align-items:center;gap:4px">
           <button class="subj-btn" onclick="openSubj('eng1',event)">📋</button>
           <div class="task-badge" id="badge-eng1">1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+40XP</span>
         </div>
       </div>
       <div class="subj-panel" id="subj-eng1">
@@ -594,7 +580,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
 
     <!-- English 2 -->
-    <div class="task-card">
+    <div class="task-card" id="card-eng2">
       <div class="task-row" onclick="toggleTask('eng2')">
         <div class="task-check" id="check-eng2">✓</div>
         <div class="task-info">
@@ -604,6 +590,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div style="display:flex;align-items:center;gap:4px">
           <button class="subj-btn" onclick="openSubj('eng2',event)">📋</button>
           <div class="task-badge" id="badge-eng2">1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+40XP</span>
         </div>
       </div>
       <div class="subj-panel" id="subj-eng2">
@@ -617,6 +604,62 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <button class="spill" onclick="pickSubj('eng2','기타',this)">기타 입력</button>
         </div>
         <input class="custom-input" id="cinput-eng2" placeholder="직접 입력...">
+      </div>
+    </div>
+
+    <!-- Math 1 -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('math1')">
+        <div class="task-check" id="check-math1">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-math1">📐 수학 1회</div>
+          <div class="task-sub">최상위 문제집 · 40분</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="subj-btn" onclick="openSubj('math1',event)">📋</button>
+          <div class="task-badge" id="badge-math1">1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+40XP</span>
+        </div>
+      </div>
+      <div class="subj-panel" id="subj-math1">
+        <div class="subj-panel-label">학습 내용 기록</div>
+        <div class="subj-pills">
+          <button class="spill on" onclick="pickSubj('math1','수학',this)">수학</button>
+          <button class="spill" onclick="pickSubj('math1','영어',this)">영어</button>
+          <button class="spill" onclick="pickSubj('math1','국어',this)">국어</button>
+          <button class="spill" onclick="pickSubj('math1','글쓰기',this)">글쓰기</button>
+          <button class="spill" onclick="pickSubj('math1','예습복습',this)">예습복습</button>
+          <button class="spill" onclick="pickSubj('math1','기타',this)">기타 입력</button>
+        </div>
+        <input class="custom-input" id="cinput-math1" placeholder="직접 입력...">
+      </div>
+    </div>
+
+    <!-- Math 2 -->
+    <div class="task-card" id="card-math2">
+      <div class="task-row" onclick="toggleTask('math2')">
+        <div class="task-check" id="check-math2">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-math2">📐 수학 2회</div>
+          <div class="task-sub">최상위 문제집 · 40분</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="subj-btn" onclick="openSubj('math2',event)">📋</button>
+          <div class="task-badge" id="badge-math2">1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+40XP</span>
+        </div>
+      </div>
+      <div class="subj-panel" id="subj-math2">
+        <div class="subj-panel-label">학습 내용 기록</div>
+        <div class="subj-pills">
+          <button class="spill on" onclick="pickSubj('math2','수학',this)">수학</button>
+          <button class="spill" onclick="pickSubj('math2','영어',this)">영어</button>
+          <button class="spill" onclick="pickSubj('math2','국어',this)">국어</button>
+          <button class="spill" onclick="pickSubj('math2','글쓰기',this)">글쓰기</button>
+          <button class="spill" onclick="pickSubj('math2','예습복습',this)">예습복습</button>
+          <button class="spill" onclick="pickSubj('math2','기타',this)">기타 입력</button>
+        </div>
+        <input class="custom-input" id="cinput-math2" placeholder="직접 입력...">
       </div>
     </div>
 
@@ -634,6 +677,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div style="display:flex;align-items:center;gap:4px">
           <button class="subj-btn" onclick="openSubj('flex',event)">📋</button>
           <div class="task-badge" id="badge-flex">1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+30XP</span>
         </div>
       </div>
       <div class="edit-panel" id="flex-edit">
@@ -661,40 +705,6 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       </div>
     </div>
 
-    <!-- Reading 1 -->
-    <div class="task-card">
-      <div class="task-row" onclick="toggleTask('read1')">
-        <div class="task-check" id="check-read1">✓</div>
-        <div class="task-info">
-          <div class="task-name" id="name-read1">📖 독서 1회</div>
-          <div class="task-sub">소설/과학/역사/사회/철학 · 30분</div>
-        </div>
-        <div class="task-badge" id="badge-read1">1회</div>
-      </div>
-    </div>
-
-    <!-- Reading 2 (낮잠 대체 가능) -->
-    <div class="task-card">
-      <div class="task-row" onclick="toggleTask('read2')">
-        <div class="task-check" id="check-read2">✓</div>
-        <div class="task-info">
-          <div class="flex-name-row">
-            <div class="task-name" id="name-read2">📖 독서 2회</div>
-            <button class="edit-btn" onclick="toggleEditPanel('read2-edit',event)">변경</button>
-          </div>
-          <div class="task-sub" id="sub-read2">소설/과학/역사/사회/철학 · 30분</div>
-        </div>
-        <div class="task-badge" id="badge-read2">1회</div>
-      </div>
-      <div class="edit-panel" id="read2-edit">
-        <div class="edit-panel-label">항목 선택</div>
-        <div class="subj-pills">
-          <button class="spill on" onclick="setRead2('📖 독서 2회','소설/과학/역사/사회/철학 · 30분',this)">독서 2회</button>
-          <button class="spill" onclick="setRead2('😴 낮잠','낮잠 = 독서 1회 인정',this)">낮잠으로 대체</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Exercise (선택, 공부 1회) -->
     <div class="task-card">
       <div class="task-row" onclick="toggleTask('exercise')">
@@ -704,6 +714,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <div class="task-sub">선택 · 공부 1회로 인정</div>
         </div>
         <div class="task-badge gray" id="badge-exercise">선택 +1회</div>
+          <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+30XP</span>
       </div>
     </div>
 
@@ -725,10 +736,10 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
   </div>
   <div class="stat-grid">
-    <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-value">7일</div><div class="stat-label">현재 연속 달성</div></div>
-    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value">32,500원</div><div class="stat-label">이달 누적 보상</div></div>
-    <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-value">48회</div><div class="stat-label">이달 공부 횟수</div></div>
-    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">1,240XP</div><div class="stat-label">총 경험치</div></div>
+    <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-value" id="stat-streak">0일</div><div class="stat-label">현재 연속 달성</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" id="stat-month-accum">0원</div><div class="stat-label">이달 누적 보상</div></div>
+    <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-value" id="stat-month-sessions">0회</div><div class="stat-label">이달 공부 횟수</div></div>
+    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value" id="stat-xp">0XP</div><div class="stat-label">총 경험치</div></div>
   </div>
   <div class="full-card">
     <div class="full-card-title">🔥 이번 달 스트릭</div>
@@ -736,10 +747,12 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
   <div class="full-card">
     <div class="full-card-title">📐 과목별 공부 횟수 (이번 달)</div>
-    <div class="bar-row"><div class="bar-label">수학</div><div class="bar-track"><div class="bar-fill" style="width:85%;background:#7B5CF5"></div></div><div class="bar-count">17회</div></div>
-    <div class="bar-row"><div class="bar-label">영어</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:#3B82F6"></div></div><div class="bar-count">16회</div></div>
-    <div class="bar-row"><div class="bar-label">독서</div><div class="bar-track"><div class="bar-fill" style="width:55%;background:#22C55E"></div></div><div class="bar-count">11회</div></div>
-    <div class="bar-row"><div class="bar-label">글쓰기</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:#EC4899"></div></div><div class="bar-count">8회</div></div>
+    <div id="subject-bar-chart">
+      <div class="bar-row"><div class="bar-label">독서</div><div class="bar-track"><div class="bar-fill" id="bar-read" style="width:0%;background:#22C55E"></div></div><div class="bar-count" id="cnt-read">0회</div></div>
+      <div class="bar-row"><div class="bar-label">영어</div><div class="bar-track"><div class="bar-fill" id="bar-eng" style="width:0%;background:#3B82F6"></div></div><div class="bar-count" id="cnt-eng">0회</div></div>
+      <div class="bar-row"><div class="bar-label">수학</div><div class="bar-track"><div class="bar-fill" id="bar-math" style="width:0%;background:#7B5CF5"></div></div><div class="bar-count" id="cnt-math">0회</div></div>
+      <div class="bar-row"><div class="bar-label">글쓰기</div><div class="bar-track"><div class="bar-fill" id="bar-write" style="width:0%;background:#EC4899"></div></div><div class="bar-count" id="cnt-write">0회</div></div>
+    </div>
   </div>
   <div style="height:8px"></div>
 </div>
@@ -977,28 +990,133 @@ const tasks = {
   exercise: { done:false, sessions:1 },
   write:    { done:false, sessions: WE?2:0 },
 };
-let xp = 240;
-const ACCUM = 32500;
+let xp = 0;
 
-// XP 레벨 시스템 — 100레벨, 하루 평균 200XP 기준 730일(2년) 설계
-// 공식: 각 레벨 필요 XP = Math.round(50 * Math.pow(1.18, lv-1))
-// 초반 빠름, 후반 매우 도전적
-const XP_PER_LEVEL = (()=>{
-  const thresholds = [0];
-  let cumulative = 0;
-  for(let lv=1; lv<=100; lv++){
-    const needed = Math.round(50 * Math.pow(1.18, lv - 1));
-    cumulative += needed;
-    thresholds.push(cumulative);
+// ── localStorage 저장 시스템 ──
+const STORE_KEY = 'rowoon_study_v2'; // v2: 이전 테스트 데이터 무효화
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function saveState() {
+  const d = getTestDate();
+  const todayKey = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+  const state = loadState() || {};
+  const history = state?.history || {};
+
+  const completedToday = Object.entries(tasks).filter(([,v])=>v.done).map(([k])=>k);
+  const extraDone = extraItems.filter(e=>e.done);
+
+  if(completedToday.length === 0 && extraDone.length === 0) {
+    // 완료 항목 없으면 오늘 기록 삭제
+    delete history[todayKey];
+  } else {
+    history[todayKey] = {
+      date: todayKey,
+      completed: completedToday,
+      sessions: calcSessions(),
+      reward: calcTotalReward(),
+      xp: xp,
+      extraItems: extraDone.map(e=>({...e})),
+    };
   }
-  return thresholds;
+
+  const streak = calcStreak(history, d);
+  const streakInLevel = streak % 10 || (streak > 0 ? 10 : 0);
+
+  const newState = {
+    xp,
+    totalAccum: calcTotalAccum(history),
+    streak,
+    streakInLevel,
+    history,
+    lastDate: todayKey,
+    flexName: document.getElementById('name-flex')?.textContent || '📝 국어 / 영상편집',
+  };
+  localStorage.setItem(STORE_KEY, JSON.stringify(newState));
+}
+
+function calcTotalReward() {
+  const s = calcSessions();
+  let base = s>=7?5000:s===6?4000:s*500;
+  let bonus = 0;
+  const mBonus=WE?1000:500, shBonus=WE?2000:1000;
+  if(tasks.miracle.done) bonus+=mBonus;
+  if(tasks.shower.done)  bonus+=shBonus;
+  const writeReward=WE?2000:1000;
+  if(tasks.write.done) bonus+=writeReward;
+  if(weeklyWriteBonusGiven) bonus+=1000;
+  bonus += extraItems.filter(e=>e.done).length * 2000;
+  return base+bonus;
+}
+
+function calcStreak(history, today) {
+  let streak = 0;
+  const d = new Date(today);
+  while(true) {
+    const key = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+    const rec = history[key];
+    if(rec && rec.sessions >= 6) {
+      streak++;
+      d.setDate(d.getDate()-1);
+    } else { break; }
+  }
+  return streak;
+}
+
+function calcTotalAccum(history) {
+  return Object.values(history).reduce((sum, r) => sum + (r.reward||0), 0);
+}
+
+function restoreToday(state) {
+  const d = getTestDate();
+  const todayKey = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+  const rec = state?.history && state.history[todayKey];
+  if(!rec) return; // 오늘 기록 없으면 빈 상태 유지
+  // 오늘 완료 항목 복원
+  rec.completed.forEach(k=>{
+    if(!tasks[k]) return;
+    tasks[k].done=true;
+    const check=document.getElementById('check-'+k);
+    const name=document.getElementById('name-'+k);
+    const badge=document.getElementById('badge-'+k);
+    if(check) check.classList.add('done');
+    if(name) name.classList.add('done');
+    if(badge) badge.classList.add('done');
+  });
+  xp = rec.xp || 0;
+  // 추가 공부 복원
+  if(rec.extraItems && rec.extraItems.length) {
+    extraItems = rec.extraItems.map(e=>({...e}));
+    extraIdCounter = Math.max(...extraItems.map(e=>e.id), 0);
+    renderExtraList();
+  }
+}
+
+
+// XP 레벨 시스템 — 100레벨, 1년(355일 달성) 기준 총 ~126,000 XP
+// 공식: 각 레벨 필요 XP = round(50 * 1.055^(lv-1))
+// Lv1→2: 50XP, Lv50→51: ~720XP, Lv99→100: ~6,200XP
+const XP_PER_LEVEL = (()=>{
+  const t=[0]; let cum=0;
+  for(let lv=1;lv<=100;lv++){
+    cum += Math.round(50 * Math.pow(1.055, lv-1));
+    t.push(cum);
+  }
+  return t;
 })();
-// XP 획득량 (각 항목별)
+
+// XP 획득량 (항목별) — 합계 355XP/일 × 355일 ≈ 126,025 XP = Lv100
 const XP_GAINS = {
   miracle:30, shower:20,
-  math1:40, math2:40, eng1:40, eng2:40,
-  flex:30, read1:25, read2:25,
-  exercise:30, write:35,
+  read1:25, read2:25,
+  eng1:40, eng2:40,
+  math1:40, math2:40,
+  flex:30, exercise:30, write:35,
   _extra:50,
 };
 
@@ -1103,7 +1221,15 @@ function calcReward() {
   if(base>0){ const c=document.createElement('div'); c.className='rchip p'; c.textContent='기본 '+base.toLocaleString()+'원'; ce.appendChild(c); }
   chips.forEach(ch=>{ const c=document.createElement('div'); c.className='rchip '+ch.c; c.textContent=ch.t; ce.appendChild(c); });
 
-  document.getElementById('accum-reward').textContent=(ACCUM+total).toLocaleString()+'원';
+  // 누적 보상: 과거 기록 합계 + 오늘 보상
+  const state = loadState();
+  const history = state?.history || {};
+  const d = getTestDate();
+  const todayKey = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+  const pastAccum = Object.entries(history)
+    .filter(([k]) => k !== todayKey)
+    .reduce((sum,[,r]) => sum+(r.reward||0), 0);
+  document.getElementById('accum-reward').textContent=(pastAccum+total).toLocaleString()+'원';
 }
 
 function updateProgress() {
@@ -1120,10 +1246,36 @@ function updateProgress() {
   const s=calcSessions();
   const chips=document.getElementById('task-chips');
   chips.innerHTML='';
-  [{k:'math1',l:'수학1'},{k:'math2',l:'수학2'},{k:'eng1',l:'영어1'},{k:'eng2',l:'영어2'},{k:'read1',l:'독서1'},{k:'read2',l:'독서2'}].forEach(({k,l})=>{
-    const c=document.createElement('div'); c.className='chip'+(tasks[k].done?' done':''); c.textContent=l; chips.appendChild(c);
+
+  // 체크리스트와 동일한 순서로 칩 표시 (주말 여부 반영)
+  const isWE = isWeekendDate(getTestDate());
+  const chipList = [
+    { k:'write',    l:'✏️ 글쓰기' },
+    { k:'miracle',  l:'🌅 미라클' },
+    { k:'shower',   l:'🚿 샤워' },
+    { k:'read1',    l:'📖 독서1' },
+    { k:'read2',    l:'📖 독서2' },
+    { k:'eng1',     l:'🎧 영어1' },
+    ...(isWE ? [] : [{ k:'eng2', l:'🎧 영어2' }]),
+    { k:'math1',    l:'📐 수학1' },
+    ...(isWE ? [] : [{ k:'math2', l:'📐 수학2' }]),
+    { k:'flex',     l: isWE ? '📖 예습/복습' : '📝 국어' },
+    { k:'exercise', l:'🏃 운동' },
+  ];
+  chipList.forEach(({k,l})=>{
+    const c=document.createElement('div');
+    c.className='chip'+(tasks[k]?.done?' done':'');
+    c.textContent=l;
+    chips.appendChild(c);
   });
   const sc=document.createElement('div'); sc.className='chip'+(s>=7?' done':''); sc.textContent=s+'/7회'; chips.appendChild(sc);
+
+  // 헤더 스트릭 배지 업데이트
+  const streakState = loadState();
+  const streakHistory = streakState?.history || {};
+  const currentStreak = calcStreak(streakHistory, getTestDate());
+  const streakHeaderEl = document.getElementById('streak-header-num');
+  if(streakHeaderEl) streakHeaderEl.textContent = currentStreak;
 
   const xpLvNow = getXPLevel(xp);
   const xpNextThresh = XP_PER_LEVEL[xpLvNow+1] || XP_PER_LEVEL[XP_PER_LEVEL.length-1];
@@ -1169,12 +1321,11 @@ function toggleTask(id) {
   const check=document.getElementById('check-'+id);
   const name=document.getElementById('name-'+id);
   const badge=document.getElementById('badge-'+id);
+  const gain = XP_GAINS[id] || 0;
   if(tasks[id].done){
     check.classList.add('done'); name.classList.add('done');
     if(badge) badge.classList.add('done');
-    xp+=30;
-
-    // 글쓰기 완료 시: 오늘이 보너스 요일이면 +1,000원
+    xp = Math.max(0, xp + gain);
     if(id === 'write' && !WE && isBonusDay() && !weeklyWriteBonusGiven) {
       weeklyWriteBonusGiven = true;
       weeklyWriteBonusAmount = 1000;
@@ -1186,13 +1337,14 @@ function toggleTask(id) {
   } else {
     check.classList.remove('done'); name.classList.remove('done');
     if(badge) badge.classList.remove('done');
-    xp-=30;
+    xp = Math.max(0, xp - gain);
     if(id === 'write') {
       weeklyWriteBonusGiven = false;
       weeklyWriteBonusAmount = 0;
     }
   }
   calcReward(); updateProgress();
+  saveState();
 }
 
 function openSubj(id,event) {
@@ -1241,11 +1393,29 @@ function closePopup(e){ if(e.target.id==='popup') closePopupDirect(); }
 function closePopupDirect(){ document.getElementById('popup').classList.remove('show'); }
 
 function buildStreakCalendar() {
-  const cal=document.getElementById('streak-calendar');
-  ['월','화','수','목','금','토','일','월','화','수','목','금','토','일','월','화','수','목','금','오늘'].forEach((d,i)=>{
-    const states=['done','done','done','done','done','miss','done','done','done','done','done','done','done','done','done','done','done','done','done','today'];
-    const dot=document.createElement('div'); dot.className='streak-dot '+states[i]; dot.textContent=d; cal.appendChild(dot);
-  });
+  const cal = document.getElementById('streak-calendar');
+  if(!cal) return;
+  cal.innerHTML = '';
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+  // 최근 20일
+  for(let i=19; i>=0; i--) {
+    const d = new Date(today); d.setDate(d.getDate()-i);
+    const key = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+    const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+    const label = i===0 ? '오늘' : dow;
+    const rec = history[key];
+    let status = 'miss';
+    if(i===0) status='today';
+    else if(rec && rec.sessions>=6) status='done';
+    else if(rec && rec.sessions>0) status='partial';
+    const dot=document.createElement('div');
+    dot.className='streak-dot '+status;
+    dot.textContent=label;
+    dot.title=key+(rec?` (${rec.sessions}회)`:'');
+    cal.appendChild(dot);
+  }
 }
 
 // Extra study items
@@ -1268,12 +1438,14 @@ function toggleExtra(id) {
   renderExtraList();
   calcReward(); updateProgress();
   if(item.done) showPopup('_extra');
+  saveState();
 }
 
 function deleteExtra(id) {
   extraItems = extraItems.filter(e=>e.id!==id);
   renderExtraList();
   calcReward(); updateProgress();
+  saveState();
 }
 
 function changeExtraSubj(id, val) {
@@ -1629,7 +1801,11 @@ function nextStreakMilestone(streak) {
 }
 
 function renderLevelSection() {
-  const streak=7, streakInLevel = streak % 10 || 10;
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+  const streak = calcStreak(history, today);
+  const streakInLevel = streak % 10 || (streak > 0 ? 10 : 0);
   const lv = Math.min(getXPLevel(xp), 100); // XP로 레벨 계산
 
   const xpLv = lv;
@@ -1747,6 +1923,49 @@ function initBadge(){ renderLevelSection(); renderBadges(); }
 
 function initHistory(){buildMonthTabs();renderHistory();}
 
+function updateStatsScreen() {
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+  const yr = today.getFullYear(), mo = today.getMonth()+1;
+
+  const streak = calcStreak(history, today);
+  const sel = document.getElementById('stat-streak');
+  if(sel) sel.textContent = streak+'일';
+
+  const monthKeys = Object.keys(history).filter(k=>{
+    const [y,m] = k.split('-').map(Number); return y===yr && m===mo;
+  });
+  const monthReward   = monthKeys.reduce((s,k)=>s+(history[k].reward||0),0);
+  const monthSessions = monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);
+  const mra=document.getElementById('stat-month-accum');
+  const mse=document.getElementById('stat-month-sessions');
+  const xpe=document.getElementById('stat-xp');
+  if(mra) mra.textContent=monthReward.toLocaleString()+'원';
+  if(mse) mse.textContent=monthSessions+'회';
+  if(xpe) xpe.textContent=xp.toLocaleString()+'XP';
+
+  const subjectCounts={read:0,eng:0,math:0,write:0};
+  monthKeys.forEach(k=>{
+    const rec=history[k]; if(!rec?.completed) return;
+    if(rec.completed.includes('read1')) subjectCounts.read++;
+    if(rec.completed.includes('read2')) subjectCounts.read++;
+    if(rec.completed.includes('eng1'))  subjectCounts.eng++;
+    if(rec.completed.includes('eng2'))  subjectCounts.eng++;
+    if(rec.completed.includes('math1')) subjectCounts.math++;
+    if(rec.completed.includes('math2')) subjectCounts.math++;
+    if(rec.completed.includes('write')) subjectCounts.write++;
+  });
+  const maxCount=Math.max(...Object.values(subjectCounts),1);
+  Object.entries(subjectCounts).forEach(([k,v])=>{
+    const bar=document.getElementById('bar-'+k);
+    const cnt=document.getElementById('cnt-'+k);
+    if(bar) bar.style.width=(v/maxCount*100)+'%';
+    if(cnt) cnt.textContent=v+'회';
+  });
+  buildStreakCalendar();
+}
+
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
@@ -1754,9 +1973,20 @@ function showScreen(name){
   document.getElementById('nav-'+name).classList.add('active');
   if(name==='history') initHistory();
   if(name==='badge') initBadge();
+  if(name==='stats') updateStatsScreen();
 }
 
 (function init(){
+  // localStorage에서 상태 복원
+  const state = loadState();
+  if(state) {
+    xp = state.xp || 0;
+    if(state.flexName){
+      const fn=document.getElementById('name-flex');
+      if(fn) fn.textContent=state.flexName;
+    }
+  }
+  restoreToday(state);
   applyDateSettings();
   const h=getTestDate().getHours();
   const g=document.getElementById('greeting-text');
@@ -1823,6 +2053,15 @@ function applyDateSettings() {
     const wh=document.getElementById('write-reward-hint');
     if(wh) wh.textContent='주말 +2,000원 🎉';
     document.getElementById('badge-write').textContent='2회';
+    // 주말: 영어2회·수학2회 숨기기, flex → 예습/복습
+    const cEng2 = document.getElementById('card-eng2');
+    const cMath2 = document.getElementById('card-math2');
+    if(cEng2) cEng2.style.display='none';
+    if(cMath2) cMath2.style.display='none';
+    const nameFlex = document.getElementById('name-flex');
+    if(nameFlex) nameFlex.textContent='📖 예습/복습';
+    tasks.eng2.sessions=0;
+    tasks.math2.sessions=0;
   } else {
     document.getElementById('day-info').textContent='📅 평일 ('+dateStr+') — 글쓰기 5~6줄';
     document.getElementById('write-sub').textContent='핵심요약→핵심생각→예시→앞으로의생각 (5~6줄) · 평일 +1,000원';
@@ -1834,6 +2073,13 @@ function applyDateSettings() {
       if(writeCard) writeCard.style.borderColor='#F5A623';
     }
     document.getElementById('badge-write').textContent='1회';
+    // 평일: 영어2회·수학2회 다시 보이기
+    const cEng2 = document.getElementById('card-eng2');
+    const cMath2 = document.getElementById('card-math2');
+    if(cEng2) cEng2.style.display='';
+    if(cMath2) cMath2.style.display='';
+    tasks.eng2.sessions=1;
+    tasks.math2.sessions=1;
   }
   // 어제 미달성이면 XP 패널티 체크
   checkXPPenalty(d);
@@ -1904,6 +2150,43 @@ function applyDevDate() {
   calcReward(); updateProgress();
   showScreen('home');
   closeDevPanel();
+}
+
+function resetAllData() {
+  localStorage.removeItem(STORE_KEY);
+  sessionStorage.clear();
+  xp = 0;
+  Object.keys(tasks).forEach(k=>{ tasks[k].done=false; });
+  weeklyWriteBonusGiven=false; weeklyWriteBonusAmount=0;
+  document.querySelectorAll('.task-check').forEach(el=>el.classList.remove('done'));
+  document.querySelectorAll('.task-name').forEach(el=>el.classList.remove('done'));
+  document.querySelectorAll('[id^="badge-"]').forEach(el=>el.classList.remove('done'));
+  document.querySelectorAll('.subj-panel').forEach(el=>el.classList.remove('show'));
+  document.getElementById('extra-list').innerHTML='';
+  extraItems=[]; extraIdCounter=0;
+  _testDate=null;
+  calcReward(); updateProgress(); buildStreakCalendar();
+  closeDevPanel();
+  showScreen('home');
+  // 완료 배너 표시
+  const banner = document.getElementById('xp-penalty-banner');
+  const titleEl = document.getElementById('penalty-title');
+  const descEl  = document.getElementById('penalty-desc');
+  if(banner && titleEl && descEl){
+    titleEl.textContent='✅ 데이터 초기화 완료!';
+    descEl.textContent='XP 0, 레벨 0, 기록 없음으로 새로 시작해요.';
+    banner.style.background='#F0FDF4';
+    banner.style.borderColor='#86EFAC';
+    titleEl.style.color='#166534';
+    descEl.style.color='#16A34A';
+    banner.style.display='block';
+    setTimeout(()=>{ banner.style.display='none'; }, 3000);
+  }
+}
+
+function doReset() {
+  document.getElementById('reset-confirm-box').style.display='none';
+  resetAllData();
 }
 
 function resetDevDate() {
@@ -1997,6 +2280,19 @@ function setQuickDay(targetDow) {
       <button class="dev-btn cancel" onclick="closeDevPanel()">취소</button>
       <button class="dev-btn reset" onclick="resetDevDate()">🔄 오늘로</button>
       <button class="dev-btn apply" onclick="applyDevDate()">✅ 적용</button>
+    </div>
+    <div style="margin-top:10px;border-top:1px solid #E5E7EB;padding-top:10px">
+      <div id="reset-confirm-box" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:800;color:#DC2626;margin-bottom:8px">정말 초기화할까요? 되돌릴 수 없어요!</div>
+        <div style="display:flex;gap:8px">
+          <button class="dev-btn" style="flex:1;background:#DC2626;color:white" onclick="doReset()">네, 초기화</button>
+          <button class="dev-btn reset" style="flex:1" onclick="document.getElementById('reset-confirm-box').style.display='none'">취소</button>
+        </div>
+      </div>
+      <button class="dev-btn" style="width:100%;background:#FEE2E2;color:#DC2626;border:1.5px solid #FECACA"
+        onclick="document.getElementById('reset-confirm-box').style.display='block'">
+        🗑️ 모든 데이터 초기화
+      </button>
     </div>
   </div>
 </div>
