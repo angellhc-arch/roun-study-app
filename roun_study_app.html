@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>로운이의 공부 습관 앱</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gold:#F5A623; --gold-light:#FFF3D4;
+  --purple:#7B5CF5; --purple-light:#EDE9FE;
+  --green:#22C55E; --green-light:#DCFCE7;
+  --orange:#F97316; --pink:#EC4899;
+  --bg:#F8F7FF; --card:#FFFFFF;
+  --text:#1E1B4B; --muted:#6B7280; --border:#E5E7EB;
+  --radius:16px; --radius-sm:10px;
+}
+html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; justify-content:center; font-family:'Nunito',sans-serif; }
+.phone-shell { width:390px; height:844px; background:var(--bg); border-radius:40px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.25); position:relative; display:flex; flex-direction:column; }
+.screen { display:none; flex-direction:column; flex:1; overflow-y:auto; padding-bottom:80px; }
+.screen.active { display:flex; }
+
+.header { background:linear-gradient(135deg,#7B5CF5 0%,#A855F7 100%); padding:18px 20px 28px; color:white; flex-shrink:0; }
+.header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.greeting { font-size:13px; opacity:.85; font-weight:600; }
+.username { font-size:21px; font-weight:900; }
+.streak-badge { background:rgba(255,255,255,.2); border:1.5px solid rgba(255,255,255,.4); border-radius:20px; padding:5px 11px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:5px; }
+.xp-bar-wrap { margin-top:4px; }
+.xp-label { font-size:12px; opacity:.8; margin-bottom:4px; font-weight:600; display:flex; justify-content:space-between; }
+.xp-bar { background:rgba(255,255,255,.25); border-radius:10px; height:7px; overflow:hidden; }
+.xp-fill { background:#FFD700; border-radius:10px; height:100%; transition:width .6s ease; }
+.level-badge { width:46px; height:46px; background:linear-gradient(135deg,#FFD700,#F5A623); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:#7C5400; border:3px solid rgba(255,255,255,.6); flex-shrink:0; text-align:center; line-height:1.3; }
+
+/* Reward banner */
+.reward-banner { margin:12px 16px 0; background:var(--card); border-radius:var(--radius); border:1.5px solid var(--gold); padding:13px 15px; }
+.reward-top-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.reward-today-block { display:flex; align-items:center; gap:8px; }
+.reward-icon { font-size:20px; }
+.reward-label-sm { font-size:10px; color:var(--muted); font-weight:600; }
+.reward-amount-sm { font-size:16px; font-weight:900; color:var(--gold); }
+.today-status-txt { font-size:10px; color:var(--muted); font-weight:600; text-align:right; line-height:1.5; white-space:pre-line; }
+.reward-chips { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; min-height:4px; }
+.rchip { font-size:10px; font-weight:700; padding:3px 7px; border-radius:20px; background:var(--gold-light); color:#9A6200; }
+.rchip.p { background:var(--purple-light); color:var(--purple); }
+.rchip.g { background:var(--green-light); color:#166534; }
+.reward-divider { height:1px; background:var(--border); margin:0 0 8px; }
+.reward-accum-row { display:flex; align-items:center; justify-content:space-between; }
+.reward-accum-label { font-size:12px; color:var(--muted); font-weight:700; }
+.reward-accum-val { font-size:20px; font-weight:900; color:var(--purple); }
+
+.day-info { text-align:center; padding:7px; margin:10px 16px 0; background:var(--purple-light); border-radius:var(--radius-sm); font-size:12px; font-weight:700; color:var(--purple); }
+
+.progress-section { margin:10px 16px 0; background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); padding:14px; display:flex; align-items:center; gap:14px; }
+.ring-wrap { position:relative; width:76px; height:76px; flex-shrink:0; }
+.ring-text { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ring-num { font-size:19px; font-weight:900; color:var(--purple); }
+.ring-den { font-size:11px; color:var(--muted); font-weight:700; }
+.progress-info { flex:1; }
+.progress-title { font-size:15px; font-weight:800; margin-bottom:3px; }
+.progress-msg { font-size:12px; color:var(--muted); font-weight:600; line-height:1.5; }
+.task-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+.chip { padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800; background:var(--purple-light); color:var(--purple); }
+.chip.done { background:var(--green-light); color:var(--green); }
+
+.section { padding:14px 16px 0; }
+.section-title { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:9px; }
+
+.task-card { background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); margin-bottom:7px; overflow:hidden; }
+.task-row { display:flex; align-items:center; gap:11px; padding:13px 14px; cursor:pointer; transition:background .15s; user-select:none; }
+.task-row:active { background:#F3F4F6; }
+.task-check { width:25px; height:25px; border-radius:50%; border:2.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .25s; font-size:13px; color:transparent; }
+.task-check.done { background:var(--green); border-color:var(--green); color:white; }
+.task-info { flex:1; min-width:0; }
+.task-name { font-size:14px; font-weight:700; }
+.task-name.done { text-decoration:line-through; color:var(--muted); }
+.task-sub { font-size:11px; color:var(--muted); font-weight:600; margin-top:1px; }
+.task-badge { font-size:10px; font-weight:800; padding:3px 7px; border-radius:20px; white-space:nowrap; flex-shrink:0; background:var(--purple-light); color:var(--purple); }
+.task-badge.done { background:var(--green-light); color:var(--green); }
+.task-badge.gold { background:var(--gold-light); color:#9A6200; }
+.task-badge.gray { background:#F3F4F6; color:var(--muted); }
+
+/* Extra study */
+.add-extra-btn { display:block; width:calc(100% - 32px); margin:0 16px 0; padding:11px; border:2px dashed var(--purple-light); border-radius:var(--radius); background:transparent; color:var(--purple); font-size:13px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; text-align:center; transition:background .15s; }
+.add-extra-btn:active { background:var(--purple-light); }
+.extra-item { background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); margin:0 16px 7px; overflow:hidden; }
+.extra-row { display:flex; align-items:center; gap:10px; padding:11px 13px; }
+.extra-check { width:24px; height:24px; border-radius:50%; border:2.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .25s; font-size:12px; color:transparent; cursor:pointer; }
+.extra-check.done { background:var(--green); border-color:var(--green); color:white; }
+.extra-name { flex:1; font-size:13px; font-weight:700; color:var(--text); }
+.extra-name.done { text-decoration:line-through; color:var(--muted); }
+.extra-subj-select { font-size:11px; font-weight:700; border:1.5px solid var(--border); border-radius:8px; padding:3px 6px; color:var(--muted); background:white; font-family:'Nunito',sans-serif; cursor:pointer; max-width:90px; }
+.extra-badge { font-size:10px; font-weight:800; padding:3px 7px; border-radius:20px; background:var(--gold-light); color:#9A6200; white-space:nowrap; }
+.extra-badge.done { background:var(--green-light); color:#166534; }
+.extra-del { background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:0 2px; line-height:1; }
+
+/* Subject record panel */
+.subj-panel { padding:0 14px 11px 50px; display:none; }
+.subj-panel.show { display:block; }
+.subj-panel-label { font-size:10px; font-weight:700; color:var(--muted); margin-bottom:5px; }
+.subj-pills { display:flex; flex-wrap:wrap; gap:5px; }
+.spill { padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; border:1.5px solid var(--border); color:var(--muted); cursor:pointer; background:white; font-family:'Nunito',sans-serif; }
+.spill.on { background:var(--purple); border-color:var(--purple); color:white; }
+.custom-input { margin-top:6px; width:100%; padding:5px 9px; border:1.5px solid var(--border); border-radius:8px; font-size:12px; font-family:'Nunito',sans-serif; font-weight:600; outline:none; display:none; }
+.custom-input.show { display:block; }
+
+/* Subj record trigger button (small, inside task row area) */
+.subj-btn { font-size:10px; color:var(--purple); font-weight:700; background:var(--purple-light); border:none; border-radius:7px; padding:2px 6px; cursor:pointer; font-family:'Nunito',sans-serif; flex-shrink:0; margin-left:4px; }
+
+/* Edit panel for flexible labels */
+.flex-name-row { display:flex; align-items:center; gap:5px; }
+.edit-btn { font-size:10px; color:var(--purple); font-weight:700; background:var(--purple-light); border:none; border-radius:7px; padding:2px 6px; cursor:pointer; font-family:'Nunito',sans-serif; flex-shrink:0; }
+.edit-panel { padding:0 14px 10px 14px; display:none; }
+.edit-panel.show { display:block; }
+.edit-panel-label { font-size:10px; font-weight:700; color:var(--muted); margin-bottom:5px; }
+
+/* Stats */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; padding:14px; }
+.stat-card { background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); padding:14px; }
+.stat-icon { font-size:20px; margin-bottom:5px; }
+.stat-value { font-size:20px; font-weight:900; color:var(--text); }
+.stat-label { font-size:11px; color:var(--muted); font-weight:600; margin-top:2px; }
+.streak-row { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+.streak-dot { width:27px; height:27px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; }
+.streak-dot.done { background:var(--purple); color:white; }
+.streak-dot.today { background:var(--gold); color:white; }
+.streak-dot.miss { background:var(--border); color:var(--muted); }
+.full-card { background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); padding:14px; margin:0 16px 9px; }
+.full-card-title { font-size:13px; font-weight:800; margin-bottom:11px; }
+.bar-row { display:flex; align-items:center; gap:9px; margin-bottom:9px; }
+.bar-label { font-size:12px; font-weight:700; width:48px; }
+.bar-track { flex:1; background:var(--border); border-radius:10px; height:9px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:10px; }
+.bar-count { font-size:11px; color:var(--muted); font-weight:700; width:28px; text-align:right; }
+
+.badge-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; padding:0 16px; }
+.badge-item { background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); padding:14px 8px; text-align:center; }
+.badge-item.locked { opacity:.4; }
+.badge-emoji { font-size:28px; margin-bottom:5px; }
+.badge-name { font-size:10px; font-weight:800; color:var(--text); }
+.badge-cond { font-size:9px; color:var(--muted); font-weight:600; margin-top:2px; }
+
+.bottom-nav { position:absolute; bottom:0; left:0; right:0; background:white; border-top:1.5px solid var(--border); display:flex; justify-content:space-around; padding:9px 0 14px; z-index:100; }
+.nav-item { display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; padding:3px 14px; }
+.nav-item:active { opacity:.6; }
+.nav-icon { font-size:21px; }
+.nav-label { font-size:10px; font-weight:800; color:var(--muted); }
+.nav-item.active .nav-label { color:var(--purple); }
+
+.popup-overlay { position:absolute; inset:0; background:rgba(0,0,0,.5); display:none; align-items:flex-end; justify-content:center; z-index:200; }
+.popup-overlay.show { display:flex; }
+.popup { background:white; border-radius:24px 24px 0 0; padding:22px 22px 34px; width:100%; text-align:center; }
+.popup-emoji { font-size:48px; margin-bottom:10px; }
+.popup-title { font-size:20px; font-weight:900; margin-bottom:5px; }
+.popup-msg { font-size:13px; color:var(--muted); font-weight:600; line-height:1.6; margin-bottom:18px; }
+.popup-btn { background:var(--purple); color:white; border:none; border-radius:14px; padding:13px 28px; font-size:15px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; width:100%; }
+/* History screen */
+.hist-summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 16px 0; }
+.hist-sum-card { background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); padding:12px 8px; text-align:center; }
+.hist-sum-icon { font-size:18px; margin-bottom:4px; }
+.hist-sum-val { font-size:15px; font-weight:900; color:var(--text); }
+.hist-sum-label { font-size:9px; color:var(--muted); font-weight:700; margin-top:2px; }
+
+.month-tab-wrap { padding:10px 16px 0; overflow-x:auto; }
+.month-tabs { display:flex; gap:6px; width:max-content; }
+.month-tab { padding:5px 14px; border-radius:20px; font-size:12px; font-weight:800; border:1.5px solid var(--border); color:var(--muted); cursor:pointer; background:white; font-family:'Nunito',sans-serif; white-space:nowrap; }
+.month-tab.on { background:var(--purple); border-color:var(--purple); color:white; }
+
+.month-summary { margin:10px 16px 0; background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); padding:12px 14px; display:flex; gap:0; }
+.msm-item { flex:1; text-align:center; }
+.msm-item:not(:last-child) { border-right:1px solid var(--border); }
+.msm-val { font-size:16px; font-weight:900; color:var(--purple); }
+.msm-label { font-size:10px; color:var(--muted); font-weight:700; margin-top:2px; }
+
+.hist-list { padding:10px 16px 0; }
+.hist-day-card { background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); margin-bottom:8px; cursor:pointer; transition:background .15s; overflow:hidden; }
+.hist-day-card:active { background:#F9F8FF; }
+.hist-day-card.complete { border-color:#C4B5FD; }
+.hist-day-card.partial { border-color:#FDE68A; }
+.hist-day-card.empty { border-color:var(--border); opacity:.6; }
+.hist-day-row { display:flex; align-items:center; gap:10px; padding:12px 14px; }
+.hist-day-dot { width:36px; height:36px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+.hist-day-dot.complete { background:var(--purple-light); }
+.hist-day-dot.partial { background:#FEF9C3; }
+.hist-day-dot.empty { background:#F3F4F6; }
+.hist-dot-day { font-size:10px; font-weight:800; }
+.hist-dot-day.complete { color:var(--purple); }
+.hist-dot-day.partial { color:#854D0E; }
+.hist-dot-day.empty { color:var(--muted); }
+.hist-dot-num { font-size:14px; font-weight:900; }
+.hist-dot-num.complete { color:var(--purple); }
+.hist-dot-num.partial { color:#854D0E; }
+.hist-dot-num.empty { color:var(--muted); }
+.hist-day-info { flex:1; min-width:0; }
+.hist-day-title { font-size:13px; font-weight:800; color:var(--text); }
+.hist-day-sub { font-size:11px; color:var(--muted); font-weight:600; margin-top:2px; }
+.hist-day-right { text-align:right; flex-shrink:0; }
+.hist-reward { font-size:14px; font-weight:900; color:var(--gold); }
+.hist-reward.zero { color:var(--muted); font-size:12px; }
+.hist-sessions { font-size:10px; color:var(--muted); font-weight:700; margin-top:2px; }
+.hist-subj-chips { display:flex; flex-wrap:wrap; gap:4px; padding:0 14px 10px 60px; }
+.hist-schip { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; background:var(--purple-light); color:var(--purple); }
+
+/* detail sheet items */
+.detail-item { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); }
+.detail-item:last-child { border-bottom:none; }
+.detail-check { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+.detail-check.done { background:var(--green); color:white; }
+.detail-check.miss { background:var(--border); color:var(--muted); }
+.detail-item-name { font-size:13px; font-weight:700; }
+.detail-item-name.miss { color:var(--muted); text-decoration:line-through; }
+.detail-subj-chip { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; background:var(--purple-light); color:var(--purple); margin-left:auto; flex-shrink:0; }
+/* ══════════════════════════════════
+   BADGE SYSTEM — Premium Design
+══════════════════════════════════ */
+.badge-grid2 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:0 16px 4px; }
+
+/* 기본 카드 */
+.badge2-item {
+  border-radius:18px;
+  padding:14px 8px 12px;
+  text-align:center;
+  position:relative;
+  cursor:default;
+  transition:transform .18s, box-shadow .18s;
+  overflow:hidden;
+}
+.badge2-item:active { transform:scale(.95); }
+
+/* 획득 전 — 밝은 배경에서 잠금 상태 */
+.badge2-item.locked {
+  background:#F4F4F8;
+  border:1.5px solid #E0DEEE;
+}
+.badge2-item.locked .badge2-name { color:#9896B0; }
+.badge2-item.locked .badge2-cond { color:#BAB8CC; }
+.badge2-item.locked .badge2-char { filter:saturate(.15) brightness(.85); }
+.badge2-item.locked .badge2-lock {
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  font-size:13px; opacity:.4;
+}
+
+/* 획득 완료 — 카테고리별 선명한 그라디언트 */
+.badge2-item.earned {
+  border:0;
+  box-shadow:0 4px 20px rgba(0,0,0,.12);
+}
+.badge2-item.earned::before {
+  content:'';
+  position:absolute; inset:0;
+  background:inherit;
+  border-radius:inherit;
+  opacity:.15;
+}
+
+/* 카테고리별 획득 카드 */
+.badge2-item.earned.cat-streak {
+  background:linear-gradient(145deg,#3B1FA8,#6D28D9,#8B5CF6);
+  border:1.5px solid rgba(196,133,250,.4);
+}
+.badge2-item.earned.cat-subject {
+  background:linear-gradient(145deg,#0C4A8C,#1D6FBF,#3B82F6);
+  border:1.5px solid rgba(147,197,253,.4);
+}
+.badge2-item.earned.cat-level {
+  background:linear-gradient(145deg,#92400E,#B45309,#D97706);
+  border:1.5px solid rgba(253,211,77,.4);
+}
+.badge2-item.earned.cat-special {
+  background:linear-gradient(145deg,#065F46,#059669,#10B981);
+  border:1.5px solid rgba(110,231,183,.4);
+}
+
+/* 빛 반짝임 오버레이 */
+.badge2-item.earned::after {
+  content:'';
+  position:absolute;
+  top:-40%; left:-40%; width:60%; height:60%;
+  background:radial-gradient(ellipse, rgba(255,255,255,.18) 0%, transparent 70%);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.badge2-char { font-size:34px; margin-bottom:5px; line-height:1; display:block; position:relative; z-index:1; }
+.badge2-name { font-size:10px; font-weight:900; color:white; line-height:1.3; position:relative; z-index:1; letter-spacing:.02em; }
+.badge2-cond { font-size:8px; color:rgba(255,255,255,.6); font-weight:700; margin-top:3px; line-height:1.4; position:relative; z-index:1; }
+
+/* 스트릭/카운트 태그 */
+.badge2-streak {
+  position:absolute; top:7px; right:7px;
+  background:rgba(255,255,255,.2);
+  color:white;
+  font-size:7px; font-weight:900;
+  padding:2px 5px; border-radius:8px;
+  backdrop-filter:blur(4px);
+  z-index:2;
+}
+.badge2-streak.gold { background:rgba(255,200,0,.35); color:#FFE066; }
+.badge2-new {
+  position:absolute; top:7px; left:7px;
+  background:#FF3B5C; color:white;
+  font-size:7px; font-weight:900;
+  padding:2px 5px; border-radius:8px;
+  z-index:2;
+  animation: pulse-new 1.5s ease-in-out infinite;
+}
+@keyframes pulse-new {
+  0%,100% { opacity:1; }
+  50% { opacity:.6; }
+}
+
+/* 획득 뱃지 빛 테두리 애니메이션 */
+@keyframes glow-border {
+  0%,100% { box-shadow:0 4px 20px rgba(123,92,245,.3); }
+  50% { box-shadow:0 4px 28px rgba(123,92,245,.6), 0 0 0 2px rgba(196,133,250,.3); }
+}
+.badge2-item.earned.cat-streak { animation: glow-streak 3s ease-in-out infinite; }
+.badge2-item.earned.cat-level  { animation: glow-gold 3s ease-in-out infinite; }
+@keyframes glow-streak {
+  0%,100% { box-shadow:0 4px 20px rgba(123,92,245,.25); }
+  50%     { box-shadow:0 4px 28px rgba(167,90,245,.5), 0 0 0 2px rgba(196,133,250,.2); }
+}
+@keyframes glow-gold {
+  0%,100% { box-shadow:0 4px 20px rgba(200,150,12,.25); }
+  50%     { box-shadow:0 4px 28px rgba(255,200,0,.5), 0 0 0 2px rgba(255,215,0,.25); }
+}
+
+/* 잠금 카드 안 자물쇠 */
+.badge2-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.badge2-lock-icon { font-size:22px; opacity:.12; }
+
+/* Level roadmap */
+.lv-node { display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0; }
+.lv-circle { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; border:2px solid transparent; }
+.lv-circle.past { background:var(--purple); color:white; }
+.lv-circle.current { background:linear-gradient(135deg,#FFD700,#F5A623); color:#7C5400; border-color:#FFD700; box-shadow:0 0 0 3px rgba(245,166,35,.25); }
+.lv-circle.future { background:#F3F4F6; color:var(--muted); border-color:var(--border); }
+.lv-circle.special { background:linear-gradient(135deg,#FF6B6B,#FF8E53); color:white; }
+.lv-node-label { font-size:8px; font-weight:800; color:var(--muted); }
+.lv-connector { width:12px; height:2px; background:var(--border); align-self:center; flex-shrink:0; margin-top:-10px; }
+.lv-connector.done { background:var(--purple); }
+</style>
+</head>
+<body>
+<div class="phone-shell">
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="header" style="padding-bottom:0;overflow:visible">
+    <div class="header-top" style="margin-bottom:8px">
+      <div>
+        <div class="greeting" id="greeting-text">좋은 아침이에요! ☀️</div>
+        <div class="username">로운이 📚</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div class="streak-badge">🔥 <span>7</span>일</div>
+        <div class="level-badge level-badge-sync">Lv<br>3</div>
+      </div>
+    </div>
+    <div class="xp-bar-wrap" style="margin-bottom:0">
+      <div class="xp-label"><span>경험치</span><span id="xp-label-text">240 / 300 XP</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:80%"></div></div>
+    </div>
+    <!-- 마스코트 + 말풍선 -->
+    <div style="position:relative;height:80px;margin-top:-4px">
+      <!-- 말풍선 -->
+      <div id="mascot-bubble" style="position:absolute;left:86px;bottom:38px;background:white;border-radius:12px;padding:6px 10px;font-size:11px;font-weight:800;color:#5B21B6;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15)">
+        오늘도 같이 공부하자! 🐸
+        <div style="position:absolute;left:10px;bottom:-7px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid white"></div>
+      </div>
+      <!-- 개구리 짱구 SVG 마스코트 -->
+      <svg width="78" height="90" viewBox="0 0 78 90" style="position:absolute;left:4px;bottom:-4px" id="mascot-svg">
+        <!-- 개구리 눈 돌기 (좌) -->
+        <ellipse cx="18" cy="18" rx="10" ry="9" fill="#3DB84C"/>
+        <ellipse cx="18" cy="17" rx="6" ry="5.5" fill="white"/>
+        <circle cx="18" cy="17" r="3.5" fill="#1a1a1a"/>
+        <circle cx="19.5" cy="15.5" r="1.2" fill="white"/>
+        <!-- 개구리 눈 돌기 (우) -->
+        <ellipse cx="60" cy="18" rx="10" ry="9" fill="#3DB84C"/>
+        <ellipse cx="60" cy="17" rx="6" ry="5.5" fill="white"/>
+        <circle cx="60" cy="17" r="3.5" fill="#1a1a1a"/>
+        <circle cx="61.5" cy="15.5" r="1.2" fill="white"/>
+        <!-- 개구리 후드 본체 -->
+        <ellipse cx="39" cy="32" rx="30" ry="20" fill="#3DB84C"/>
+        <!-- 얼굴 (살색) -->
+        <ellipse cx="39" cy="38" rx="26" ry="24" fill="#FAD9C1"/>
+        <!-- 짱구 눈썹 (좌) - 특징적인 두꺼운 눈썹 -->
+        <path d="M20 28 Q25 24 30 27" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- 짱구 눈썹 (우) -->
+        <path d="M48 27 Q53 24 58 28" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- 짱구 눈 (좌) - 크고 동그란 눈 -->
+        <ellipse cx="27" cy="35" rx="7" ry="7.5" fill="#1a1a1a"/>
+        <ellipse cx="29" cy="33" rx="2.8" ry="2.8" fill="white"/>
+        <!-- 짱구 눈 (우) -->
+        <ellipse cx="51" cy="35" rx="7" ry="7.5" fill="#1a1a1a"/>
+        <ellipse cx="53" cy="33" rx="2.8" ry="2.8" fill="white"/>
+        <!-- 코 -->
+        <ellipse cx="39" cy="43" rx="2" ry="1.5" fill="#E8A88A"/>
+        <!-- 입 (동그랗게 벌린 모양 - 놀란 표정) -->
+        <ellipse cx="39" cy="52" rx="5" ry="6" fill="#8B1A2A"/>
+        <ellipse cx="39" cy="50" rx="3.5" ry="2.5" fill="#C41E3A"/>
+        <!-- 개구리 몸통 -->
+        <ellipse cx="39" cy="76" rx="24" ry="18" fill="#3DB84C"/>
+        <!-- 배 흰 부분 -->
+        <ellipse cx="39" cy="78" rx="14" ry="11" fill="#E8F5E8"/>
+        <!-- 팔 (좌) -->
+        <ellipse cx="14" cy="72" rx="7" ry="5" fill="#3DB84C" transform="rotate(-20 14 72)"/>
+        <!-- 팔 (우) -->
+        <ellipse cx="64" cy="72" rx="7" ry="5" fill="#3DB84C" transform="rotate(20 64 72)"/>
+        <!-- 다리 (좌) -->
+        <ellipse cx="26" cy="89" rx="8" ry="5" fill="#3DB84C" transform="rotate(-10 26 89)"/>
+        <!-- 다리 (우) -->
+        <ellipse cx="52" cy="89" rx="8" ry="5" fill="#3DB84C" transform="rotate(10 52 89)"/>
+        <!-- 개구리 후드 귀 장식 라인 -->
+        <path d="M10 24 Q8 30 12 36" stroke="#2A9B3A" stroke-width="1.5" fill="none"/>
+        <path d="M68 24 Q70 30 66 36" stroke="#2A9B3A" stroke-width="1.5" fill="none"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="day-info" id="day-info">📅 평일 — 글쓰기 5~6줄</div>
+
+  <!-- XP 패널티 알림 배너 (어제 미달성 시 표시) -->
+  <div id="xp-penalty-banner" style="display:none;margin:8px 16px 0;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius-sm);padding:11px 14px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:20px">⚠️</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:900;color:#991B1B" id="penalty-title">어제 학습 미달성!</div>
+        <div style="font-size:11px;font-weight:700;color:#DC2626;margin-top:2px" id="penalty-desc">XP 3일치가 차감됐어요.</div>
+      </div>
+      <button onclick="this.closest('#xp-penalty-banner').style.display='none'" style="background:none;border:none;font-size:16px;color:#9CA3AF;cursor:pointer">✕</button>
+    </div>
+  </div>
+
+  <!-- Reward banner -->
+  <div class="reward-banner">
+    <div class="reward-top-row">
+      <div class="reward-today-block">
+        <div class="reward-icon">💰</div>
+        <div>
+          <div class="reward-label-sm">오늘 받을 보상</div>
+          <div class="reward-amount-sm" id="today-reward">0원</div>
+        </div>
+      </div>
+      <div class="today-status-txt" id="today-status">학습 0/7회&#10;기본 0원</div>
+    </div>
+    <div class="reward-chips" id="reward-chips"></div>
+    <div class="reward-divider"></div>
+    <div class="reward-accum-row">
+      <div class="reward-accum-label">📦 이달 누적 보상</div>
+      <div class="reward-accum-val" id="accum-reward">32,500원</div>
+    </div>
+  </div>
+
+  <!-- Progress ring -->
+  <div class="progress-section">
+    <div class="ring-wrap">
+      <svg width="76" height="76" viewBox="0 0 76 76">
+        <circle cx="38" cy="38" r="30" fill="none" stroke="#E5E7EB" stroke-width="7"/>
+        <circle cx="38" cy="38" r="30" fill="none" stroke="#7B5CF5" stroke-width="7"
+          stroke-dasharray="188" id="progress-ring" stroke-dashoffset="188"
+          stroke-linecap="round" transform="rotate(-90 38 38)" style="transition:stroke-dashoffset .6s ease"/>
+      </svg>
+      <div class="ring-text">
+        <div class="ring-num" id="done-count">0</div>
+        <div class="ring-den" id="total-count">/ 9</div>
+      </div>
+    </div>
+    <div class="progress-info">
+      <div class="progress-title">오늘의 미션</div>
+      <div class="progress-msg" id="progress-msg">체크하면서 하나씩 완료해봐요!</div>
+      <div class="task-chips" id="task-chips"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">✅ 오늘의 체크리스트</div>
+
+    <!-- Writing (맨 위!) -->
+    <div class="task-card" style="border-color:#C4B5FD;background:linear-gradient(160deg,#FAFAFE,#F5F3FF)">
+      <div class="task-row" onclick="toggleTask('write')">
+        <div class="task-check" id="check-write">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-write">✏️ 글쓰기</div>
+          <div class="task-sub" id="write-sub">핵심요약→핵심생각→예시→앞으로의생각 (5~6줄) · <span id="write-reward-hint">평일 +1,000원</span></div>
+        </div>
+        <div class="task-badge" id="badge-write" style="background:#EDE9FE;color:#5B21B6">오늘의 첫 미션!</div>
+      </div>
+    </div>
+
+    <!-- Miracle Morning -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('miracle')">
+        <div class="task-check" id="check-miracle">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-miracle">🌅 미라클 모닝</div>
+          <div class="task-sub">6:15 이전 기상 +500원</div>
+        </div>
+        <div class="task-badge gold" id="badge-miracle">+500원</div>
+      </div>
+    </div>
+
+    <!-- Shower -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('shower')">
+        <div class="task-check" id="check-shower">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-shower">🚿 아침 샤워</div>
+          <div class="task-sub">샤워 +1,000원 · 미라클모닝+샤워 합계 1,500원</div>
+        </div>
+        <div class="task-badge gold" id="badge-shower">+1,000원</div>
+      </div>
+    </div>
+
+    <!-- Math 1 -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('math1')">
+        <div class="task-check" id="check-math1">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-math1">📐 수학 1회</div>
+          <div class="task-sub">최상위 문제집 · 40분</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="subj-btn" onclick="openSubj('math1',event)">📋</button>
+          <div class="task-badge" id="badge-math1">1회</div>
+        </div>
+      </div>
+      <div class="subj-panel" id="subj-math1">
+        <div class="subj-panel-label">학습 내용 기록</div>
+        <div class="subj-pills">
+          <button class="spill on" onclick="pickSubj('math1','수학',this)">수학</button>
+          <button class="spill" onclick="pickSubj('math1','영어',this)">영어</button>
+          <button class="spill" onclick="pickSubj('math1','국어',this)">국어</button>
+          <button class="spill" onclick="pickSubj('math1','글쓰기',this)">글쓰기</button>
+          <button class="spill" onclick="pickSubj('math1','예습복습',this)">예습복습</button>
+          <button class="spill" onclick="pickSubj('math1','기타',this)">기타 입력</button>
+        </div>
+        <input class="custom-input" id="cinput-math1" placeholder="직접 입력...">
+      </div>
+    </div>
+
+    <!-- Math 2 -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('math2')">
+        <div class="task-check" id="check-math2">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-math2">📐 수학 2회</div>
+          <div class="task-sub">최상위 문제집 · 40분</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="subj-btn" onclick="openSubj('math2',event)">📋</button>
+          <div class="task-badge" id="badge-math2">1회</div>
+        </div>
+      </div>
+      <div class="subj-panel" id="subj-math2">
+        <div class="subj-panel-label">학습 내용 기록</div>
+        <div class="subj-pills">
+          <button class="spill on" onclick="pickSubj('math2','수학',this)">수학</button>
+          <button class="spill" onclick="pickSubj('math2','영어',this)">영어</button>
+          <button class="spill" onclick="pickSubj('math2','국어',this)">국어</button>
+          <button class="spill" onclick="pickSubj('math2','글쓰기',this)">글쓰기</button>
+          <button class="spill" onclick="pickSubj('math2','예습복습',this)">예습복습</button>
+          <button class="spill" onclick="pickSubj('math2','기타',this)">기타 입력</button>
+        </div>
+        <input class="custom-input" id="cinput-math2" placeholder="직접 입력...">
+      </div>
+    </div>
+
+    <!-- English 1 -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('eng1')">
+        <div class="task-check" id="check-eng1">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-eng1">🎧 영어 1회</div>
+          <div class="task-sub">듣기→따라읽기→번역 · 40분</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="subj-btn" onclick="openSubj('eng1',event)">📋</button>
+          <div class="task-badge" id="badge-eng1">1회</div>
+        </div>
+      </div>
+      <div class="subj-panel" id="subj-eng1">
+        <div class="subj-panel-label">학습 내용 기록</div>
+        <div class="subj-pills">
+          <button class="spill" onclick="pickSubj('eng1','수학',this)">수학</button>
+          <button class="spill on" onclick="pickSubj('eng1','영어',this)">영어</button>
+          <button class="spill" onclick="pickSubj('eng1','국어',this)">국어</button>
+          <button class="spill" onclick="pickSubj('eng1','글쓰기',this)">글쓰기</button>
+          <button class="spill" onclick="pickSubj('eng1','예습복습',this)">예습복습</button>
+          <button class="spill" onclick="pickSubj('eng1','기타',this)">기타 입력</button>
+        </div>
+        <input class="custom-input" id="cinput-eng1" placeholder="직접 입력...">
+      </div>
+    </div>
+
+    <!-- English 2 -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('eng2')">
+        <div class="task-check" id="check-eng2">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-eng2">🎧 영어 2회</div>
+          <div class="task-sub">단어암기 · 40분</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="subj-btn" onclick="openSubj('eng2',event)">📋</button>
+          <div class="task-badge" id="badge-eng2">1회</div>
+        </div>
+      </div>
+      <div class="subj-panel" id="subj-eng2">
+        <div class="subj-panel-label">학습 내용 기록</div>
+        <div class="subj-pills">
+          <button class="spill" onclick="pickSubj('eng2','수학',this)">수학</button>
+          <button class="spill on" onclick="pickSubj('eng2','영어',this)">영어</button>
+          <button class="spill" onclick="pickSubj('eng2','국어',this)">국어</button>
+          <button class="spill" onclick="pickSubj('eng2','글쓰기',this)">글쓰기</button>
+          <button class="spill" onclick="pickSubj('eng2','예습복습',this)">예습복습</button>
+          <button class="spill" onclick="pickSubj('eng2','기타',this)">기타 입력</button>
+        </div>
+        <input class="custom-input" id="cinput-eng2" placeholder="직접 입력...">
+      </div>
+    </div>
+
+    <!-- Flex task: 국어/영상편집 (변경 가능) -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('flex')">
+        <div class="task-check" id="check-flex">✓</div>
+        <div class="task-info">
+          <div class="flex-name-row">
+            <div class="task-name" id="name-flex">📝 국어 / 영상편집</div>
+            <button class="edit-btn" onclick="toggleEditPanel('flex-edit',event)">변경</button>
+          </div>
+          <div class="task-sub">1회 인정 · 40분</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="subj-btn" onclick="openSubj('flex',event)">📋</button>
+          <div class="task-badge" id="badge-flex">1회</div>
+        </div>
+      </div>
+      <div class="edit-panel" id="flex-edit">
+        <div class="edit-panel-label">항목 이름 변경</div>
+        <div class="subj-pills">
+          <button class="spill on" onclick="setFlexName('📝 국어 / 영상편집',this)">국어 / 영상편집</button>
+          <button class="spill" onclick="setFlexName('📝 국어',this)">국어</button>
+          <button class="spill" onclick="setFlexName('🎬 영상편집',this)">영상편집</button>
+          <button class="spill" onclick="setFlexName('📖 예습복습',this)">예습복습</button>
+          <button class="spill" onclick="setFlexName('📐 수학 추가',this)">수학 추가</button>
+        </div>
+        <input class="custom-input show" id="flex-custom" placeholder="직접 입력..." oninput="if(this.value.trim()) setFlexName(this.value.trim(),null)">
+      </div>
+      <div class="subj-panel" id="subj-flex">
+        <div class="subj-panel-label">학습 내용 기록</div>
+        <div class="subj-pills">
+          <button class="spill" onclick="pickSubj('flex','수학',this)">수학</button>
+          <button class="spill" onclick="pickSubj('flex','영어',this)">영어</button>
+          <button class="spill on" onclick="pickSubj('flex','국어',this)">국어</button>
+          <button class="spill" onclick="pickSubj('flex','글쓰기',this)">글쓰기</button>
+          <button class="spill" onclick="pickSubj('flex','예습복습',this)">예습복습</button>
+          <button class="spill" onclick="pickSubj('flex','기타',this)">기타 입력</button>
+        </div>
+        <input class="custom-input" id="cinput-flex" placeholder="직접 입력...">
+      </div>
+    </div>
+
+    <!-- Reading 1 -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('read1')">
+        <div class="task-check" id="check-read1">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-read1">📖 독서 1회</div>
+          <div class="task-sub">소설/과학/역사/사회/철학 · 30분</div>
+        </div>
+        <div class="task-badge" id="badge-read1">1회</div>
+      </div>
+    </div>
+
+    <!-- Reading 2 (낮잠 대체 가능) -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('read2')">
+        <div class="task-check" id="check-read2">✓</div>
+        <div class="task-info">
+          <div class="flex-name-row">
+            <div class="task-name" id="name-read2">📖 독서 2회</div>
+            <button class="edit-btn" onclick="toggleEditPanel('read2-edit',event)">변경</button>
+          </div>
+          <div class="task-sub" id="sub-read2">소설/과학/역사/사회/철학 · 30분</div>
+        </div>
+        <div class="task-badge" id="badge-read2">1회</div>
+      </div>
+      <div class="edit-panel" id="read2-edit">
+        <div class="edit-panel-label">항목 선택</div>
+        <div class="subj-pills">
+          <button class="spill on" onclick="setRead2('📖 독서 2회','소설/과학/역사/사회/철학 · 30분',this)">독서 2회</button>
+          <button class="spill" onclick="setRead2('😴 낮잠','낮잠 = 독서 1회 인정',this)">낮잠으로 대체</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exercise (선택, 공부 1회) -->
+    <div class="task-card">
+      <div class="task-row" onclick="toggleTask('exercise')">
+        <div class="task-check" id="check-exercise">✓</div>
+        <div class="task-info">
+          <div class="task-name" id="name-exercise">🏃 운동</div>
+          <div class="task-sub">선택 · 공부 1회로 인정</div>
+        </div>
+        <div class="task-badge gray" id="badge-exercise">선택 +1회</div>
+      </div>
+    </div>
+
+    <!-- Extra study section -->
+    <div class="section-title" style="margin-top:6px">⚡ 추가 공부 <span style="font-weight:600;color:var(--gold)">(회당 +2,000원)</span></div>
+    <div id="extra-list"></div>
+    <button class="add-extra-btn" onclick="addExtra()">+ 추가 공부 입력하기</button>
+
+    <div style="height:8px"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="screen" id="screen-stats">
+  <div class="header">
+    <div class="header-top">
+      <div><div class="greeting">나의 성장 기록</div><div class="username">통계 & 보상 📊</div></div>
+      <div class="level-badge level-badge-sync">Lv<br>3</div>
+    </div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-value">7일</div><div class="stat-label">현재 연속 달성</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value">32,500원</div><div class="stat-label">이달 누적 보상</div></div>
+    <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-value">48회</div><div class="stat-label">이달 공부 횟수</div></div>
+    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">1,240XP</div><div class="stat-label">총 경험치</div></div>
+  </div>
+  <div class="full-card">
+    <div class="full-card-title">🔥 이번 달 스트릭</div>
+    <div class="streak-row" id="streak-calendar"></div>
+  </div>
+  <div class="full-card">
+    <div class="full-card-title">📐 과목별 공부 횟수 (이번 달)</div>
+    <div class="bar-row"><div class="bar-label">수학</div><div class="bar-track"><div class="bar-fill" style="width:85%;background:#7B5CF5"></div></div><div class="bar-count">17회</div></div>
+    <div class="bar-row"><div class="bar-label">영어</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:#3B82F6"></div></div><div class="bar-count">16회</div></div>
+    <div class="bar-row"><div class="bar-label">독서</div><div class="bar-track"><div class="bar-fill" style="width:55%;background:#22C55E"></div></div><div class="bar-count">11회</div></div>
+    <div class="bar-row"><div class="bar-label">글쓰기</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:#EC4899"></div></div><div class="bar-count">8회</div></div>
+  </div>
+  <div style="height:8px"></div>
+</div>
+
+<!-- BADGES & LEVEL -->
+<div class="screen" id="screen-badge" style="background:var(--bg)">
+  <div class="header" style="padding-bottom:20px">
+    <div class="header-top">
+      <div><div class="greeting">로운이의 성장</div><div class="username">레벨 & 뱃지 🏅</div></div>
+      <div class="level-badge" id="lv-badge-main">Lv<br><span id="lv-num-main">3</span></div>
+    </div>
+  </div>
+
+  <!-- 레벨 카드 -->
+  <div style="margin:12px 16px 0;background:white;border-radius:var(--radius);border:1.5px solid var(--border);overflow:hidden">
+    <!-- 레벨 헤더 -->
+    <div style="background:linear-gradient(135deg,#7B5CF5,#A855F7);padding:16px;color:white">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="lv-big-badge" style="width:60px;height:60px;background:linear-gradient(135deg,#FFD700,#F5A623);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#7C5400;border:3px solid rgba(255,255,255,.7);text-align:center;line-height:1.3;flex-shrink:0">Lv<br><span id="lv-big-num">3</span></div>
+        <div style="flex:1">
+          <div style="font-size:18px;font-weight:900" id="lv-title-txt">🌱 새싹 탐험가</div>
+          <div style="font-size:12px;opacity:.85;font-weight:600;margin-top:2px">현재 연속 <span id="lv-streak-num">7</span>일 달성 중</div>
+          <div style="font-size:11px;opacity:.75;font-weight:600;margin-top:1px">다음 레벨까지 <span id="lv-remain">3</span>일 연속 달성 필요</div>
+        </div>
+      </div>
+      <!-- 연속 달성 진행바 -->
+      <div style="margin-top:12px">
+        <div style="font-size:11px;opacity:.8;font-weight:600;margin-bottom:5px;display:flex;justify-content:space-between"><span>레벨업 진행도</span><span id="lv-prog-txt">7/10일</span></div>
+        <div style="background:rgba(255,255,255,.25);border-radius:10px;height:8px;overflow:hidden">
+          <div id="lv-prog-bar" style="background:#FFD700;border-radius:10px;height:100%;width:70%;transition:width .6s ease"></div>
+        </div>
+      </div>
+      <!-- XP 진행바 -->
+      <div style="margin-top:10px">
+        <div style="font-size:11px;opacity:.8;font-weight:600;margin-bottom:5px;display:flex;justify-content:space-between">
+          <span>⭐ 경험치 (XP)</span>
+          <span id="xp-detail-txt">240 / 300 XP · 다음까지 60XP</span>
+        </div>
+        <div style="background:rgba(255,255,255,.25);border-radius:10px;height:8px;overflow:hidden">
+          <div id="xp-detail-bar" style="background:#A5F3FC;border-radius:10px;height:100%;width:80%;transition:width .6s ease"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- XP 획득 방법 -->
+    <div style="padding:14px 16px 0">
+      <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:10px;letter-spacing:.04em">⭐ 경험치(XP) 획득 방법</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+        <div style="background:#F5F3FF;border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">📐</span>
+          <div><div style="font-size:11px;font-weight:800;color:var(--text)">수학/영어 완료</div><div style="font-size:13px;font-weight:900;color:var(--purple)">+40 XP</div></div>
+        </div>
+        <div style="background:#F0FDF4;border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">📖</span>
+          <div><div style="font-size:11px;font-weight:800;color:var(--text)">독서 완료</div><div style="font-size:13px;font-weight:900;color:#16A34A">+25 XP</div></div>
+        </div>
+        <div style="background:#FFFBEB;border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">✏️</span>
+          <div><div style="font-size:11px;font-weight:800;color:var(--text)">글쓰기 완료</div><div style="font-size:13px;font-weight:900;color:#D97706">+35 XP</div></div>
+        </div>
+        <div style="background:#FFF1F2;border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">🌅</span>
+          <div><div style="font-size:11px;font-weight:800;color:var(--text)">미라클모닝</div><div style="font-size:13px;font-weight:900;color:#E11D48">+30 XP</div></div>
+        </div>
+        <div style="background:#EFF6FF;border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">🏃</span>
+          <div><div style="font-size:11px;font-weight:800;color:var(--text)">운동 완료</div><div style="font-size:13px;font-weight:900;color:#2563EB">+30 XP</div></div>
+        </div>
+        <div style="background:#FDF4FF;border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">⚡</span>
+          <div><div style="font-size:11px;font-weight:800;color:var(--text)">추가 공부</div><div style="font-size:13px;font-weight:900;color:#9333EA">+50 XP</div></div>
+        </div>
+      </div>
+
+      <!-- 레벨 규칙 -->
+      <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:10px;letter-spacing:.04em">📋 레벨 규칙</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700"><span style="font-size:16px">⬆️</span><span>10일 연속 달성 → <b>레벨 +1</b></span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700"><span style="font-size:16px">⬇️</span><span>학습 5개 이하 달성 시 → 다음날 <b>XP 3일치 차감</b> + 알림</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700"><span style="font-size:16px">🏆</span><span>레벨 10 달성 → <b>10,000원 특별 보너스!</b></span></div>
+      </div>
+
+      <!-- 연속 달성 보상 테이블 -->
+      <div style="margin-top:14px;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.04em">💰 연속 달성 보상 (10일 주기 반복)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+        <div style="background:#EDE9FE;border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:10px;font-weight:800;color:#5B21B6">10일·40일·70일…</div>
+          <div style="font-size:16px;font-weight:900;color:#7B5CF5;margin-top:2px">10,000원</div>
+        </div>
+        <div style="background:#FEF3C7;border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:10px;font-weight:800;color:#92400E">20일·50일·80일…</div>
+          <div style="font-size:16px;font-weight:900;color:#F59E0B;margin-top:2px">20,000원</div>
+        </div>
+        <div style="background:#DCFCE7;border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:10px;font-weight:800;color:#14532D">30일·60일·90일…</div>
+          <div style="font-size:16px;font-weight:900;color:#22C55E;margin-top:2px">30,000원</div>
+        </div>
+      </div>
+      <!-- 다음 보상까지 -->
+      <div style="background:#F5F3FF;border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted)">다음 연속 보상까지</div>
+          <div style="font-size:13px;font-weight:900;color:var(--purple)" id="next-streak-txt">10일 달성 → +10,000원</div>
+        </div>
+        <div style="font-size:22px">🎯</div>
+      </div>
+
+      <!-- 레벨별 XP 필요량 테이블 -->
+      <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:10px;letter-spacing:.04em">📊 레벨별 필요 경험치</div>
+      <div style="margin-bottom:14px" id="xp-level-table"></div>
+
+      <!-- 레벨 달성 뱃지 로드맵 -->
+      <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:10px;letter-spacing:.04em">🏅 레벨 달성 뱃지</div>
+      <div id="lv-badge-roadmap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+
+      <!-- 레벨 로드맵 -->
+      <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.04em">🗺️ 레벨 로드맵</div>
+      <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:4px" id="lv-roadmap"></div>
+    </div>
+  </div>
+
+  <!-- 뱃지 섹션 -->
+  <div style="padding:16px 16px 0">
+    <div style="font-size:12px;font-weight:900;color:var(--purple);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">✦ 획득한 뱃지 <span id="badge-count-txt" style="color:var(--purple)"></span></div>
+  </div>
+  <div class="badge-grid2" id="badge-earned-grid"></div>
+
+  <div style="padding:14px 16px 0">
+    <div style="font-size:12px;font-weight:900;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">🔒 도전 중인 뱃지</div>
+  </div>
+  <div id="badge-locked-grid" style="padding:0 16px"></div>
+
+  <div style="height:8px"></div>
+</div>
+
+<!-- HISTORY -->
+<div class="screen" id="screen-history">
+  <div class="header">
+    <div class="header-top">
+      <div><div class="greeting">그동안 열심히 했어요!</div><div class="username">공부 기록 📖</div></div>
+      <div class="level-badge level-badge-sync">Lv<br>3</div>
+    </div>
+  </div>
+
+  <!-- 요약 카드 3개 -->
+  <div class="hist-summary-row">
+    <div class="hist-sum-card">
+      <div class="hist-sum-icon">💰</div>
+      <div class="hist-sum-val">89,500원</div>
+      <div class="hist-sum-label">총 누적 보상</div>
+    </div>
+    <div class="hist-sum-card">
+      <div class="hist-sum-icon">🔥</div>
+      <div class="hist-sum-val">14일</div>
+      <div class="hist-sum-label">최장 스트릭</div>
+    </div>
+    <div class="hist-sum-card">
+      <div class="hist-sum-icon">📅</div>
+      <div class="hist-sum-val">38일</div>
+      <div class="hist-sum-label">총 달성일</div>
+    </div>
+  </div>
+
+  <!-- 월 탭 선택 -->
+  <div class="month-tab-wrap">
+    <div class="month-tabs" id="month-tabs"></div>
+  </div>
+
+  <!-- 월 요약 -->
+  <div class="month-summary" id="month-summary"></div>
+
+  <!-- 날짜 리스트 -->
+  <div class="hist-list" id="hist-list"></div>
+
+  <!-- 날짜 상세 바텀시트 -->
+  <div class="popup-overlay" id="day-detail-overlay" onclick="closeDayDetail(event)">
+    <div class="popup" style="text-align:left;padding:20px 20px 34px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div id="detail-date-title" style="font-size:17px;font-weight:900;color:var(--text)"></div>
+        <button onclick="closeDayDetailDirect()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer">✕</button>
+      </div>
+      <!-- 보상 -->
+      <div id="detail-reward-row" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:12px;background:var(--gold-light);border-radius:var(--radius-sm)">
+        <span style="font-size:20px">💰</span>
+        <div>
+          <div style="font-size:11px;color:#9A6200;font-weight:700">오늘 받은 보상</div>
+          <div id="detail-reward" style="font-size:20px;font-weight:900;color:var(--gold)"></div>
+        </div>
+      </div>
+      <!-- 체크리스트 -->
+      <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.05em">완료한 항목</div>
+      <div id="detail-items"></div>
+      <!-- 과목 기록 -->
+      <div style="font-size:11px;font-weight:800;color:var(--muted);margin:12px 0 8px;letter-spacing:.05em">과목 기록</div>
+      <div id="detail-subjects" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-home" onclick="showScreen('home')"><div class="nav-icon">🏠</div><div class="nav-label">홈</div></div>
+  <div class="nav-item" id="nav-history" onclick="showScreen('history')"><div class="nav-icon">📖</div><div class="nav-label">기록</div></div>
+  <div class="nav-item" id="nav-stats" onclick="showScreen('stats')"><div class="nav-icon">📊</div><div class="nav-label">통계</div></div>
+  <div class="nav-item" id="nav-badge" onclick="showScreen('badge')"><div class="nav-icon">🏅</div><div class="nav-label">뱃지</div></div>
+</div>
+
+<div class="popup-overlay" id="popup" onclick="closePopup(event)">
+  <div class="popup">
+    <div class="popup-emoji" id="popup-emoji">🎉</div>
+    <div class="popup-title" id="popup-title">완료!</div>
+    <div class="popup-msg" id="popup-msg">잘 했어!</div>
+    <button class="popup-btn" onclick="closePopupDirect()">확인!</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ── 🛠 테스트 날짜 시스템 ──
+let _testDate = null; // null이면 실제 날짜 사용
+
+function getTestDate() { return _testDate ? new Date(_testDate) : new Date(); }
+function isWeekendDate(d) { return d.getDay()===0 || d.getDay()===6; }
+const WE = isWeekendDate(getTestDate());
+
+const tasks = {
+  miracle:  { done:false },
+  shower:   { done:false },
+  math1:    { done:false, sessions:1 },
+  math2:    { done:false, sessions:1 },
+  eng1:     { done:false, sessions:1 },
+  eng2:     { done:false, sessions:1 },
+  flex:     { done:false, sessions:1 },
+  read1:    { done:false, sessions:1 },
+  read2:    { done:false, sessions:1 },
+  exercise: { done:false, sessions:1 },
+  write:    { done:false, sessions: WE?2:0 },
+};
+let xp = 240;
+const ACCUM = 32500;
+
+// XP 레벨 시스템 — 100레벨, 하루 평균 200XP 기준 730일(2년) 설계
+// 공식: 각 레벨 필요 XP = Math.round(50 * Math.pow(1.18, lv-1))
+// 초반 빠름, 후반 매우 도전적
+const XP_PER_LEVEL = (()=>{
+  const thresholds = [0];
+  let cumulative = 0;
+  for(let lv=1; lv<=100; lv++){
+    const needed = Math.round(50 * Math.pow(1.18, lv - 1));
+    cumulative += needed;
+    thresholds.push(cumulative);
+  }
+  return thresholds;
+})();
+// XP 획득량 (각 항목별)
+const XP_GAINS = {
+  miracle:30, shower:20,
+  math1:40, math2:40, eng1:40, eng2:40,
+  flex:30, read1:25, read2:25,
+  exercise:30, write:35,
+  _extra:50,
+};
+
+function getXPLevel(xpVal) {
+  for(let i=XP_PER_LEVEL.length-1; i>=0; i--){
+    if(xpVal >= XP_PER_LEVEL[i]) return i;
+  }
+  return 0;
+}
+
+// 레벨별 달성 뱃지 정보
+const LEVEL_MILESTONE_BADGES = [
+  { lv:10,  icon:'🌱', label:'Lv 10 · 새싹 완성',    bonus:'',          color:'#6EE7B7', bg:'#F0FDF4', textColor:'#065F46' },
+  { lv:20,  icon:'🐣', label:'Lv 20 · 탐험가',        bonus:'+5,000원',  color:'#93C5FD', bg:'#EFF6FF', textColor:'#1E40AF' },
+  { lv:30,  icon:'🐢', label:'Lv 30 · 도전자',        bonus:'',          color:'#A78BFA', bg:'#F5F3FF', textColor:'#4C1D95' },
+  { lv:40,  icon:'🦊', label:'Lv 40 · 학습자',        bonus:'+10,000원', color:'#FCA5A5', bg:'#FFF1F2', textColor:'#9F1239' },
+  { lv:50,  icon:'🐯', label:'Lv 50 · 전사',          bonus:'',          color:'#FCD34D', bg:'#FFFBEB', textColor:'#78350F' },
+  { lv:60,  icon:'🦁', label:'Lv 60 · 학자',          bonus:'+20,000원', color:'#86EFAC', bg:'#F0FDF4', textColor:'#14532D' },
+  { lv:70,  icon:'🚀', label:'Lv 70 · 천재',          bonus:'',          color:'#67E8F9', bg:'#ECFEFF', textColor:'#164E63' },
+  { lv:80,  icon:'💎', label:'Lv 80 · 영웅',          bonus:'+30,000원', color:'#818CF8', bg:'#EEF2FF', textColor:'#312E81' },
+  { lv:90,  icon:'🌟', label:'Lv 90 · 전설',          bonus:'',          color:'#F9A8D4', bg:'#FDF2F8', textColor:'#831843' },
+  { lv:100, icon:'👑', label:'Lv 100 · 전설의 로운',  bonus:'+100,000원',color:'#FFD700', bg:'#FFFBEB', textColor:'#78350F' },
+];
+
+function calcSessions() {
+  let s=0;
+  ['math1','math2','eng1','eng2','flex','read1','read2','exercise'].forEach(k=>{ if(tasks[k].done) s+=tasks[k].sessions; });
+  if(WE && tasks.write.done) s+=2;
+  return s;
+}
+
+// 이번 주 글쓰기 보너스 — 월~금 중 랜덤 하루에 +1,000원
+// 주차 키가 바뀌면 새로 랜덤 날짜 뽑기
+function getWeekKey() {
+  const d = new Date();
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return d.getFullYear() + '-W' + week;
+}
+
+// 이번 주의 랜덤 보너스 요일 결정 (1=월 ~ 5=금)
+function getBonusWeekday() {
+  const key = 'bonus-wd-' + getWeekKey();
+  let wd = parseInt(sessionStorage.getItem(key) || '0');
+  if (!wd) {
+    wd = Math.floor(Math.random() * 5) + 1; // 1~5
+    sessionStorage.setItem(key, wd);
+  }
+  return wd;
+}
+
+let weeklyWriteBonusGiven = false;
+let weeklyWriteBonusAmount = 0;
+
+const RANDOM_BONUSES = [
+  { amount: 500,  msg: '짱구도 깜짝 놀랐어! 보너스 500원! 🐸' },
+  { amount: 1000, msg: '글쓰기 실력이 쑥쑥! 보너스 1,000원! ✍️' },
+  { amount: 1500, msg: '셜록 선생님이 칭찬했어! 보너스 1,500원! 🔍' },
+  { amount: 2000, msg: '이번 주 글쓰기 MVP! 보너스 2,000원! 🏆' },
+  { amount: 3000, msg: '작가 탄생?! 대박 보너스 3,000원! 📖✨' },
+];
+
+function isBonusDay() {
+  const today = new Date().getDay(); // 0=일,1=월...5=금,6=토
+  if (today === 0 || today === 6) return false; // 주말 제외
+  return today === getBonusWeekday();
+}
+
+function calcReward() {
+  const s = calcSessions();
+  let base = s>=7 ? 5000 : s===6 ? 4000 : s*500;
+  let bonus = 0;
+  const chips = [];
+  const mBonus = WE?1000:500;
+  const shBonus = WE?2000:1000;
+
+  if(tasks.miracle.done){ bonus+=mBonus; chips.push({t:'🌅 미라클 +'+mBonus.toLocaleString()+'원',c:''}); }
+  if(tasks.shower.done) { bonus+=shBonus; chips.push({t:'🚿 샤워 +'+shBonus.toLocaleString()+'원',c:''}); }
+
+  // 글쓰기 보상: 평일 1,000원 / 주말 2,000원
+  const writeReward = WE ? 2000 : 1000;
+  if(tasks.write.done){
+    bonus += writeReward;
+    chips.push({t:'✏️ 글쓰기 +'+ writeReward.toLocaleString()+'원', c:'g'});
+    if(weeklyWriteBonusGiven){
+      bonus += 1000;
+      chips.push({t:'🎲 글쓰기 보너스 데이 +1,000원', c:'g'});
+    }
+  }
+
+  // extra study
+  const extraDone = extraItems.filter(e=>e.done).length;
+  const extraBonus = extraDone * 2000;
+  if(extraDone>0){ bonus+=extraBonus; chips.push({t:'⚡ 추가공부 '+extraDone+'회 +'+extraBonus.toLocaleString()+'원',c:'g'}); }
+
+  const total = base+bonus;
+  document.getElementById('today-reward').textContent=total.toLocaleString()+'원';
+  document.getElementById('today-status').textContent='학습 '+s+'/7회\n기본 '+base.toLocaleString()+'원';
+
+  const ce = document.getElementById('reward-chips');
+  ce.innerHTML='';
+  if(base>0){ const c=document.createElement('div'); c.className='rchip p'; c.textContent='기본 '+base.toLocaleString()+'원'; ce.appendChild(c); }
+  chips.forEach(ch=>{ const c=document.createElement('div'); c.className='rchip '+ch.c; c.textContent=ch.t; ce.appendChild(c); });
+
+  document.getElementById('accum-reward').textContent=(ACCUM+total).toLocaleString()+'원';
+}
+
+function updateProgress() {
+  const all = Object.keys(tasks);
+  const done = all.filter(k=>tasks[k].done).length;
+  const total = all.length;
+  document.getElementById('done-count').textContent=done;
+  document.getElementById('total-count').textContent='/ '+total;
+  const offset=188-(188*done/total);
+  document.getElementById('progress-ring').style.strokeDashoffset=offset;
+  const msgs=['체크하면서 하나씩!','잘 하고 있어요! 👍','절반 넘었어요! 💪','거의 다 왔어! 🔥','완벽해! 최고야! 🎉'];
+  document.getElementById('progress-msg').textContent=msgs[Math.min(Math.floor(done/total*4),4)];
+
+  const s=calcSessions();
+  const chips=document.getElementById('task-chips');
+  chips.innerHTML='';
+  [{k:'math1',l:'수학1'},{k:'math2',l:'수학2'},{k:'eng1',l:'영어1'},{k:'eng2',l:'영어2'},{k:'read1',l:'독서1'},{k:'read2',l:'독서2'}].forEach(({k,l})=>{
+    const c=document.createElement('div'); c.className='chip'+(tasks[k].done?' done':''); c.textContent=l; chips.appendChild(c);
+  });
+  const sc=document.createElement('div'); sc.className='chip'+(s>=7?' done':''); sc.textContent=s+'/7회'; chips.appendChild(sc);
+
+  const xpLvNow = getXPLevel(xp);
+  const xpNextThresh = XP_PER_LEVEL[xpLvNow+1] || XP_PER_LEVEL[XP_PER_LEVEL.length-1];
+  const xpCurThresh  = XP_PER_LEVEL[xpLvNow] || 0;
+  const pct=Math.min(((xp-xpCurThresh)/(xpNextThresh-xpCurThresh))*100,100);
+  document.getElementById('xp-fill').style.width=pct+'%';
+  document.getElementById('xp-label-text').textContent=xp+' / '+xpNextThresh.toLocaleString()+' XP';
+
+  // 모든 레벨 배지 실시간 동기화
+  const curLv = Math.min(xpLvNow, 100);
+  document.querySelectorAll('.level-badge-sync').forEach(el => el.innerHTML='Lv<br>'+curLv);
+  const lnm = document.getElementById('lv-num-main');
+  if(lnm) lnm.textContent = curLv;
+  const lbn = document.getElementById('lv-big-num');
+  if(lbn) lbn.textContent = curLv;
+}
+
+const POPUPS = {
+  miracle: ['🌅','미라클 모닝!', WE?'주말 기상! +1,000원':'6:15 이전 기상! +500원'],
+  shower:  ['🚿','아침 샤워!', WE?'주말 샤워 +2,000원! 합계 3,000원!':'샤워 +1,000원! 미라클+샤워 합계 1,500원!'],
+  math1:   ['📐','수학 1회 완료!','집중해서 풀었지? 대단해! 💪'],
+  math2:   ['📐','수학 2회 완료!','오늘 수학 모두 끝! 최고야! 🎉'],
+  eng1:    ['🎧','영어 1회 완료!','듣기+읽기+번역 완료!'],
+  eng2:    ['🎧','영어 2회 완료!','오늘 영어 모두 끝! 멋져! 🎉'],
+  flex:    ['📝','완료!','1회 인정! 잘 했어!'],
+  read1:   ['📖','독서 1회!','책 속에 길이 있어! 📚'],
+  read2:   ['📖','독서 2회!','오늘 독서도 끝! 최고야!'],
+  exercise:['🏃','운동 완료!','공부 1회 인정! 몸도 마음도 튼튼! 💪'],
+  write:   ['✏️', WE?'주말 글쓰기 완료!':'글쓰기 완료!', WE?'주말 글쓰기 +2,000원! 셜록 선생님께 피드백 받아요!':'평일 글쓰기 +1,000원! 셜록 선생님께 피드백 받는 거 잊지 마!'],
+};
+
+function showWeeklyBonusPopup() {
+  setTimeout(() => {
+    document.getElementById('popup-emoji').textContent = '🎲';
+    document.getElementById('popup-title').textContent = '🎉 보너스 데이!';
+    document.getElementById('popup-msg').textContent = '오늘이 이번 주 글쓰기 보너스 날이야! +1,000원 추가!';
+    document.getElementById('popup').classList.add('show');
+  }, 500);
+}
+
+function toggleTask(id) {
+  tasks[id].done=!tasks[id].done;
+  const check=document.getElementById('check-'+id);
+  const name=document.getElementById('name-'+id);
+  const badge=document.getElementById('badge-'+id);
+  if(tasks[id].done){
+    check.classList.add('done'); name.classList.add('done');
+    if(badge) badge.classList.add('done');
+    xp+=30;
+
+    // 글쓰기 완료 시: 오늘이 보너스 요일이면 +1,000원
+    if(id === 'write' && !WE && isBonusDay() && !weeklyWriteBonusGiven) {
+      weeklyWriteBonusGiven = true;
+      weeklyWriteBonusAmount = 1000;
+      showPopup(id);
+      showWeeklyBonusPopup();
+    } else {
+      showPopup(id);
+    }
+  } else {
+    check.classList.remove('done'); name.classList.remove('done');
+    if(badge) badge.classList.remove('done');
+    xp-=30;
+    if(id === 'write') {
+      weeklyWriteBonusGiven = false;
+      weeklyWriteBonusAmount = 0;
+    }
+  }
+  calcReward(); updateProgress();
+}
+
+function openSubj(id,event) {
+  event.stopPropagation();
+  const sp=document.getElementById('subj-'+id);
+  if(!sp) return;
+  const was=sp.classList.contains('show');
+  document.querySelectorAll('.subj-panel').forEach(e=>e.classList.remove('show'));
+  if(!was) sp.classList.add('show');
+}
+
+function pickSubj(taskId,subj,btn) {
+  btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  const ci=document.getElementById('cinput-'+taskId);
+  if(ci) ci.classList.toggle('show',subj==='기타');
+}
+
+function toggleEditPanel(panelId,event) {
+  event.stopPropagation();
+  const p=document.getElementById(panelId);
+  p.classList.toggle('show');
+}
+
+function setFlexName(name,btn) {
+  document.getElementById('name-flex').textContent=name;
+  if(btn){ btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p=>p.classList.remove('on')); btn.classList.add('on'); }
+  document.getElementById('flex-edit').classList.remove('show');
+}
+
+function setRead2(name,sub,btn) {
+  document.getElementById('name-read2').textContent=name;
+  document.getElementById('sub-read2').textContent=sub;
+  if(btn){ btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p=>p.classList.remove('on')); btn.classList.add('on'); }
+  document.getElementById('read2-edit').classList.remove('show');
+}
+
+function showPopup(id) {
+  const m=POPUPS[id]||['🎉','완료!','잘 했어!'];
+  document.getElementById('popup-emoji').textContent=m[0];
+  document.getElementById('popup-title').textContent=m[1];
+  document.getElementById('popup-msg').textContent=m[2];
+  document.getElementById('popup').classList.add('show');
+}
+function closePopup(e){ if(e.target.id==='popup') closePopupDirect(); }
+function closePopupDirect(){ document.getElementById('popup').classList.remove('show'); }
+
+function buildStreakCalendar() {
+  const cal=document.getElementById('streak-calendar');
+  ['월','화','수','목','금','토','일','월','화','수','목','금','토','일','월','화','수','목','금','오늘'].forEach((d,i)=>{
+    const states=['done','done','done','done','done','miss','done','done','done','done','done','done','done','done','done','done','done','done','done','today'];
+    const dot=document.createElement('div'); dot.className='streak-dot '+states[i]; dot.textContent=d; cal.appendChild(dot);
+  });
+}
+
+// Extra study items
+let extraItems = [];
+let extraIdCounter = 0;
+
+const SUBJ_OPTIONS = ['수학','영어','국어','글쓰기','예습복습','기타'];
+
+function addExtra() {
+  const id = ++extraIdCounter;
+  extraItems.push({ id, done:false, subj:'수학' });
+  renderExtraList();
+  calcReward(); updateProgress();
+}
+
+function toggleExtra(id) {
+  const item = extraItems.find(e=>e.id===id);
+  if(!item) return;
+  item.done = !item.done;
+  renderExtraList();
+  calcReward(); updateProgress();
+  if(item.done) showPopup('_extra');
+}
+
+function deleteExtra(id) {
+  extraItems = extraItems.filter(e=>e.id!==id);
+  renderExtraList();
+  calcReward(); updateProgress();
+}
+
+function changeExtraSubj(id, val) {
+  const item = extraItems.find(e=>e.id===id);
+  if(item) item.subj = val;
+}
+
+function renderExtraList() {
+  const el = document.getElementById('extra-list');
+  el.innerHTML = '';
+  extraItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'extra-item';
+    const opts = SUBJ_OPTIONS.map(s=>`<option value="${s}"${item.subj===s?' selected':''}>${s}</option>`).join('');
+    div.innerHTML = `
+      <div class="extra-row">
+        <div class="extra-check${item.done?' done':''}" onclick="toggleExtra(${item.id})">✓</div>
+        <div class="extra-name${item.done?' done':''}">📚 추가 공부 ${item.id}회</div>
+        <select class="extra-subj-select" onchange="changeExtraSubj(${item.id},this.value)">${opts}</select>
+        <div class="extra-badge${item.done?' done':''}">+2,000원</div>
+        <button class="extra-del" onclick="deleteExtra(${item.id})">✕</button>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+POPUPS['_extra'] = ['⚡','추가 공부 완료!','대단해! 추가 공부 +2,000원!'];
+
+// ── History data (이번 달은 빈 데이터, 이전 달만 mock) ──
+const HISTORY_DATA = (()=>{
+  const days=[];
+  const now=new Date();
+  const thisYear=now.getFullYear(), thisMon=now.getMonth();
+  const taskNames={miracle:'🌅 미라클 모닝',shower:'🚿 아침 샤워',math1:'📐 수학 1회',math2:'📐 수학 2회',eng1:'🎧 영어 1회',eng2:'🎧 영어 2회',flex:'📝 국어/영상편집',read1:'📖 독서 1회',read2:'📖 독서 2회',exercise:'🏃 운동',write:'✏️ 글쓰기'};
+  const allKeys=Object.keys(taskNames);
+  const subjMap={math1:'수학',math2:'수학',eng1:'영어',eng2:'영어',flex:'국어'};
+  for(let i=89;i>=0;i--){
+    const d=new Date(now); d.setDate(d.getDate()-i);
+    const isWE=d.getDay()===0||d.getDay()===6;
+    // 이번 달은 모두 빈 데이터
+    const isThisMonth = d.getFullYear()===thisYear && d.getMonth()===thisMon;
+    if(isThisMonth){
+      days.push({date:new Date(d),isWE,completed:[],allKeys,taskNames,sessions:0,reward:0,subjects:[],status:'empty'});
+      continue;
+    }
+    const rand=Math.random();
+    const completed=rand>0.12?allKeys.filter(()=>Math.random()>0.28):[];
+    const sessions=completed.filter(k=>!['miracle','shower','write'].includes(k)).length;
+    const base=sessions>=7?5000:sessions===6?4000:sessions*500;
+    let reward=base;
+    if(completed.includes('miracle')) reward+=isWE?1000:500;
+    if(completed.includes('shower')) reward+=isWE?2000:1000;
+    if(isWE&&completed.includes('write')) reward+=2000;
+    const subjList=[...new Set(completed.filter(k=>subjMap[k]).map(k=>subjMap[k]))];
+    days.push({date:new Date(d),isWE,completed,allKeys,taskNames,sessions,reward:completed.length>0?reward:0,subjects:subjList,status:completed.length===0?'empty':sessions>=5?'complete':'partial'});
+  }
+  return days;
+})();
+
+let selectedMonth=null;
+
+function getMonths(){
+  const seen=new Set(), res=[];
+  HISTORY_DATA.forEach(d=>{const k=d.date.getFullYear()+'-'+(d.date.getMonth()+1); if(!seen.has(k)){seen.add(k);res.push(k);}});
+  return res.reverse();
+}
+
+function buildMonthTabs(){
+  const tabs=document.getElementById('month-tabs');
+  const months=getMonths();
+  selectedMonth=months[0];
+  tabs.innerHTML='';
+  months.forEach(m=>{
+    const [y,mo]=m.split('-');
+    const btn=document.createElement('button');
+    btn.className='month-tab'+(m===selectedMonth?' on':'');
+    btn.textContent=y+'년 '+mo+'월';
+    btn.onclick=()=>{selectedMonth=m; document.querySelectorAll('.month-tab').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderHistory();};
+    tabs.appendChild(btn);
+  });
+}
+
+function renderHistory(){
+  const [y,mo]=selectedMonth.split('-').map(Number);
+  const filtered=HISTORY_DATA.filter(d=>d.date.getFullYear()===y&&d.date.getMonth()+1===mo);
+  const totalReward=filtered.reduce((a,b)=>a+b.reward,0);
+  const completeDays=filtered.filter(d=>d.status==='complete').length;
+  const totalSessions=filtered.reduce((a,b)=>a+b.sessions,0);
+  document.getElementById('month-summary').innerHTML=`
+    <div class="msm-item"><div class="msm-val">${totalReward.toLocaleString()}원</div><div class="msm-label">이달 보상</div></div>
+    <div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div>
+    <div class="msm-item"><div class="msm-val">${totalSessions}회</div><div class="msm-label">총 학습</div></div>`;
+  const list=document.getElementById('hist-list');
+  list.innerHTML='';
+  [...filtered].reverse().forEach(d=>{
+    const dow=['일','월','화','수','목','금','토'][d.date.getDay()];
+    const dn=d.date.getDate();
+    const isToday=d.date.toDateString()===new Date().toDateString();
+    const card=document.createElement('div');
+    card.className='hist-day-card '+d.status;
+    const statusLabel=d.status==='complete'?'모두 완료 🎉':d.status==='partial'?'일부 완료':'기록 없음';
+    const subjChips=d.subjects.map(s=>`<span class="hist-schip">${s}</span>`).join('');
+    const idx=HISTORY_DATA.indexOf(d);
+    card.innerHTML=`
+      <div class="hist-day-row" onclick="openDayDetail(${idx})">
+        <div class="hist-day-dot ${d.status}">
+          <div class="hist-dot-day ${d.status}">${isToday?'오늘':dow}</div>
+          <div class="hist-dot-num ${d.status}">${dn}</div>
+        </div>
+        <div class="hist-day-info">
+          <div class="hist-day-title">${mo}월 ${dn}일 (${dow})${d.isWE?' 🏖️':''}</div>
+          <div class="hist-day-sub">${statusLabel} · 학습 ${d.sessions}회</div>
+        </div>
+        <div class="hist-day-right">
+          <div class="hist-reward${d.reward===0?' zero':''}">${d.reward>0?d.reward.toLocaleString()+'원':'—'}</div>
+          <div class="hist-sessions">${d.completed.length}/${d.allKeys.length} 항목</div>
+        </div>
+      </div>
+      ${d.subjects.length>0?`<div class="hist-subj-chips">${subjChips}</div>`:''}`;
+    list.appendChild(card);
+  });
+}
+
+function openDayDetail(idx){
+  const d=HISTORY_DATA[idx];
+  const dow=['일','월','화','수','목','금','토'][d.date.getDay()];
+  document.getElementById('detail-date-title').textContent=d.date.getFullYear()+'년 '+(d.date.getMonth()+1)+'월 '+d.date.getDate()+'일 ('+dow+')';
+  document.getElementById('detail-reward').textContent=(d.reward>0?d.reward.toLocaleString()+'원':'0원');
+  const subjMap={math1:'수학',math2:'수학',eng1:'영어',eng2:'영어',flex:'국어'};
+  const items=document.getElementById('detail-items');
+  items.innerHTML='';
+  Object.entries(d.taskNames).forEach(([k,name])=>{
+    const done=d.completed.includes(k);
+    const subj=subjMap[k];
+    const div=document.createElement('div');
+    div.className='detail-item';
+    div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div>
+      <div class="detail-item-name${done?'':' miss'}">${name}</div>
+      ${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;
+    items.appendChild(div);
+  });
+  const subjEl=document.getElementById('detail-subjects');
+  subjEl.innerHTML='';
+  const counts={};
+  d.completed.filter(k=>subjMap[k]).forEach(k=>{const s=subjMap[k];counts[s]=(counts[s]||0)+1;});
+  if(Object.keys(counts).length>0) Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});
+  else subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';
+  document.getElementById('day-detail-overlay').classList.add('show');
+}
+function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailDirect();}
+function closeDayDetailDirect(){document.getElementById('day-detail-overlay').classList.remove('show');}
+
+// ── Level & Badge System ──
+// 100레벨 타이틀 — 10레벨 단위 티어로 구성
+const LEVEL_TITLES = (()=>{
+  const titles = [''];
+  const tiers = [
+    [1,  10,  '🌱', '새싹'],
+    [11, 20,  '🐣', '탐험가'],
+    [21, 30,  '🐢', '도전자'],
+    [31, 40,  '🦊', '학습자'],
+    [41, 50,  '🐯', '전사'],
+    [51, 60,  '🦁', '학자'],
+    [61, 70,  '🚀', '천재'],
+    [71, 80,  '💎', '영웅'],
+    [81, 90,  '🌟', '전설'],
+    [91, 100, '👑', '레전드'],
+  ];
+  for(let lv=1; lv<=100; lv++){
+    const tier = tiers.find(([s,e])=>lv>=s&&lv<=e);
+    const [s,,icon,name] = tier;
+    const sub = lv===100 ? '전설의 로운' : `${name} ${lv}`;
+    titles.push(`${icon} ${sub}`);
+  }
+  return titles;
+})();
+
+// 20 badges — 짱구 캐릭터 테마 (SVG 캐릭터 이모지 + 설명)
+const ALL_BADGES = [
+  // 🔥 연속 달성 스트릭 — 짱구 테마
+  { id:'s10',  cat:'streak',  char:'shin_basic', name:'10일 연속!',     cond:'10일 연속 달성',   streak:10,  earned:true,  isNew:true  },
+  { id:'s30',  cat:'streak',  char:'shin_fire',  name:'30일 파이어',    cond:'30일 연속 달성',   streak:30,  earned:false },
+  { id:'s50',  cat:'streak',  char:'shin_hero',  name:'50일 영웅',      cond:'50일 연속 달성',   streak:50,  earned:false },
+  { id:'s100', cat:'streak',  char:'shin_king',  name:'100일의 왕',     cond:'100일 연속 달성',  streak:100, earned:false },
+
+  // 📐 수학 횟수
+  { id:'m50',  cat:'subject', char:'🧮', name:'수학 새싹',      cond:'수학 50회 완료',   count:50,   earned:true,  isNew:false },
+  { id:'m100', cat:'subject', char:'📐', name:'수학 백 번',     cond:'수학 100회 완료',  count:100,  earned:false },
+  { id:'m200', cat:'subject', char:'🏅', name:'수학 달인',      cond:'수학 200회 완료',  count:200,  earned:false },
+  { id:'m300', cat:'subject', char:'🥇', name:'수학 고수',      cond:'수학 300회 완료',  count:300,  earned:false },
+  { id:'m400', cat:'subject', char:'🧠', name:'수학 천재',      cond:'수학 400회 완료',  count:400,  earned:false },
+  { id:'m500', cat:'subject', char:'💎', name:'수학 전설',      cond:'수학 500회 완료',  count:500,  earned:false },
+
+  // 🎧 영어 횟수
+  { id:'e50',  cat:'subject', char:'🎧', name:'영어 새싹',      cond:'영어 50회 완료',   count:50,   earned:true,  isNew:false },
+  { id:'e100', cat:'subject', char:'🌍', name:'영어 백 번',     cond:'영어 100회 완료',  count:100,  earned:false },
+  { id:'e200', cat:'subject', char:'🗣️', name:'영어 달인',      cond:'영어 200회 완료',  count:200,  earned:false },
+  { id:'e300', cat:'subject', char:'✈️', name:'영어 고수',      cond:'영어 300회 완료',  count:300,  earned:false },
+  { id:'e400', cat:'subject', char:'🎓', name:'영어 천재',      cond:'영어 400회 완료',  count:400,  earned:false },
+  { id:'e500', cat:'subject', char:'🌟', name:'영어 전설',      cond:'영어 500회 완료',  count:500,  earned:false },
+
+  // 📖 독서 횟수
+  { id:'r50',  cat:'subject', char:'📖', name:'독서 새싹',      cond:'독서 50회 완료',   count:50,   earned:false },
+  { id:'r100', cat:'subject', char:'📚', name:'독서 백 번',     cond:'독서 100회 완료',  count:100,  earned:false },
+  { id:'r200', cat:'subject', char:'🐛', name:'책벌레',         cond:'독서 200회 완료',  count:200,  earned:false },
+  { id:'r300', cat:'subject', char:'🦉', name:'지혜의 부엉이',  cond:'독서 300회 완료',  count:300,  earned:false },
+  { id:'r400', cat:'subject', char:'🌙', name:'독서 고수',      cond:'독서 400회 완료',  count:400,  earned:false },
+  { id:'r500', cat:'subject', char:'💫', name:'독서 전설',      cond:'독서 500회 완료',  count:500,  earned:false },
+
+  // ✏️ 글쓰기 횟수
+  { id:'w50',  cat:'subject', char:'✍️', name:'글쓰기 새싹',    cond:'글쓰기 50회 완료', count:50,   earned:false },
+  { id:'w100', cat:'subject', char:'📝', name:'글쓰기 백 번',   cond:'글쓰기 100회 완료',count:100,  earned:false },
+  { id:'w200', cat:'subject', char:'📓', name:'글쓰기 달인',    cond:'글쓰기 200회 완료',count:200,  earned:false },
+  { id:'w300', cat:'subject', char:'🖊️', name:'글쓰기 고수',    cond:'글쓰기 300회 완료',count:300,  earned:false },
+  { id:'w400', cat:'subject', char:'🪶', name:'글쓰기 천재',    cond:'글쓰기 400회 완료',count:400,  earned:false },
+  { id:'w500', cat:'subject', char:'🏆', name:'글쓰기 전설',    cond:'글쓰기 500회 완료',count:500,  earned:false },
+
+  // 🏆 레벨 기념
+  { id:'lv3',  cat:'level',   char:'🥉', name:'레벨 3 달성',    cond:'레벨 3 달성',              earned:true,  isNew:false },
+  { id:'lv5',  cat:'level',   char:'🥈', name:'레벨 5 달성',    cond:'레벨 5 달성 (+3,000원)',   earned:false },
+  { id:'lv10', cat:'level',   char:'🥇', name:'레벨 10 전설',   cond:'레벨 10 달성 (+10,000원)', earned:false },
+
+  // ⭐ 특별 미션
+  { id:'p1',   cat:'special', char:'🌅', name:'미라클 스타터',  cond:'미라클모닝 첫 달성',      earned:true,  isNew:false },
+  { id:'p2',   cat:'special', char:'🚿', name:'상쾌한 아침',    cond:'미라클모닝+샤워 10일',    earned:false },
+  { id:'p3',   cat:'special', char:'💯', name:'올퍼펙트',       cond:'전 항목 완료 하루',        earned:false },
+  { id:'p4',   cat:'special', char:'⚡', name:'추가 공부왕',    cond:'추가 공부 10회',           earned:false },
+  { id:'p5',   cat:'special', char:'🎯', name:'5일 완벽 주간',  cond:'한 주 5일 7회 달성',       earned:false },
+];
+
+// 짱구 캐릭터 설명
+const CHAR_FLAVOR = {
+  's10':'짱구도 10일은 쉽지 않아!','s30':'봉미선 엄마도 인정!','s50':'마사오도 깜짝 놀람!','s100':'신노스케 레전드!',
+  'm50':'수학 고수 되는 중 📐','m500':'최상위 문제집 완전 정복!',
+  'e50':'영어 귀 뚫리는 중 🎧','e500':'영어 달인 등극!',
+  'r500':'책벌레 등극 🐛','w500':'셜록 선생님도 놀람!',
+  'lv3':'성장하는 로운!','lv5':'중간 보스 클리어!','lv10':'전설 달성! 🏆',
+  'p1':'오늘의 시작 🌅','p2':'아침 루틴 완성!','p3':'완벽한 하루!','p4':'공부 에너지 폭발!','p5':'이번 주 최강!',
+};
+
+// 짱구 SVG 캐릭터 생성
+function makeShinSVG(type) {
+  const C = {
+    shin_basic:  { bg:'#3DB84C', acc:'#FFD700', label:'🐸', hat:'frog' },
+    shin_fire:   { bg:'#EF4444', acc:'#FF8C00', label:'🔥', hat:'fire' },
+    shin_hero:   { bg:'#3B82F6', acc:'#93C5FD', label:'⚡', hat:'hero' },
+    shin_king:   { bg:'#7B5CF5', acc:'#FFD700', label:'👑', hat:'crown' },
+    shin_math:   { bg:'#8B5CF6', acc:'#C4B5FD', label:'📐', hat:'grad' },
+    shin_eng:    { bg:'#0EA5E9', acc:'#7DD3FC', label:'🌍', hat:'grad' },
+    shin_book:   { bg:'#10B981', acc:'#6EE7B7', label:'📚', hat:'grad' },
+    shin_write:  { bg:'#F59E0B', acc:'#FDE68A', label:'✍️', hat:'grad' },
+    shin_lv3:    { bg:'#CD7F32', acc:'#F5DEB3', label:'③',  hat:'none' },
+    shin_lv5:    { bg:'#9CA3AF', acc:'#E5E7EB', label:'⑤',  hat:'star' },
+    shin_crown:  { bg:'#F59E0B', acc:'#FEF3C7', label:'10', hat:'crown'},
+    shin_morning:{ bg:'#FB923C', acc:'#FED7AA', label:'🌅', hat:'none' },
+    shin_shower: { bg:'#38BDF8', acc:'#BAE6FD', label:'🚿', hat:'none' },
+    shin_perfect:{ bg:'#22C55E', acc:'#BBF7D0', label:'💯', hat:'star' },
+    shin_star:   { bg:'#A855F7', acc:'#E9D5FF', label:'⭐', hat:'star' },
+  };
+  const c = C[type]||C['shin_basic'];
+  const hats = {
+    frog:`<ellipse cx="22" cy="8" rx="8" ry="7" fill="${c.bg}"/><ellipse cx="22" cy="7" rx="5" ry="4" fill="white"/><circle cx="22" cy="7" r="2.5" fill="#111"/><ellipse cx="50" cy="8" rx="8" ry="7" fill="${c.bg}"/><ellipse cx="50" cy="7" rx="5" ry="4" fill="white"/><circle cx="50" cy="7" r="2.5" fill="#111"/><ellipse cx="36" cy="14" rx="24" ry="10" fill="${c.bg}"/>`,
+    fire:`<path d="M24 16 Q28 4 36 9 Q40 2 46 9 Q52 5 46 16 Z" fill="#FF6B00"/><path d="M28 16 Q31 9 36 11 Q40 7 43 11 Q46 9 43 16 Z" fill="#FFD700"/>`,
+    hero:`<rect x="14" y="8" width="44" height="10" rx="5" fill="${c.acc}"/><rect x="12" y="9" width="7" height="8" rx="3.5" fill="${c.acc}"/><rect x="53" y="9" width="7" height="8" rx="3.5" fill="${c.acc}"/>`,
+    crown:`<path d="M14 16 L20 5 L28 12 L36 3 L44 12 L52 5 L58 16 Z" fill="#FFD700" stroke="#F5A623" stroke-width="1"/><circle cx="36" cy="5" r="3" fill="#EF4444"/><circle cx="20" cy="7" r="2" fill="#3B82F6"/><circle cx="52" cy="7" r="2" fill="#22C55E"/>`,
+    grad:`<path d="M16 16 L36 8 L56 16 L36 21 Z" fill="${c.acc}" stroke="${c.bg}" stroke-width="1"/><rect x="33" y="16" width="6" height="8" fill="${c.bg}"/><circle cx="36" cy="24" r="3.5" fill="${c.acc}"/>`,
+    star:`<path d="M36 3 L40 13 L51 13 L42 19 L46 29 L36 23 L26 29 L30 19 L21 13 L32 13 Z" fill="#FFD700"/>`,
+    none:``,
+  };
+  return `<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" width="44" height="44">
+    <circle cx="36" cy="36" r="34" fill="${c.bg}" opacity=".12"/>
+    ${hats[c.hat]||''}
+    <ellipse cx="36" cy="43" rx="21" ry="19" fill="#FAD9C1"/>
+    <path d="M18 36 Q23 31 28 34" stroke="#111" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M44 34 Q49 31 54 36" stroke="#111" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <ellipse cx="26" cy="41" rx="5.5" ry="6" fill="#111"/>
+    <ellipse cx="27.8" cy="39.2" rx="2.2" ry="2.2" fill="white"/>
+    <ellipse cx="46" cy="41" rx="5.5" ry="6" fill="#111"/>
+    <ellipse cx="47.8" cy="39.2" rx="2.2" ry="2.2" fill="white"/>
+    <ellipse cx="36" cy="48" rx="1.8" ry="1.3" fill="#E8A88A"/>
+    <ellipse cx="36" cy="56" rx="4.5" ry="5" fill="#8B1A2A"/>
+    <ellipse cx="36" cy="54.5" rx="3" ry="2" fill="#C41E3A"/>
+    <text x="36" y="71" text-anchor="middle" font-size="8" font-weight="900" fill="${c.bg}" font-family="sans-serif">${c.label}</text>
+  </svg>`;
+}
+
+function renderBadges() {
+  const earned = ALL_BADGES.filter(b=>b.earned);
+  document.getElementById('badge-count-txt').textContent = earned.length+'/'+ALL_BADGES.length;
+
+  function makeBadgeEl(b) {
+    const div=document.createElement('div');
+    const catClass = 'cat-'+b.cat;
+    div.className='badge2-item '+(b.earned ? 'earned '+catClass : 'locked');
+    div.title=CHAR_FLAVOR[b.id]||'';
+    const isShin = typeof b.char==='string' && b.char.startsWith('shin_');
+    const charHTML = isShin
+      ? `<div style="display:flex;justify-content:center;margin-bottom:4px;position:relative;z-index:1">${makeShinSVG(b.char)}</div>`
+      : `<div class="badge2-char">${b.char}</div>`;
+    div.innerHTML=`
+      ${b.isNew?'<div class="badge2-new">NEW</div>':''}
+      ${b.streak?`<div class="badge2-streak${b.streak>=50?' gold':''}">${b.streak}일</div>`:''}
+      ${b.count?`<div class="badge2-streak${b.count>=300?' gold':''}">${b.count}회</div>`:''}
+      ${!b.earned?'<div class="badge2-lock"><span class="badge2-lock-icon">🔒</span></div>':''}
+      ${charHTML}
+      <div class="badge2-name">${b.name}</div>
+      <div class="badge2-cond">${b.cond}</div>`;
+    return div;
+  }
+
+  // 카테고리별 섹션 렌더
+  const cats = [
+    { key:'streak',  label:'🔥 연속 달성 스트릭' },
+    { key:'subject', label:'📚 과목별 횟수 달인' },
+    { key:'level',   label:'🏆 레벨 달성 기념' },
+    { key:'special', label:'⭐ 특별 미션' },
+  ];
+  const earnedGrid = document.getElementById('badge-earned-grid');
+  const lockedGrid = document.getElementById('badge-locked-grid');
+  earnedGrid.innerHTML='';
+  lockedGrid.innerHTML='';
+  earned.forEach(b=>earnedGrid.appendChild(makeBadgeEl(b)));
+  lockedGrid.style.display='block';
+  cats.forEach(({key,label})=>{
+    const catBadges=ALL_BADGES.filter(b=>!b.earned&&b.cat===key);
+    if(catBadges.length===0) return;
+    const secLabel=document.createElement('div');
+    secLabel.style.cssText='font-size:10px;font-weight:900;color:var(--muted);padding:10px 0 7px;letter-spacing:.08em;text-transform:uppercase';
+    secLabel.textContent=label;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:4px';
+    catBadges.forEach(b=>wrap.appendChild(makeBadgeEl(b)));
+    lockedGrid.appendChild(secLabel);
+    lockedGrid.appendChild(wrap);
+  });
+}
+
+function calcStreakReward(streak) {
+  // 10일 주기: 10→1만, 20→2만, 30→3만, 40→1만, 50→2만, 60→3만...
+  if (streak <= 0 || streak % 10 !== 0) return 0;
+  const pos = streak % 30; // 0=30번째, 10=10번째, 20=20번째
+  if (pos === 10) return 10000;
+  if (pos === 20) return 20000;
+  if (pos === 0)  return 30000;
+  return 0;
+}
+
+function nextStreakMilestone(streak) {
+  const next = Math.ceil((streak + 1) / 10) * 10;
+  const pos = next % 30;
+  const reward = pos===10?10000 : pos===20?20000 : 30000;
+  return { next, reward };
+}
+
+function renderLevelSection() {
+  const streak=7, streakInLevel = streak % 10 || 10;
+  const lv = Math.min(getXPLevel(xp), 100); // XP로 레벨 계산
+
+  const xpLv = lv;
+  const xpCur = XP_PER_LEVEL[xpLv] || 0;
+  const xpNext = XP_PER_LEVEL[xpLv+1] || XP_PER_LEVEL[XP_PER_LEVEL.length-1];
+  const xpRemain = Math.max(0, xpNext - xp);
+  const xpPct = Math.min(((xp - xpCur) / (xpNext - xpCur)) * 100, 100);
+
+  // 모든 레벨 배지 동시 업데이트
+  document.querySelectorAll('#lv-num-main, .lv-num-sync').forEach(el => el.textContent = lv);
+  document.querySelectorAll('.level-badge-sync').forEach(el => el.innerHTML = 'Lv<br>'+lv);
+  document.getElementById('lv-big-num').textContent = lv;
+  document.getElementById('lv-num-main').textContent = lv;
+
+  document.getElementById('lv-title-txt').textContent = LEVEL_TITLES[lv] || '';
+  document.getElementById('lv-streak-num').textContent = streak;
+  document.getElementById('lv-remain').textContent = 10 - streakInLevel;
+  document.getElementById('lv-prog-txt').textContent = streakInLevel+'/10일';
+  document.getElementById('lv-prog-bar').style.width = (streakInLevel/10*100)+'%';
+
+  // XP 진행 바
+  const xpBar = document.getElementById('xp-detail-bar');
+  const xpTxt = document.getElementById('xp-detail-txt');
+  if(xpBar) xpBar.style.width = xpPct+'%';
+  if(xpTxt) xpTxt.textContent = xp+' / '+(xpNext).toLocaleString()+' XP · 다음까지 '+xpRemain.toLocaleString()+'XP';
+
+  // 다음 연속 보상 안내
+  const {next, reward} = nextStreakMilestone(streak);
+  const nsel = document.getElementById('next-streak-txt');
+  if(nsel) nsel.textContent = next+'일 달성 → +'+reward.toLocaleString()+'원 보너스!';
+
+  // XP 레벨 테이블
+  const tbl = document.getElementById('xp-level-table');
+  if(tbl) {
+    const tiers = [
+      { s:1,  e:10,  icon:'🌱', name:'새싹',  color:'#6EE7B7', textColor:'#065F46', bg:'#F0FDF4' },
+      { s:11, e:20,  icon:'🐣', name:'탐험가', color:'#93C5FD', textColor:'#1E40AF', bg:'#EFF6FF' },
+      { s:21, e:30,  icon:'🐢', name:'도전자', color:'#A78BFA', textColor:'#4C1D95', bg:'#F5F3FF' },
+      { s:31, e:40,  icon:'🦊', name:'학습자', color:'#FCA5A5', textColor:'#9F1239', bg:'#FFF1F2' },
+      { s:41, e:50,  icon:'🐯', name:'전사',   color:'#FCD34D', textColor:'#78350F', bg:'#FFFBEB' },
+      { s:51, e:60,  icon:'🦁', name:'학자',   color:'#86EFAC', textColor:'#14532D', bg:'#F0FDF4' },
+      { s:61, e:70,  icon:'🚀', name:'천재',   color:'#67E8F9', textColor:'#164E63', bg:'#ECFEFF' },
+      { s:71, e:80,  icon:'💎', name:'영웅',   color:'#818CF8', textColor:'#312E81', bg:'#EEF2FF' },
+      { s:81, e:90,  icon:'🌟', name:'전설',   color:'#F9A8D4', textColor:'#831843', bg:'#FDF2F8' },
+      { s:91, e:100, icon:'👑', name:'레전드', color:'#FFD700', textColor:'#78350F', bg:'#FFFBEB' },
+    ];
+    const rows = tiers.map(t => {
+      const xpStart = XP_PER_LEVEL[t.s - 1];
+      const xpEnd   = XP_PER_LEVEL[t.e];
+      const totalNeeded = xpEnd - xpStart;
+      const days = (totalNeeded / 200).toFixed(0);
+      const isDone  = xpLv >= t.e;
+      const isCur   = xpLv >= t.s-1 && xpLv < t.e;
+      const progress = isCur ? Math.round((xpLv - t.s + 1) / 10 * 100) : isDone ? 100 : 0;
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:11px;margin-bottom:5px;
+          background:${isDone ? t.bg : isCur ? t.bg : '#FAFAFA'};
+          border:1.5px solid ${isDone ? t.color : isCur ? t.color : '#F0F0F0'}">
+          <div style="font-size:22px;flex-shrink:0">${t.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:900;color:${isDone||isCur ? t.textColor : '#9CA3AF'}">Lv${t.s}~${t.e} · ${t.name}</span>
+              ${isCur ? `<span style="font-size:9px;font-weight:800;background:${t.color};color:${t.textColor};padding:1px 6px;border-radius:6px">진행중 Lv${xpLv}</span>` : ''}
+              ${isDone ? `<span style="font-size:10px;color:${t.textColor}">✓</span>` : ''}
+            </div>
+            <div style="background:${isDone||isCur?'rgba(0,0,0,.08)':'#E5E7EB'};border-radius:6px;height:5px;overflow:hidden">
+              <div style="height:100%;border-radius:6px;background:${t.color};width:${progress}%;transition:width .5s ease"></div>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:11px;font-weight:900;color:${isDone||isCur?t.textColor:'#9CA3AF'}">${totalNeeded.toLocaleString()} XP</div>
+            <div style="font-size:9px;color:#9CA3AF;font-weight:700">약 ${days}일</div>
+          </div>
+        </div>`;
+    });
+    tbl.innerHTML = rows.join('');
+  }
+
+  // 레벨 달성 뱃지 로드맵
+  const lbr = document.getElementById('lv-badge-roadmap');
+  if(lbr) {
+    lbr.innerHTML='';
+    LEVEL_MILESTONE_BADGES.forEach(b=>{
+      const achieved = lv >= b.lv;
+      const row = document.createElement('div');
+      row.style.cssText=`display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1.5px solid ${achieved ? b.color : '#E5E7EB'};background:${achieved ? b.bg : '#F9F9F9'};opacity:${achieved?'1':'0.55'}`;
+      row.innerHTML=`
+        <div style="width:38px;height:38px;border-radius:50%;background:${achieved?b.color:'#E5E7EB'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${b.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:900;color:${achieved?b.textColor:'#9CA3AF'}">${b.label}</div>
+          ${b.bonus?`<div style="font-size:11px;font-weight:700;color:${achieved?b.textColor:'#9CA3AF'};margin-top:1px">보너스 ${b.bonus}</div>`:''}
+        </div>
+        <div style="font-size:13px">${achieved?'✅':'🔒'}</div>`;
+      lbr.appendChild(row);
+    });
+  }
+
+  // 레벨 로드맵 — 10단위 마일스톤
+  const rm=document.getElementById('lv-roadmap'); rm.innerHTML='';
+  const milestones = [10,20,30,40,50,60,70,80,90,100];
+  milestones.forEach((m,i) => {
+    if(i>0){ const conn=document.createElement('div'); conn.className='lv-connector'+(lv>=m?' done':''); rm.appendChild(conn); }
+    const node=document.createElement('div'); node.className='lv-node';
+    const circle=document.createElement('div');
+    const isCurTier = lv>=m-9 && lv<m;
+    const isDoneTier = lv>=m;
+    circle.className='lv-circle '+(m===100?'special':isDoneTier?'past':isCurTier?'current':'future');
+    circle.textContent = m===100 ? '👑' : m;
+    const label=document.createElement('div'); label.className='lv-node-label'; label.textContent='Lv'+m;
+    node.appendChild(circle); node.appendChild(label); rm.appendChild(node);
+  });
+}
+
+function initBadge(){ renderLevelSection(); renderBadges(); }
+
+function initHistory(){buildMonthTabs();renderHistory();}
+
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='history') initHistory();
+  if(name==='badge') initBadge();
+}
+
+(function init(){
+  applyDateSettings();
+  const h=getTestDate().getHours();
+  const g=document.getElementById('greeting-text');
+  if(h<10) g.textContent='좋은 아침이에요! ☀️';
+  else if(h<14) g.textContent='파이팅, 로운! 💪';
+  else if(h<18) g.textContent='오후도 열심히! 🔥';
+  else g.textContent='오늘 하루도 고생했어! 🌙';
+  calcReward(); updateProgress(); buildStreakCalendar();
+})();
+
+// ── XP 패널티 시스템 ──
+// 하루 평균 획득 XP (3일치): 수학2+영어2+독서2+글쓰기+미라클 = 40*2+40*2+25*2+35+30 = 245 / 7일 ≈ 35 * 3일 = 105XP
+const XP_PENALTY_3DAYS = 105;
+
+function checkXPPenalty(currentDate) {
+  // 어제 날짜
+  const yesterday = new Date(currentDate);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yKey = yesterday.getFullYear()+'-'+(yesterday.getMonth()+1)+'-'+yesterday.getDate();
+
+  // sessionStorage에서 어제 학습 횟수 확인
+  const ySessionsStr = sessionStorage.getItem('sessions-'+yKey);
+  if(ySessionsStr === null) return; // 데이터 없으면 무시
+
+  const ySessions = parseInt(ySessionsStr);
+  const banner = document.getElementById('xp-penalty-banner');
+  const titleEl = document.getElementById('penalty-title');
+  const descEl  = document.getElementById('penalty-desc');
+
+  // 어제 이미 패널티 적용했는지 확인
+  const penaltyKey = 'penalty-applied-'+yKey;
+  const alreadyApplied = sessionStorage.getItem(penaltyKey);
+
+  if(ySessions <= 5 && !alreadyApplied) {
+    // XP 차감
+    const before = xp;
+    xp = Math.max(0, xp - XP_PENALTY_3DAYS);
+    sessionStorage.setItem(penaltyKey, '1');
+    // 배너 표시
+    const dow = ['일','월','화','수','목','금','토'][yesterday.getDay()];
+    titleEl.textContent = '⚠️ '+(yesterday.getMonth()+1)+'월 '+yesterday.getDate()+'일 ('+dow+') 학습 미달성!';
+    descEl.textContent = '학습 '+ySessions+'회 → XP 3일치 차감: '+before+' → '+xp+' XP (-'+XP_PENALTY_3DAYS+'XP)';
+    banner.style.display = 'block';
+  } else if(ySessions > 5) {
+    banner.style.display = 'none';
+  }
+}
+
+function saveTodaySessions() {
+  const d = getTestDate();
+  const key = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  const s = calcSessions();
+  sessionStorage.setItem('sessions-'+key, s);
+}
+function applyDateSettings() {
+  const d = getTestDate();
+  const we = isWeekendDate(d);
+  const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+  const dateStr = (d.getMonth()+1)+'월 '+d.getDate()+'일 ('+dow+')';
+
+  if(we){
+    document.getElementById('day-info').textContent='🏖️ 주말 ('+dateStr+') — 글쓰기 10~15줄 · 미라클/샤워 2배 · 글쓰기 +2,000원';
+    document.getElementById('write-sub').textContent='책소개→내용요약→인상깊은부분→나의생각→결론 (10~15줄)';
+    const wh=document.getElementById('write-reward-hint');
+    if(wh) wh.textContent='주말 +2,000원 🎉';
+    document.getElementById('badge-write').textContent='2회';
+  } else {
+    document.getElementById('day-info').textContent='📅 평일 ('+dateStr+') — 글쓰기 5~6줄';
+    document.getElementById('write-sub').textContent='핵심요약→핵심생각→예시→앞으로의생각 (5~6줄) · 평일 +1,000원';
+    const wh=document.getElementById('write-reward-hint');
+    const bonusToday=isBonusDay();
+    if(wh) wh.textContent=bonusToday?'평일 +1,000원 🎲 오늘 보너스 데이!':'평일 +1,000원';
+    if(bonusToday){
+      const writeCard=document.querySelector('.task-card[style*="C4B5FD"]');
+      if(writeCard) writeCard.style.borderColor='#F5A623';
+    }
+    document.getElementById('badge-write').textContent='1회';
+  }
+  // 어제 미달성이면 XP 패널티 체크
+  checkXPPenalty(d);
+}
+
+// ── 🛠 개발자 패널 ──
+function openDevPanel() {
+  document.getElementById('dev-panel').classList.add('show');
+  const d = getTestDate();
+  // 날짜 input 세팅
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  document.getElementById('dev-date-input').value = yyyy+'-'+mm+'-'+dd;
+  // 시간 input 세팅
+  document.getElementById('dev-hour-input').value = d.getHours();
+  updateDevPreview();
+}
+function closeDevPanel() { document.getElementById('dev-panel').classList.remove('show'); }
+
+function updateDevPreview() {
+  const dateVal = document.getElementById('dev-date-input').value;
+  const hourVal = parseInt(document.getElementById('dev-hour-input').value)||0;
+  if(!dateVal) return;
+  const d = new Date(dateVal+'T'+String(hourVal).padStart(2,'0')+':00:00');
+  const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+  const we = isWeekendDate(d);
+  const timeLabel = hourVal<10?'아침':hourVal<14?'오전':hourVal<18?'오후':'저녁';
+  document.getElementById('dev-preview').textContent =
+    (d.getMonth()+1)+'월 '+d.getDate()+'일 ('+dow+') '+timeLabel+' · '+(we?'🏖️ 주말':'📅 평일');
+}
+
+function applyDevDate() {
+  const dateVal = document.getElementById('dev-date-input').value;
+  const hourVal = parseInt(document.getElementById('dev-hour-input').value)||0;
+  if(!dateVal) return;
+  const d = new Date(dateVal+'T'+String(hourVal).padStart(2,'0')+':00:00');
+
+  // 패널티 테스트: 어제 날짜에 임의 세션 수 저장
+  const prevDay = new Date(d); prevDay.setDate(prevDay.getDate()-1);
+  const prevKey = prevDay.getFullYear()+'-'+(prevDay.getMonth()+1)+'-'+prevDay.getDate();
+  const prevSessions = parseInt(document.getElementById('dev-prev-sessions').value ?? '7');
+  sessionStorage.setItem('sessions-'+prevKey, prevSessions);
+  // 기존 패널티 기록 제거해서 재테스트 가능하게
+  sessionStorage.removeItem('penalty-applied-'+prevKey);
+
+  _testDate = d;
+
+  // 태스크 초기화
+  Object.keys(tasks).forEach(k=>{ tasks[k].done=false; });
+  weeklyWriteBonusGiven=false; weeklyWriteBonusAmount=0;
+  document.querySelectorAll('.task-check').forEach(el=>el.classList.remove('done'));
+  document.querySelectorAll('.task-name').forEach(el=>el.classList.remove('done'));
+  document.querySelectorAll('.task-badge').forEach(el=>el.classList.remove('done'));
+  document.querySelectorAll('.subj-panel').forEach(el=>el.classList.remove('show'));
+  document.querySelectorAll('.edit-panel').forEach(el=>el.classList.remove('show'));
+  document.getElementById('extra-list').innerHTML='';
+  extraItems=[]; extraIdCounter=0;
+  xp=240;
+
+  applyDateSettings();
+  const h=d.getHours();
+  const g=document.getElementById('greeting-text');
+  if(h<10) g.textContent='좋은 아침이에요! ☀️';
+  else if(h<14) g.textContent='파이팅, 로운! 💪';
+  else if(h<18) g.textContent='오후도 열심히! 🔥';
+  else g.textContent='오늘 하루도 고생했어! 🌙';
+  calcReward(); updateProgress();
+  showScreen('home');
+  closeDevPanel();
+}
+
+function resetDevDate() {
+  _testDate=null;
+  document.getElementById('dev-date-input').value='';
+  document.getElementById('dev-hour-input').value=new Date().getHours();
+  document.getElementById('dev-preview').textContent='실제 오늘 날짜로 초기화됩니다';
+}
+
+function setQuickDay(targetDow) {
+  const today = new Date();
+  const cur = today.getDay();
+  let diff = targetDow - cur;
+  if(diff < 0) diff += 7;
+  const target = new Date(today);
+  target.setDate(today.getDate() + diff);
+  const yyyy = target.getFullYear();
+  const mm = String(target.getMonth()+1).padStart(2,'0');
+  const dd = String(target.getDate()).padStart(2,'0');
+  document.getElementById('dev-date-input').value = yyyy+'-'+mm+'-'+dd;
+  updateDevPreview();
+}
+
+</script>
+
+<!-- 🛠 개발자 패널 (플로팅 버튼 + 바텀시트) -->
+<style>
+.dev-fab { position:fixed; bottom:90px; right:16px; width:42px; height:42px; border-radius:50%; background:#1E1B4B; color:white; border:none; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,.3); z-index:999; font-family:'Nunito',sans-serif; opacity:.75; transition:opacity .2s; }
+.dev-fab:hover { opacity:1; }
+.dev-panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; display:none; align-items:flex-end; justify-content:center; }
+.dev-panel-overlay.show { display:flex; }
+.dev-panel { background:white; border-radius:24px 24px 0 0; padding:20px 20px 36px; width:100%; max-width:390px; }
+.dev-panel-title { font-size:16px; font-weight:900; color:#1E1B4B; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+.dev-panel-sub { font-size:12px; color:#6B7280; font-weight:600; margin-bottom:16px; }
+.dev-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.dev-label { font-size:12px; font-weight:800; color:#374151; width:60px; flex-shrink:0; }
+.dev-input { flex:1; padding:8px 12px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:13px; font-family:'Nunito',sans-serif; font-weight:700; outline:none; color:#1E1B4B; }
+.dev-input:focus { border-color:#7B5CF5; }
+.dev-preview-box { background:#F5F3FF; border-radius:10px; padding:10px 14px; font-size:13px; font-weight:800; color:#5B21B6; margin-bottom:16px; text-align:center; }
+.dev-btn-row { display:flex; gap:8px; }
+.dev-btn { flex:1; padding:12px; border-radius:12px; border:none; font-size:13px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; }
+.dev-btn.apply { background:#7B5CF5; color:white; }
+.dev-btn.reset { background:#F3F4F6; color:#374151; }
+.dev-btn.cancel { background:#F3F4F6; color:#374151; flex:.6; }
+.dev-day-shortcuts { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.dev-day-pill { padding:5px 11px; border-radius:20px; font-size:11px; font-weight:800; border:1.5px solid #E5E7EB; background:white; color:#374151; cursor:pointer; font-family:'Nunito',sans-serif; }
+.dev-day-pill:active { background:#EDE9FE; border-color:#7B5CF5; color:#5B21B6; }
+</style>
+
+<button class="dev-fab" onclick="openDevPanel()" title="테스트 날짜 설정">🛠</button>
+
+<div class="dev-panel-overlay" id="dev-panel" onclick="if(event.target===this)closeDevPanel()">
+  <div class="dev-panel">
+    <div class="dev-panel-title">🛠 테스트 날짜 설정</div>
+    <div class="dev-panel-sub">날짜를 바꿔서 평일/주말/시간대를 테스트해요</div>
+
+    <!-- 빠른 선택 -->
+    <div style="font-size:11px;font-weight:800;color:#6B7280;margin-bottom:7px">빠른 선택</div>
+    <div class="dev-day-shortcuts">
+      <button class="dev-day-pill" onclick="setQuickDay(1)">월요일</button>
+      <button class="dev-day-pill" onclick="setQuickDay(3)">수요일</button>
+      <button class="dev-day-pill" onclick="setQuickDay(5)">금요일</button>
+      <button class="dev-day-pill" onclick="setQuickDay(6)">토요일 🏖️</button>
+      <button class="dev-day-pill" onclick="setQuickDay(0)">일요일 🏖️</button>
+    </div>
+
+    <!-- 날짜 직접 입력 -->
+    <div class="dev-row">
+      <div class="dev-label">📅 날짜</div>
+      <input class="dev-input" type="date" id="dev-date-input" oninput="updateDevPreview()">
+    </div>
+    <div class="dev-row">
+      <div class="dev-label">🕐 시간</div>
+      <input class="dev-input" type="number" id="dev-hour-input" min="0" max="23" value="9" oninput="updateDevPreview()" style="width:70px;flex:none">
+      <span style="font-size:12px;font-weight:700;color:#6B7280">시 (0~23)</span>
+    </div>
+    <!-- 패널티 테스트 -->
+    <div style="background:#FEF9EC;border-radius:10px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:800;color:#92400E;margin-bottom:7px">⚡ 패널티 테스트 — 어제 학습 횟수 시뮬레이션</div>
+      <div class="dev-row" style="margin-bottom:0">
+        <div class="dev-label" style="font-size:11px">어제 학습</div>
+        <input class="dev-input" type="number" id="dev-prev-sessions" min="0" max="9" value="7" style="width:60px;flex:none">
+        <span style="font-size:11px;font-weight:700;color:#6B7280">회 (5 이하 → XP 차감 알림)</span>
+      </div>
+    </div>
+
+    <!-- 미리보기 -->
+    <div class="dev-preview-box" id="dev-preview">날짜를 선택해주세요</div>
+
+    <div class="dev-btn-row">
+      <button class="dev-btn cancel" onclick="closeDevPanel()">취소</button>
+      <button class="dev-btn reset" onclick="resetDevDate()">🔄 오늘로</button>
+      <button class="dev-btn apply" onclick="applyDevDate()">✅ 적용</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
