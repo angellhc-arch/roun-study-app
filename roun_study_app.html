@@ -706,7 +706,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
 
     <!-- Exercise (선택, 공부 1회) -->
-    <div class="task-card">
+    <div class="task-card" id="card-exercise">
       <div class="task-row" onclick="toggleTask('exercise')">
         <div class="task-check" id="check-exercise">✓</div>
         <div class="task-info">
@@ -1260,7 +1260,7 @@ function updateProgress() {
     { k:'math1',    l:'📐 수학1' },
     ...(isWE ? [] : [{ k:'math2', l:'📐 수학2' }]),
     { k:'flex',     l: isWE ? '📖 예습/복습' : '📝 국어' },
-    { k:'exercise', l:'🏃 운동' },
+    ...(isWE ? [] : [{ k:'exercise', l:'🏃 운동' }]),
   ];
   chipList.forEach(({k,l})=>{
     const c=document.createElement('div');
@@ -2053,15 +2053,18 @@ function applyDateSettings() {
     const wh=document.getElementById('write-reward-hint');
     if(wh) wh.textContent='주말 +2,000원 🎉';
     document.getElementById('badge-write').textContent='2회';
-    // 주말: 영어2회·수학2회 숨기기, flex → 예습/복습
+    // 주말: 영어2회·수학2회·운동 숨기기, flex → 예습/복습
     const cEng2 = document.getElementById('card-eng2');
     const cMath2 = document.getElementById('card-math2');
+    const cExercise = document.getElementById('card-exercise');
     if(cEng2) cEng2.style.display='none';
     if(cMath2) cMath2.style.display='none';
+    if(cExercise) cExercise.style.display='none';
     const nameFlex = document.getElementById('name-flex');
     if(nameFlex) nameFlex.textContent='📖 예습/복습';
     tasks.eng2.sessions=0;
     tasks.math2.sessions=0;
+    tasks.exercise.sessions=0;
   } else {
     document.getElementById('day-info').textContent='📅 평일 ('+dateStr+') — 글쓰기 5~6줄';
     document.getElementById('write-sub').textContent='핵심요약→핵심생각→예시→앞으로의생각 (5~6줄) · 평일 +1,000원';
@@ -2073,13 +2076,16 @@ function applyDateSettings() {
       if(writeCard) writeCard.style.borderColor='#F5A623';
     }
     document.getElementById('badge-write').textContent='1회';
-    // 평일: 영어2회·수학2회 다시 보이기
+    // 평일: 영어2회·수학2회·운동 다시 보이기
     const cEng2 = document.getElementById('card-eng2');
     const cMath2 = document.getElementById('card-math2');
+    const cExercise = document.getElementById('card-exercise');
     if(cEng2) cEng2.style.display='';
     if(cMath2) cMath2.style.display='';
+    if(cExercise) cExercise.style.display='';
     tasks.eng2.sessions=1;
     tasks.math2.sessions=1;
+    tasks.exercise.sessions=1;
   }
   // 어제 미달성이면 XP 패널티 체크
   checkXPPenalty(d);
