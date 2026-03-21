@@ -362,7 +362,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:80%"></div></div>
     </div>
     <div style="text-align:right;margin-top:4px;padding-right:2px">
-      <span style="font-size:9px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.05em">v202603211216</span>
+      <span id="version-txt" style="font-size:9px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.05em"></span>
     </div>
     <!-- 마스코트 + 말풍선 -->
     <div style="position:relative;height:80px;margin-top:-4px">
@@ -910,7 +910,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="hist-sum-card">
       <div class="hist-sum-icon">🔥</div>
       <div class="hist-sum-val" id="hist-best-streak">0일</div>
-      <div class="hist-sum-label">최장 스트릭</div>
+      <div class="hist-sum-label">최장 연속 기록</div>
     </div>
     <div class="hist-sum-card">
       <div class="hist-sum-icon">📅</div>
@@ -1511,42 +1511,45 @@ function renderExtraList() {
 POPUPS['_extra'] = ['⚡','추가 공부 완료!','대단해! 추가 공부 +2,000원!'];
 
 // ── History data (이번 달은 빈 데이터, 이전 달만 mock) ──
-const HISTORY_DATA = (()=>{
-  const days=[];
-  const now=new Date();
-  const thisYear=now.getFullYear(), thisMon=now.getMonth();
-  const taskNames={miracle:'🌅 미라클 모닝',shower:'🚿 아침 샤워',math1:'📐 수학 1회',math2:'📐 수학 2회',eng1:'🎧 영어 1회',eng2:'🎧 영어 2회',flex:'📝 국어/영상편집',read1:'📖 독서 1회',read2:'📖 독서 2회',exercise:'🏃 운동',write:'✏️ 글쓰기'};
-  const allKeys=Object.keys(taskNames);
-  const subjMap={math1:'수학',math2:'수학',eng1:'영어',eng2:'영어',flex:'국어'};
-  for(let i=89;i>=0;i--){
-    const d=new Date(now); d.setDate(d.getDate()-i);
-    const isWE=d.getDay()===0||d.getDay()===6;
-    // 이번 달은 모두 빈 데이터
-    const isThisMonth = d.getFullYear()===thisYear && d.getMonth()===thisMon;
-    if(isThisMonth){
-      days.push({date:new Date(d),isWE,completed:[],allKeys,taskNames,sessions:0,reward:0,subjects:[],status:'empty'});
-      continue;
-    }
-    const rand=Math.random();
-    const completed=rand>0.12?allKeys.filter(()=>Math.random()>0.28):[];
-    const sessions=completed.filter(k=>!['miracle','shower','write'].includes(k)).length;
-    const base=sessions>=7?5000:sessions===6?4000:sessions*500;
-    let reward=base;
-    if(completed.includes('miracle')) reward+=isWE?1000:500;
-    if(completed.includes('shower')) reward+=isWE?2000:1000;
-    if(isWE&&completed.includes('write')) reward+=2000;
-    const subjList=[...new Set(completed.filter(k=>subjMap[k]).map(k=>subjMap[k]))];
-    days.push({date:new Date(d),isWE,completed,allKeys,taskNames,sessions,reward:completed.length>0?reward:0,subjects:subjList,status:completed.length===0?'empty':sessions>=5?'complete':'partial'});
-  }
-  return days;
-})();
+const TASK_NAMES = {
+  miracle:'🌅 미라클 모닝', shower:'🚿 아침 샤워',
+  read1:'📖 독서 1회', read2:'📖 독서 2회',
+  eng1:'🎧 영어 1회', eng2:'🎧 영어 2회',
+  math1:'📐 수학 1회', math2:'📐 수학 2회',
+  flex:'📝 국어/영상편집', exercise:'🏃 운동', write:'✏️ 글쓰기'
+};
+const SUBJ_MAP = {math1:'수학',math2:'수학',eng1:'영어',eng2:'영어',flex:'국어',read1:'독서',read2:'독서',write:'글쓰기'};
 
-let selectedMonth=null;
+function getHistoryData() {
+  const state = loadState();
+  const history = state?.history || {};
+  // key: 'YYYY-MM-DD' 형태 → Date 객체로 변환해서 배열로
+  return Object.entries(history).map(([key, rec]) => {
+    const [y,m,d] = key.split('-').map(Number);
+    const date = new Date(y, m-1, d);
+    const isWE = date.getDay()===0||date.getDay()===6;
+    const completed = rec.completed || [];
+    const sessions = rec.sessions || 0;
+    const subjects = [...new Set(completed.filter(k=>SUBJ_MAP[k]).map(k=>SUBJ_MAP[k]))];
+    const status = completed.length===0 ? 'empty' : sessions>=6 ? 'complete' : 'partial';
+    return { key, date, isWE, completed, sessions, reward: rec.reward||0, subjects, status };
+  }).sort((a,b) => a.date - b.date);
+}
+
+let selectedMonth = null;
 
 function getMonths(){
+  const data = getHistoryData();
   const seen=new Set(), res=[];
-  HISTORY_DATA.forEach(d=>{const k=d.date.getFullYear()+'-'+(d.date.getMonth()+1); if(!seen.has(k)){seen.add(k);res.push(k);}});
-  return res.reverse();
+  // 현재 달은 항상 포함
+  const now = getTestDate();
+  const curKey = now.getFullYear()+'-'+(now.getMonth()+1);
+  seen.add(curKey); res.push(curKey);
+  data.forEach(d=>{
+    const k=d.date.getFullYear()+'-'+(d.date.getMonth()+1);
+    if(!seen.has(k)){ seen.add(k); res.push(k); }
+  });
+  return res.sort().reverse();
 }
 
 function buildMonthTabs(){
@@ -1559,14 +1562,32 @@ function buildMonthTabs(){
     const btn=document.createElement('button');
     btn.className='month-tab'+(m===selectedMonth?' on':'');
     btn.textContent=y+'년 '+mo+'월';
-    btn.onclick=()=>{selectedMonth=m; document.querySelectorAll('.month-tab').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderHistory();};
+    btn.onclick=()=>{ selectedMonth=m; document.querySelectorAll('.month-tab').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderHistory(); };
     tabs.appendChild(btn);
   });
 }
 
 function renderHistory(){
   const [y,mo]=selectedMonth.split('-').map(Number);
-  const filtered=HISTORY_DATA.filter(d=>d.date.getFullYear()===y&&d.date.getMonth()+1===mo);
+  const allData = getHistoryData();
+  // 해당 월의 모든 날짜 생성 (기록 없는 날도 포함)
+  const now = getTestDate();
+  const isCurrentMonth = y===now.getFullYear() && mo===now.getMonth()+1;
+  const daysInMonth = new Date(y, mo, 0).getDate();
+  const lastDay = isCurrentMonth ? now.getDate() : daysInMonth;
+
+  const filtered = [];
+  for(let dn=1; dn<=lastDay; dn++){
+    const date = new Date(y, mo-1, dn);
+    const key = y+'-'+String(mo).padStart(2,'0')+'-'+String(dn).padStart(2,'0');
+    const rec = allData.find(d=>d.key===key);
+    if(rec) { filtered.push(rec); }
+    else {
+      filtered.push({ key, date, isWE:date.getDay()===0||date.getDay()===6,
+        completed:[], sessions:0, reward:0, subjects:[], status:'empty' });
+    }
+  }
+
   const totalReward=filtered.reduce((a,b)=>a+b.reward,0);
   const completeDays=filtered.filter(d=>d.status==='complete').length;
   const totalSessions=filtered.reduce((a,b)=>a+b.sessions,0);
@@ -1574,19 +1595,20 @@ function renderHistory(){
     <div class="msm-item"><div class="msm-val">${totalReward.toLocaleString()}원</div><div class="msm-label">이달 보상</div></div>
     <div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div>
     <div class="msm-item"><div class="msm-val">${totalSessions}회</div><div class="msm-label">총 학습</div></div>`;
+
   const list=document.getElementById('hist-list');
   list.innerHTML='';
   [...filtered].reverse().forEach(d=>{
     const dow=['일','월','화','수','목','금','토'][d.date.getDay()];
     const dn=d.date.getDate();
-    const isToday=d.date.toDateString()===new Date().toDateString();
+    const isToday=d.date.toDateString()===getTestDate().toDateString();
     const card=document.createElement('div');
     card.className='hist-day-card '+d.status;
     const statusLabel=d.status==='complete'?'모두 완료 🎉':d.status==='partial'?'일부 완료':'기록 없음';
     const subjChips=d.subjects.map(s=>`<span class="hist-schip">${s}</span>`).join('');
-    const idx=HISTORY_DATA.indexOf(d);
+    const keyStr = d.key;
     card.innerHTML=`
-      <div class="hist-day-row" onclick="openDayDetail(${idx})">
+      <div class="hist-day-row" onclick="openDayDetail('${keyStr}')">
         <div class="hist-day-dot ${d.status}">
           <div class="hist-dot-day ${d.status}">${isToday?'오늘':dow}</div>
           <div class="hist-dot-num ${d.status}">${dn}</div>
@@ -1597,7 +1619,7 @@ function renderHistory(){
         </div>
         <div class="hist-day-right">
           <div class="hist-reward${d.reward===0?' zero':''}">${d.reward>0?d.reward.toLocaleString()+'원':'—'}</div>
-          <div class="hist-sessions">${d.completed.length}/${d.allKeys.length} 항목</div>
+          <div class="hist-sessions">${d.completed.length}/${Object.keys(TASK_NAMES).length} 항목</div>
         </div>
       </div>
       ${d.subjects.length>0?`<div class="hist-subj-chips">${subjChips}</div>`:''}`;
@@ -1605,17 +1627,19 @@ function renderHistory(){
   });
 }
 
-function openDayDetail(idx){
-  const d=HISTORY_DATA[idx];
-  const dow=['일','월','화','수','목','금','토'][d.date.getDay()];
-  document.getElementById('detail-date-title').textContent=d.date.getFullYear()+'년 '+(d.date.getMonth()+1)+'월 '+d.date.getDate()+'일 ('+dow+')';
-  document.getElementById('detail-reward').textContent=(d.reward>0?d.reward.toLocaleString()+'원':'0원');
-  const subjMap={math1:'수학',math2:'수학',eng1:'영어',eng2:'영어',flex:'국어'};
+function openDayDetail(key){
+  const allData = getHistoryData();
+  const d = allData.find(r=>r.key===key);
+  const [y,m,dn] = key.split('-').map(Number);
+  const date = new Date(y, m-1, dn);
+  const dow=['일','월','화','수','목','금','토'][date.getDay()];
+  document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';
+  document.getElementById('detail-reward').textContent=d?(d.reward>0?d.reward.toLocaleString()+'원':'0원'):'0원';
   const items=document.getElementById('detail-items');
   items.innerHTML='';
-  Object.entries(d.taskNames).forEach(([k,name])=>{
-    const done=d.completed.includes(k);
-    const subj=subjMap[k];
+  Object.entries(TASK_NAMES).forEach(([k,name])=>{
+    const done=d?d.completed.includes(k):false;
+    const subj=SUBJ_MAP[k];
     const div=document.createElement('div');
     div.className='detail-item';
     div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div>
@@ -1625,14 +1649,18 @@ function openDayDetail(idx){
   });
   const subjEl=document.getElementById('detail-subjects');
   subjEl.innerHTML='';
-  const counts={};
-  d.completed.filter(k=>subjMap[k]).forEach(k=>{const s=subjMap[k];counts[s]=(counts[s]||0)+1;});
-  if(Object.keys(counts).length>0) Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});
-  else subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';
+  if(d && d.subjects.length>0){
+    const counts={};
+    d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});
+    Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});
+  } else {
+    subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';
+  }
   document.getElementById('day-detail-overlay').classList.add('show');
 }
 function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailDirect();}
 function closeDayDetailDirect(){document.getElementById('day-detail-overlay').classList.remove('show');}
+
 
 // ── Level & Badge System ──
 // 100레벨 타이틀 — 10레벨 단위 티어로 구성
@@ -1997,7 +2025,7 @@ function calcBadgeEarned() {
   // 추가공부 총 횟수
   const extraCount = Object.values(pastHistory).reduce((s,r)=>(s+(r.extraItems?.length||0)),0);
 
-  // 최장 스트릭
+  // 최장 연속 기록
   const bestStreak = calcBestStreak(pastHistory);
 
   ALL_BADGES.forEach(b => {
@@ -2137,8 +2165,17 @@ function showScreen(name){
       if(fn) fn.textContent=state.flexName;
     }
   }
-  // 뱃지 달성 여부 초기 계산
-  calcBadgeEarned();
+  // 버전 표시 (현재 시간)
+  const _vn = new Date();
+  const _vs = _vn.getFullYear()
+    + String(_vn.getMonth()+1).padStart(2,'0')
+    + String(_vn.getDate()).padStart(2,'0')
+    + ' '
+    + String(_vn.getHours()).padStart(2,'0')
+    + ':'
+    + String(_vn.getMinutes()).padStart(2,'0');
+  const _vel = document.getElementById('version-txt');
+  if(_vel) _vel.textContent = 'v' + _vs;
   restoreToday(state);
   applyDateSettings();
   const h=getTestDate().getHours();
