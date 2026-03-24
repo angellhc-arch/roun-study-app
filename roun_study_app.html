@@ -301,7 +301,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .game-bonus-title { font-size:16px; font-weight:900; color:#78350F; margin-bottom:6px; }
 .game-bonus-word { font-size:26px; font-weight:900; color:#D97706; margin-bottom:10px; }
 .game-bonus-desc { font-size:13px; font-weight:700; color:#92400E; margin-bottom:14px; line-height:1.5; }
-.game-bonus-textarea { width:100%; padding:12px 14px; border:2px solid #FCD34D; border-radius:12px; font-size:14px; font-family:'Nunito',sans-serif; font-weight:700; outline:none; min-height:80px; resize:none; background:white; color:var(--text); }
+.game-bonus-textarea { width:100%; padding:12px 14px; border:2px solid #FCD34D; border-radius:12px; font-size:14px; font-family:'Nunito',sans-serif; font-weight:700; outline:none; min-height:80px; resize:none; background:white; color:var(--text); -webkit-user-select:text; user-select:text; touch-action:auto; cursor:text; }
 .game-bonus-textarea:focus { border-color:#F59E0B; }
 .game-bonus-submit { width:100%; margin-top:10px; padding:13px; background:linear-gradient(135deg,#F59E0B,#D97706); color:white; border:none; border-radius:12px; font-size:14px; font-weight:900; cursor:pointer; font-family:'Nunito',sans-serif; }
 
@@ -631,7 +631,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <button class="spill" onclick="setFlexName('🎬 영상편집',this)">영상편집</button>
           <button class="spill" onclick="setFlexName('📖 예습복습',this)">예습복습</button>
         </div>
-        <input class="custom-input show" id="flex-custom" placeholder="직접 입력..." oninput="if(this.value.trim()) setFlexName(this.value.trim(),null)">
+        <input class="custom-input show" id="flex-custom" placeholder="직접 입력 후 엔터..." onkeydown="if(event.key==='Enter'&&this.value.trim()){setFlexName(this.value.trim(),null);this.value='';}" onclick="event.stopPropagation()">
       </div>
       <div class="subj-panel" id="subj-flex">
         <div class="subj-panel-label">학습 내용 기록</div>
@@ -697,11 +697,11 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div class="word-input-group" style="margin-bottom:10px">
         <div class="word-input-label" style="margin-bottom:6px">📋 아래 형식으로 붙여넣기</div>
         <div style="background:#F8F7FF;border-radius:10px;padding:10px 12px;font-size:11px;font-weight:700;color:#7B5CF5;margin-bottom:8px;line-height:1.8;border:1.5px dashed #C4B5FD">
-          단어: exercise<br>뜻: 운동, 연습하다<br>예문: I exercise every morning.
+          단어 : test<br>뜻 : 시험, 테스트 / 시험하다<br>예문 : I have a math test tomorrow.<br>해석 : 나는 내일 수학시험을 봐요.
         </div>
         <textarea id="wi-bulk" class="word-input"
-          placeholder="단어: exercise&#10;뜻: 운동, 연습하다&#10;예문: I exercise every morning."
-          style="min-height:110px;resize:vertical;line-height:1.7;font-size:13px;padding:10px 12px"></textarea>
+          placeholder="단어 : test&#10;뜻 : 시험, 테스트 / 시험하다&#10;예문 : I have a math test tomorrow.&#10;해석 : 나는 내일 수학시험을 봐요."
+          style="min-height:130px;resize:vertical;line-height:1.9;font-size:13px;padding:10px 12px"></textarea>
       </div>
       <button class="word-add-btn" onclick="addWord()">✅ 단어장에 추가!</button>
     </div>
@@ -742,78 +742,77 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 </div>
 
 <!-- ══════════════════ GAME SCREEN ══════════════════ -->
-<div class="screen" id="screen-game" style="padding-bottom:0;overflow-y:auto;">
-  <div class="game-top-bar">
+<div class="screen" id="screen-game" style="padding-bottom:0;overflow:hidden;display:none;flex-direction:column;">
+  <!-- 상단 고정 바 -->
+  <div class="game-top-bar" style="flex-shrink:0">
     <button class="game-back-btn" onclick="exitGame()">✕</button>
     <div class="game-progress-wrap">
-      <div class="game-progress-label" id="game-prog-label">1 / 5 단어</div>
+      <div class="game-progress-label" id="game-prog-label">1 / 5 문제</div>
       <div class="game-progress-bar"><div class="game-progress-fill" id="game-prog-fill" style="width:0%"></div></div>
     </div>
-    <div class="game-xp-display">⭐ <span id="game-xp-earned">0</span> XP</div>
+    <div class="game-xp-display" style="display:none">⭐ <span id="game-xp-earned">0</span> XP</div>
   </div>
 
-  <!-- 일반 게임 단계 -->
-  <div id="game-main-area">
-    <div class="game-word-card">
-      <div class="game-stage-badge">
-        <span id="stage-label">Stage 1</span>
-        <span class="game-stage-stars" id="stage-stars">⭐⭐⭐</span>
+  <!-- 스크롤 가능한 콘텐츠 영역 -->
+  <div id="game-scroll-area" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:40px">
+
+    <!-- 퀴즈 메인 영역 -->
+    <div id="game-main-area">
+
+      <!-- 문제 유형 배지 -->
+      <div style="padding:10px 16px 0;display:flex;align-items:center;justify-content:space-between">
+        <div id="q-type-badge" style="display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:900;background:var(--purple-light);color:var(--purple)">
+          📝 유형
+        </div>
+        <button onclick="skipWord()" style="background:#F3F4F6;border:none;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif">건너뛰기</button>
       </div>
-      <div class="game-hint-label" id="hint-label">💡 뜻 힌트</div>
-      <div id="hint-content" class="game-hint-text">힌트가 여기에 나와요</div>
+
+      <!-- 문제 카드 -->
+      <div class="game-word-card" style="margin-top:8px">
+        <div class="game-hint-label" id="hint-label">문제</div>
+        <div id="hint-content" class="game-hint-text"></div>
+      </div>
+
+      <!-- 주관식 입력 (유형 A·C) -->
+      <div id="q-input-area" class="game-input-area">
+        <input class="game-answer-input" id="game-answer" placeholder="답을 입력해봐요!" autocomplete="off" autocorrect="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')submitAnswer()"
+          onfocus="scrollToInput()">
+      </div>
+
+      <!-- 객관식 선택지 (유형 B) -->
+      <div id="q-choice-area" style="display:none;padding:10px 16px 0">
+        <div id="q-choices" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- 제출 버튼 (주관식만) -->
+      <div id="q-submit-row" class="game-btn-row" style="justify-content:flex-end">
+        <button class="game-submit-btn" onclick="submitAnswer()" style="flex:1">확인 →</button>
+      </div>
+
+      <div class="game-feedback" id="game-feedback">
+        <div class="game-feedback-emoji" id="fb-emoji">🎉</div>
+        <div class="game-feedback-msg" id="fb-msg">정답!</div>
+        <div id="fb-answer" style="display:none;margin-top:8px;background:white;border-radius:10px;padding:9px 13px;font-size:14px;font-weight:900;color:#DC2626;text-align:left"></div>
+        <div class="game-feedback-xp" id="fb-xp" style="display:none"></div>
+      </div>
+
+      <button class="game-next-btn" id="game-next-btn" onclick="nextWord()">다음 문제 →</button>
     </div>
 
-    <div class="game-input-area">
-      <input class="game-answer-input" id="game-answer" placeholder="영어 단어를 입력해봐요!" autocomplete="off" autocorrect="off" spellcheck="false"
-        onkeydown="if(event.key==='Enter')submitAnswer()">
+    <!-- 게임 결과 -->
+    <div id="game-result-area" style="display:none;padding:0 0 20px">
+      <div class="game-result-card">
+        <div class="game-result-emoji" id="result-emoji">🎉</div>
+        <div class="game-result-title" id="result-title">퀴즈 완료!</div>
+        <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:8px" id="result-sub">정말 잘했어! 🐸</div>
+        <div class="game-result-breakdown" id="result-breakdown"></div>
+        <button class="game-result-btn" onclick="exitGame()">🏠 단어 관리로 돌아가기</button>
+        <button class="game-result-btn" style="margin-top:8px;background:linear-gradient(135deg,#F59E0B,#EF4444)" onclick="startGame()">🎮 다시 풀기!</button>
+      </div>
     </div>
 
-    <div class="game-btn-row">
-      <button class="game-hint-btn" id="next-hint-btn" onclick="showNextHint()">💡 다음 힌트</button>
-      <button class="game-submit-btn" onclick="submitAnswer()">확인 →</button>
-      <button class="game-skip-btn" onclick="skipWord()">건너뛰기</button>
-    </div>
-
-    <div class="game-feedback" id="game-feedback">
-      <div class="game-feedback-emoji" id="fb-emoji">🎉</div>
-      <div class="game-feedback-msg" id="fb-msg">정답!</div>
-      <div class="game-feedback-xp" id="fb-xp">+30 XP 획득!</div>
-    </div>
-
-    <button class="game-next-btn" id="game-next-btn" onclick="nextWord()">다음 단어 →</button>
-  </div>
-
-  <!-- 보너스 스테이지 -->
-  <div id="game-bonus-area" style="display:none">
-    <div class="game-bonus-card">
-      <div style="font-size:28px;margin-bottom:6px">🎁</div>
-      <div class="game-bonus-title">보너스 스테이지!</div>
-      <div class="game-bonus-word" id="bonus-word-display"></div>
-      <div class="game-bonus-desc" id="bonus-desc">이 단어를 사용해서<br>짧은 문장을 만들어봐요! ✍️</div>
-      <textarea class="game-bonus-textarea" id="bonus-input" placeholder="여기에 문장을 써봐요..."></textarea>
-      <button class="game-bonus-submit" onclick="submitBonus()">✅ 완성했어요!</button>
-    </div>
-    <div class="game-feedback" id="bonus-feedback" style="display:none;margin:10px 16px 0">
-      <div class="game-feedback-emoji" id="bf-emoji">🌟</div>
-      <div class="game-feedback-msg" id="bf-msg">완벽해!</div>
-      <div class="game-feedback-xp" id="bf-xp">+15 XP 획득!</div>
-    </div>
-    <button class="game-next-btn" id="bonus-next-btn" style="display:none" onclick="nextWord()">다음 단어 →</button>
-  </div>
-
-  <!-- 게임 결과 -->
-  <div id="game-result-area" style="display:none;padding:0 0 20px">
-    <div class="game-result-card">
-      <div class="game-result-emoji" id="result-emoji">🎉</div>
-      <div class="game-result-title" id="result-title">게임 완료!</div>
-      <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:8px" id="result-sub">정말 잘했어! 🐸</div>
-      <div class="game-result-xp">+<span id="result-total-xp">0</span> XP 획득!</div>
-      <div class="game-result-breakdown" id="result-breakdown"></div>
-      <button class="game-result-btn" onclick="exitGame()">🏠 단어 관리로 돌아가기</button>
-      <button class="game-result-btn" style="margin-top:8px;background:linear-gradient(135deg,#F59E0B,#EF4444)" onclick="startGame()">🎮 다시 게임하기!</button>
-    </div>
-  </div>
-  <div style="height:20px"></div>
+  </div><!-- end game-scroll-area -->
 </div>
 
 <!-- ══════════════════ STATS ══════════════════ -->
@@ -1106,7 +1105,11 @@ function toggleTask(id) {
 function openSubj(id,event){event.stopPropagation();const sp=document.getElementById('subj-'+id);if(!sp)return;const was=sp.classList.contains('show');document.querySelectorAll('.subj-panel').forEach(e=>e.classList.remove('show'));if(!was)sp.classList.add('show');}
 function pickSubj(taskId,subj,btn){btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p=>p.classList.remove('on'));btn.classList.add('on');}
 function toggleEditPanel(panelId,event){event.stopPropagation();document.getElementById(panelId).classList.toggle('show');}
-function setFlexName(name,btn){document.getElementById('name-flex').textContent=name;if(btn){btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p=>p.classList.remove('on'));btn.classList.add('on');}document.getElementById('flex-edit').classList.remove('show');}
+function setFlexName(name,btn){
+  document.getElementById('name-flex').textContent=name;
+  if(btn){btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p=>p.classList.remove('on'));btn.classList.add('on');document.getElementById('flex-edit').classList.remove('show');}
+  // 직접 입력(btn=null)일 때는 패널 유지
+}
 function setRead2(name,sub,btn){document.getElementById('name-read2').textContent=name;document.getElementById('sub-read2').textContent=sub;if(btn){btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p=>p.classList.remove('on'));btn.classList.add('on');}document.getElementById('read2-edit').classList.remove('show');}
 function showPopup(id){const m=POPUPS[id]||['🎉','완료!','잘 했어!'];document.getElementById('popup-emoji').textContent=m[0];document.getElementById('popup-title').textContent=m[1];document.getElementById('popup-msg').textContent=typeof m[2]==='function'?m[2]():m[2];document.getElementById('popup').classList.add('show');}
 function closePopup(e){if(e.target.id==='popup')closePopupDirect();}
@@ -1148,8 +1151,12 @@ function calcBestStreak(history){const dates=Object.keys(history).filter(k=>hist
 function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';const subjectCounts={read:0,eng:0,math:0,write:0};monthKeys.forEach(k=>{const rec=history[k];if(!rec?.completed)return;if(rec.completed.includes('read1'))subjectCounts.read++;if(rec.completed.includes('read2'))subjectCounts.read++;if(rec.completed.includes('eng1'))subjectCounts.eng++;if(rec.completed.includes('eng2'))subjectCounts.eng++;if(rec.completed.includes('math1'))subjectCounts.math++;if(rec.completed.includes('math2'))subjectCounts.math++;if(rec.completed.includes('write'))subjectCounts.write++;});const maxCount=Math.max(...Object.values(subjectCounts),1);Object.entries(subjectCounts).forEach(([k,v])=>{const bar=document.getElementById('bar-'+k);const cnt=document.getElementById('cnt-'+k);if(bar)bar.style.width=(v/maxCount*100)+'%';if(cnt)cnt.textContent=v+'회';});buildStreakCalendar();}
 
 function showScreen(name){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.remove('active');
+    s.style.display='';
+  });
+  const el = document.getElementById('screen-'+name);
+  el.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const navEl=document.getElementById('nav-'+name);
   if(navEl)navEl.classList.add('active');
@@ -1168,11 +1175,11 @@ function applyDateSettings(){const d=getTestDate();const we=isWeekendDate(d);con
 let wordList = [];
 
 const SAMPLE_WORDS = [
-  { word:'generous', meaning:'관대한, 너그러운', example:'She was _____ with her time and money.' },
-  { word:'curious',  meaning:'호기심 많은, 궁금한', example:'The _____ cat looked around the room.' },
-  { word:'patient',  meaning:'인내심 있는, 참을성 있는', example:'You need to be _____ when learning new things.' },
-  { word:'brilliant', meaning:'뛰어난, 훌륭한, 밝은', example:'She came up with a _____ idea.' },
-  { word:'adventure', meaning:'모험, 어드벤처', example:'Life is a great _____.' },
+  { word:'generous', meaning:'관대한, 너그러운', example:'She was _____ with her time and money.', translation:'그녀는 시간과 돈에 관대했어요.' },
+  { word:'curious',  meaning:'호기심 많은, 궁금한', example:'The _____ cat looked around the room.', translation:'호기심 많은 고양이가 방을 둘러봤어요.' },
+  { word:'patient',  meaning:'인내심 있는, 참을성 있는', example:'You need to be _____ when learning new things.', translation:'새로운 것을 배울 때는 인내심이 필요해요.' },
+  { word:'brilliant', meaning:'뛰어난, 훌륭한, 밝은', example:'She came up with a _____ idea.', translation:'그녀는 훌륭한 아이디어를 생각해냈어요.' },
+  { word:'adventure', meaning:'모험, 어드벤처', example:'Life is a great _____.', translation:'삶은 위대한 모험이에요.' },
 ];
 
 function addSampleWords() {
@@ -1190,30 +1197,31 @@ function addWord() {
   const raw = (document.getElementById('wi-bulk').value || '').trim();
   if (!raw) { alert('단어 정보를 입력해주세요!'); return; }
 
-  // 파싱: 각 줄에서 "키: 값" 추출 (대소문자·공백 유연하게)
+  // 파싱: "키 : 값" 또는 "키: 값" 형식 모두 허용
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  let word = '', meaning = '', example = '';
+  let word = '', meaning = '', example = '', translation = '';
 
   lines.forEach(line => {
     const colon = line.indexOf(':');
     if (colon === -1) return;
     const key = line.slice(0, colon).trim().toLowerCase();
     const val = line.slice(colon + 1).trim();
-    if (['단어','word'].includes(key))         word    = val;
-    else if (['뜻','의미','meaning'].includes(key)) meaning = val;
-    else if (['예문','example'].includes(key)) example = val;
+    if (['단어','word'].includes(key))                    word        = val;
+    else if (['뜻','의미','meaning'].includes(key))       meaning     = val;
+    else if (['예문','example'].includes(key))            example     = val;
+    else if (['해석','translation','번역'].includes(key)) translation = val;
   });
 
-  if (!word)    { alert('단어를 찾을 수 없어요!\n"단어: ..." 형식으로 입력해주세요.'); return; }
-  if (!meaning) { alert('뜻을 찾을 수 없어요!\n"뜻: ..." 형식으로 입력해주세요.'); return; }
-  if (!example) { alert('예문을 찾을 수 없어요!\n"예문: ..." 형식으로 입력해주세요.'); return; }
+  if (!word)    { alert('단어를 찾을 수 없어요!\n"단어 : ..." 형식으로 입력해주세요.'); return; }
+  if (!meaning) { alert('뜻을 찾을 수 없어요!\n"뜻 : ..." 형식으로 입력해주세요.'); return; }
+  if (!example) { alert('예문을 찾을 수 없어요!\n"예문 : ..." 형식으로 입력해주세요.'); return; }
 
   // 중복 체크
   if (wordList.find(w => w.word.toLowerCase() === word.toLowerCase())) {
     alert(`"${word}" 은(는) 이미 단어장에 있어요!`); return;
   }
 
-  wordList.push({ id: Date.now(), word, meaning, example });
+  wordList.push({ id: Date.now(), word, meaning, example, translation });
   saveWords(wordList);
   document.getElementById('wi-bulk').value = '';
   renderWordScreen();
@@ -1248,6 +1256,7 @@ function renderWordScreen() {
           <div class="word-item-en">${w.word}</div>
           <div class="word-item-kr">${w.meaning}</div>
           ${w.example ? `<div class="word-item-ex">${w.example}</div>` : ''}
+          ${w.translation ? `<div style="font-size:11px;color:#6B7280;font-weight:600;margin-top:2px">🇰🇷 ${w.translation}</div>` : ''}
         </div>
         <button class="word-del-btn" onclick="deleteWord(${w.id})">🗑️</button>`;
       container.appendChild(div);
@@ -1295,294 +1304,300 @@ function renderGameHistory() {
 }
 
 // ════════════════════════════════════════
-//  GAME ENGINE
+//  QUIZ ENGINE  (3가지 문제 유형)
+//  A: 뜻 보고 단어 쓰기
+//  B: 단어 보고 뜻 고르기 (4지선다)
+//  C: 예문 빈칸에 단어 쓰기
 // ════════════════════════════════════════
 
 let gameState = {
-  words: [],          // 이번 게임의 단어 목록 (shuffled)
-  currentIndex: 0,    // 현재 단어 인덱스
-  currentStage: 1,    // 1=뜻힌트 2=예문힌트 3=글자힌트
-  xpEarned: 0,        // 이번 게임 획득 XP
-  results: [],        // [{word, stars, xp, bonus}]
-  answered: false,    // 현재 단어 정답 맞췄는지
-  bonusShown: false,  // 보너스 스테이지 표시 여부
-  bonusDone: false,   // 보너스 완료 여부
+  questions: [],     // [{word, meaning, example, qtype}]
+  currentIndex: 0,
+  xpEarned: 0,
+  results: [],       // [{word, qtype, correct, xp}]
+  answered: false,
 };
 
-const XP_BY_STAGE = { 1: 30, 2: 20, 3: 10 };
-const STARS_BY_STAGE = { 1: '⭐⭐⭐', 2: '⭐⭐', 3: '⭐' };
-
-const PRAISE_MSGS = {
-  1: ['천재인데?! 🤩', '와! 첫 번째 힌트에 맞췄어! 🎯', '대박! 역시 로운이! 🔥', '완벽해! 💎'],
-  2: ['잘했어! 💪', '두 번째 힌트에 맞췄어! 👍', '오케이! 멋진데! ✨', '좋아! 계속 이렇게! 🙌'],
-  3: ['끝까지 해냈어! 👏', '포기하지 않았어! 🌟', '끈기 있게 맞췄어! 💫', '잘 버텼어! 😊'],
-  bonus: ['문장 완성! 완벽해! 📝🌟', '로운이 작가 탄생?! ✍️', '셜록 선생님이 박수쳐요! 👏', '영어 실력 쑥쑥! 📈'],
+const QTYPE_INFO = {
+  A: { label: '📝 뜻 보고 단어 쓰기',   color:'#EDE9FE', textColor:'#5B21B6' },
+  B: { label: '🔤 단어 보고 뜻 고르기', color:'#DBEAFE', textColor:'#1E40AF' },
+  C: { label: '📖 빈칸에 단어 채우기',  color:'#DCFCE7', textColor:'#166534' },
 };
+
+const PRAISE_CORRECT = [
+  '천재인데?! 🤩', '역시 로운이! 🔥', '완벽해! 💎', '대박! 🎯',
+  '잘했어! 💪', '멋진데! ✨', '최고야! 🙌', '굉장해! 🌟'
+];
+const PRAISE_WRONG = [
+  '아쉬워! 다시 도전! 💫', '거의 다 왔어! 🤔', '괜찮아, 다음엔 맞출 수 있어! 😊'
+];
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
-function makeLetterHint(word) {
-  // 단어의 50% 정도 글자 숨기기, 첫글자·마지막글자는 보여줌
-  const letters = word.split('');
-  const len = letters.length;
-  return letters.map((ch, i) => {
-    if (i === 0 || i === len - 1) return ch;
-    if (ch === ' ') return ' ';
-    return Math.random() < 0.5 ? '_' : ch;
-  }).join(' ');
+function buildQuestions(words) {
+  // 모든 단어에 대해 3가지 유형 골고루 배정 후 섞기
+  const qtypes = ['A','B','C'];
+  const questions = [];
+  words.forEach(w => {
+    // 예문 없으면 C 제외
+    const available = w.example ? qtypes : ['A','B'];
+    const qtype = available[Math.floor(Math.random() * available.length)];
+    questions.push({ ...w, qtype });
+  });
+  return shuffle(questions);
 }
 
 function startGame() {
   wordList = loadWords();
   if (wordList.length === 0) return;
 
-  const picked = shuffle(wordList).slice(0, Math.min(wordList.length, 5));
+  const questions = buildQuestions(wordList);
   gameState = {
-    words: picked,
+    questions,
     currentIndex: 0,
-    currentStage: 1,
     xpEarned: 0,
     results: [],
     answered: false,
-    bonusShown: false,
-    bonusDone: false,
   };
 
-  // 게임 화면 전환 (네비 없이 full)
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-game').classList.add('active');
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display=''; });
+  const gameEl = document.getElementById('screen-game');
+  gameEl.classList.add('active');
+  gameEl.style.display = 'flex';
   document.querySelector('.bottom-nav').style.display = 'none';
 
-  renderGameWord();
+  renderQuestion();
 }
 
-function renderGameWord() {
-  const w = gameState.words[gameState.currentIndex];
-  const total = gameState.words.length;
+function renderQuestion() {
+  const q = gameState.questions[gameState.currentIndex];
+  const total = gameState.questions.length;
   const idx = gameState.currentIndex;
 
-  // 상단 진행도
-  document.getElementById('game-prog-label').textContent = (idx + 1) + ' / ' + total + ' 단어';
+  // 진행도
+  document.getElementById('game-prog-label').textContent = (idx + 1) + ' / ' + total + ' 문제';
   document.getElementById('game-prog-fill').style.width = ((idx / total) * 100) + '%';
   document.getElementById('game-xp-earned').textContent = gameState.xpEarned;
 
-  // 메인 vs 보너스 영역
   document.getElementById('game-main-area').style.display = 'block';
-  document.getElementById('game-bonus-area').style.display = 'none';
   document.getElementById('game-result-area').style.display = 'none';
-
-  // 초기화
-  gameState.currentStage = 1;
   gameState.answered = false;
-  gameState.bonusShown = false;
-  gameState.bonusDone = false;
 
-  const answerInput = document.getElementById('game-answer');
-  answerInput.value = '';
-  answerInput.className = 'game-answer-input';
-  answerInput.disabled = false;
+  // 유형 배지
+  const info = QTYPE_INFO[q.qtype];
+  const badge = document.getElementById('q-type-badge');
+  badge.textContent = info.label;
+  badge.style.background = info.color;
+  badge.style.color = info.textColor;
 
+  // 피드백·다음 버튼 초기화
   document.getElementById('game-feedback').className = 'game-feedback';
   document.getElementById('game-next-btn').className = 'game-next-btn';
-  document.getElementById('next-hint-btn').disabled = false;
 
-  renderStage();
+  if (q.qtype === 'A') renderTypeA(q);
+  else if (q.qtype === 'B') renderTypeB(q);
+  else renderTypeC(q);
 }
 
-function renderStage() {
-  const w = gameState.words[gameState.currentIndex];
-  const stage = gameState.currentStage;
+// ── 유형 A: 뜻 보고 단어 쓰기 ──
+function renderTypeA(q) {
+  document.getElementById('hint-label').textContent = '뜻을 보고 영어 단어를 써봐요!';
+  document.getElementById('hint-content').textContent = q.meaning;
+  document.getElementById('hint-content').className = 'game-hint-text';
 
-  document.getElementById('stage-label').textContent = 'Stage ' + stage;
-  document.getElementById('stage-stars').textContent = STARS_BY_STAGE[stage];
-
-  if (stage === 1) {
-    document.getElementById('hint-label').textContent = '💡 뜻 힌트';
-    document.getElementById('hint-content').textContent = w.meaning;
-    document.getElementById('hint-content').className = 'game-hint-text';
-  } else if (stage === 2) {
-    document.getElementById('hint-label').textContent = '📖 예문 힌트';
-    const exText = w.example || '예문이 없어요. 단어를 추가할 때 예문도 넣어보세요!';
-    document.getElementById('hint-content').textContent = exText;
-    document.getElementById('hint-content').className = 'game-hint-text example';
-  } else if (stage === 3) {
-    document.getElementById('hint-label').textContent = '🔤 글자 힌트';
-    document.getElementById('hint-content').textContent = makeLetterHint(w.word);
-    document.getElementById('hint-content').className = 'game-hint-text game-hint-blank';
-  }
-
-  // 다음 힌트 버튼 상태
-  document.getElementById('next-hint-btn').disabled = stage >= 3;
-  document.getElementById('next-hint-btn').textContent = stage >= 3 ? '💡 힌트 없음' : '💡 다음 힌트';
+  showInputArea();
+  const inp = document.getElementById('game-answer');
+  inp.value = ''; inp.className = 'game-answer-input'; inp.disabled = false;
+  inp.placeholder = '영어 단어를 입력해봐요!';
+  setTimeout(() => { inp.focus(); inp.scrollIntoView({ behavior:'smooth', block:'center' }); }, 150);
 }
 
-function showNextHint() {
-  if (gameState.currentStage >= 3) return;
-  gameState.currentStage++;
-  // 입력 초기화
-  const ai = document.getElementById('game-answer');
-  ai.value = '';
-  ai.className = 'game-answer-input';
-  document.getElementById('game-feedback').className = 'game-feedback';
+function renderTypeB(q) {
+  document.getElementById('hint-label').textContent = '이 단어의 뜻은 무엇일까요?';
+  document.getElementById('hint-content').textContent = q.word;
+  document.getElementById('hint-content').className = 'game-hint-text';
+  document.getElementById('hint-content').style.fontSize = '28px';
+  document.getElementById('hint-content').style.fontWeight = '900';
+  document.getElementById('hint-content').style.color = 'var(--purple)';
 
-  // 힌트 사용 메시지
-  showFeedback('hint-used', '💡', '힌트 사용!', 'Stage ' + gameState.currentStage + ' 힌트로 넘어갔어요.');
-  setTimeout(() => {
-    document.getElementById('game-feedback').className = 'game-feedback';
-    renderStage();
-  }, 900);
+  showChoiceArea();
+
+  // 오답 보기 생성 (다른 단어들의 뜻에서 3개)
+  const others = shuffle(wordList.filter(w => w.word !== q.word)).slice(0, 3);
+  const choices = shuffle([
+    { text: q.meaning, correct: true },
+    ...others.map(o => ({ text: o.meaning, correct: false }))
+  ]);
+
+  const choicesEl = document.getElementById('q-choices');
+  choicesEl.innerHTML = '';
+  choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'width:100%;text-align:left;padding:12px 14px;border:2px solid var(--border);border-radius:12px;background:white;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;font-family:Nunito,sans-serif;line-height:1.5;transition:all .15s;display:flex;align-items:center;gap:10px';
+    btn.innerHTML = `<span style="width:24px;height:24px;border-radius:50%;background:var(--purple-light);color:var(--purple);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">${['①','②','③','④'][i]}</span><span>${c.text}</span>`;
+    btn.onclick = () => submitChoice(c.correct, c.text, q);
+    choicesEl.appendChild(btn);
+  });
 }
 
+// ── 유형 C: 예문 빈칸 채우기 ──
+function renderTypeC(q) {
+  document.getElementById('hint-label').textContent = '빈칸에 알맞은 단어를 써봐요!';
+  const exWithBlank = q.example || q.word + '을(를) 사용한 문장';
+  // 예문 + 해석 함께 표시
+  const hc = document.getElementById('hint-content');
+  hc.className = 'game-hint-text example';
+  hc.style.fontSize = ''; hc.style.fontWeight = ''; hc.style.color = '';
+  hc.innerHTML = `<div>${exWithBlank}</div>${q.translation ? `<div style="font-size:12px;color:#9CA3AF;font-weight:600;margin-top:6px;font-style:normal">🇰🇷 ${q.translation}</div>` : ''}`;
+
+  showInputArea();
+  const inp = document.getElementById('game-answer');
+  inp.value = ''; inp.className = 'game-answer-input'; inp.disabled = false;
+  inp.placeholder = '빈칸(_____) 에 들어갈 단어를 써봐요!';
+  setTimeout(() => { inp.focus(); inp.scrollIntoView({ behavior:'smooth', block:'center' }); }, 150);
+}
+
+function showInputArea() {
+  document.getElementById('q-input-area').style.display = 'block';
+  document.getElementById('q-choice-area').style.display = 'none';
+  document.getElementById('q-submit-row').style.display = 'flex';
+  // hint-content 스타일 초기화
+  const hc = document.getElementById('hint-content');
+  hc.style.fontSize = ''; hc.style.fontWeight = ''; hc.style.color = '';
+}
+
+function showChoiceArea() {
+  document.getElementById('q-input-area').style.display = 'none';
+  document.getElementById('q-choice-area').style.display = 'block';
+  document.getElementById('q-submit-row').style.display = 'none';
+}
+
+// ── 주관식 제출 ──
 function submitAnswer() {
   if (gameState.answered) return;
-  const w = gameState.words[gameState.currentIndex];
-  const answer = document.getElementById('game-answer').value.trim().toLowerCase();
-  const correct = w.word.toLowerCase();
+  const q = gameState.questions[gameState.currentIndex];
+  const raw = document.getElementById('game-answer').value.trim().toLowerCase();
+  if (!raw) return;
 
-  if (!answer) return;
-
-  const isCorrect = answer === correct;
-  const ai = document.getElementById('game-answer');
+  const correct = q.word.toLowerCase();
+  const isCorrect = raw === correct;
+  const inp = document.getElementById('game-answer');
 
   if (isCorrect) {
-    gameState.answered = true;
-    ai.className = 'game-answer-input correct';
-    ai.disabled = true;
-
-    const xpGain = XP_BY_STAGE[gameState.currentStage] || 10;
-    const stars = gameState.currentStage;
-    gameState.xpEarned += xpGain;
-    xp += xpGain; // 메인 XP에도 반영
-    document.getElementById('game-xp-earned').textContent = gameState.xpEarned;
-
-    const praiseList = PRAISE_MSGS[gameState.currentStage];
-    const praise = praiseList[Math.floor(Math.random() * praiseList.length)];
-    showFeedback('correct', '🎉', praise, '+' + xpGain + ' XP 획득! ' + STARS_BY_STAGE[gameState.currentStage]);
-
-    gameState.results.push({ word: w.word, stageCleared: gameState.currentStage, xp: xpGain, stars });
-    document.getElementById('next-hint-btn').disabled = true;
-
-    // 0.8초 후 보너스 or 다음 단어 버튼 표시
-    setTimeout(() => showBonusOrNext(w), 800);
-
+    inp.className = 'game-answer-input correct';
+    onCorrect(q);
   } else {
-    ai.className = 'game-answer-input wrong';
-    showFeedback('wrong', '🤔', '다시 해봐요!', '영어 단어를 정확히 입력해봐요');
-    setTimeout(() => {
-      ai.className = 'game-answer-input';
-      document.getElementById('game-feedback').className = 'game-feedback';
-    }, 900);
+    inp.className = 'game-answer-input wrong';
+    const praise = PRAISE_WRONG[Math.floor(Math.random() * PRAISE_WRONG.length)];
+    // 유형별로 정답 표시 내용 다르게
+    let answerHtml = '';
+    if (q.qtype === 'C') {
+      const filled = q.example ? q.example.replace(/_+/g, `<b style="color:#DC2626">${q.word}</b>`) : '';
+      answerHtml = `정답 단어: <span style="font-size:18px;color:#DC2626;font-weight:900">${q.word}</span>`
+        + (filled ? `<br><span style="font-size:12px;font-weight:700;color:#6B7280;font-style:italic">${filled}</span>` : '')
+        + (q.translation ? `<br><span style="font-size:12px;font-weight:700;color:#9CA3AF">🇰🇷 ${q.translation}</span>` : '');
+    } else {
+      answerHtml = `정답: <span style="font-size:18px;color:#DC2626;font-weight:900">${q.word}</span>`
+        + `<br><span style="font-size:12px;font-weight:700;color:#6B7280">${q.meaning}</span>`;
+    }
+    showFeedback('wrong', '🤔', praise, answerHtml);
+    onWrong(q);
+    setTimeout(() => { inp.className = 'game-answer-input'; }, 600);
+  }
+  inp.disabled = true;
+}
+
+// ── 객관식 제출 ──
+function submitChoice(isCorrect, choiceText, q) {
+  if (gameState.answered) return;
+
+  const btns = document.querySelectorAll('#q-choices button');
+  btns.forEach(btn => {
+    btn.disabled = true;
+    const span = btn.querySelectorAll('span')[1];
+    if (span && span.textContent === q.meaning) {
+      btn.style.background = '#F0FDF4'; btn.style.borderColor = '#86EFAC';
+    } else if (span && span.textContent === choiceText && !isCorrect) {
+      btn.style.background = '#FFF1F2'; btn.style.borderColor = '#FECACA';
+    }
+  });
+
+  if (isCorrect) onCorrect(q);
+  else {
+    const praise = PRAISE_WRONG[Math.floor(Math.random() * PRAISE_WRONG.length)];
+    showFeedback('wrong', '🤔', praise,
+      `정답: <span style="font-size:15px;color:#DC2626">${q.meaning}</span>${q.example ? `<br><span style="font-size:11px;font-weight:600;color:#9CA3AF;font-style:italic">${q.example}</span>` : ''}`);
+    onWrong(q);
   }
 }
 
-function showBonusOrNext(w) {
-  document.getElementById('game-feedback').className = 'game-feedback';
-  // 보너스 스테이지 (정답 맞춘 경우에만)
-  document.getElementById('game-main-area').style.display = 'none';
-  document.getElementById('game-bonus-area').style.display = 'block';
-
-  document.getElementById('bonus-word-display').textContent = w.word;
-  document.getElementById('bonus-desc').innerHTML = '<b>' + w.word + '</b> 를 써서<br>짧은 문장을 만들어봐요! ✍️';
-  document.getElementById('bonus-input').value = '';
-  document.getElementById('bonus-feedback').style.display = 'none';
-  document.getElementById('bonus-next-btn').style.display = 'none';
+function onCorrect(q) {
+  gameState.answered = true;
+  const praise = PRAISE_CORRECT[Math.floor(Math.random() * PRAISE_CORRECT.length)];
+  showFeedback('correct', '🎉', praise, '');
+  gameState.results.push({ word: q.word, qtype: q.qtype, correct: true });
+  document.getElementById('game-next-btn').className = 'game-next-btn show';
 }
 
-function submitBonus() {
-  const text = document.getElementById('bonus-input').value.trim();
-  if (!text) { alert('문장을 입력해주세요!'); return; }
-
-  const w = gameState.words[gameState.currentIndex];
-  const bonusXP = 15;
-  gameState.xpEarned += bonusXP;
-  xp += bonusXP;
-  document.getElementById('game-xp-earned').textContent = gameState.xpEarned;
-
-  // 마지막 result에 bonus 추가
-  if (gameState.results.length > 0) {
-    gameState.results[gameState.results.length - 1].bonusXP = bonusXP;
-    gameState.results[gameState.results.length - 1].bonusSentence = text;
-  }
-
-  const praiseList = PRAISE_MSGS.bonus;
-  const praise = praiseList[Math.floor(Math.random() * praiseList.length)];
-
-  const fb = document.getElementById('bonus-feedback');
-  document.getElementById('bf-emoji').textContent = '🌟';
-  document.getElementById('bf-msg').textContent = praise;
-  document.getElementById('bf-xp').textContent = '+' + bonusXP + ' XP 획득!';
-  fb.className = 'game-feedback correct show';
-  fb.style.display = 'block';
-
-  document.getElementById('bonus-input').disabled = true;
-  document.querySelector('.game-bonus-submit').disabled = true;
-  document.getElementById('bonus-next-btn').style.display = 'block';
-
-  saveState(); // XP 저장
-  updateProgress();
+function onWrong(q) {
+  gameState.answered = true;
+  gameState.results.push({ word: q.word, qtype: q.qtype, correct: false, xp: 0 });
+  document.getElementById('game-next-btn').className = 'game-next-btn show';
 }
 
 function skipWord() {
-  const w = gameState.words[gameState.currentIndex];
-  gameState.results.push({ word: w.word, stageCleared: 0, xp: 0, stars: 0, skipped: true });
+  if (gameState.answered) return;
+  const q = gameState.questions[gameState.currentIndex];
+  gameState.results.push({ word: q.word, qtype: q.qtype, correct: false, xp: 0, skipped: true });
   nextWord();
 }
 
 function nextWord() {
   gameState.currentIndex++;
-  if (gameState.currentIndex >= gameState.words.length) {
+  if (gameState.currentIndex >= gameState.questions.length) {
     showGameResult();
   } else {
-    renderGameWord();
+    renderQuestion();
   }
 }
 
 function showGameResult() {
   document.getElementById('game-main-area').style.display = 'none';
-  document.getElementById('game-bonus-area').style.display = 'none';
   document.getElementById('game-result-area').style.display = 'block';
-
-  // 진행도 100%
   document.getElementById('game-prog-fill').style.width = '100%';
-  document.getElementById('game-xp-earned').textContent = gameState.xpEarned;
 
-  const total = gameState.words.length;
-  const correct = gameState.results.filter(r => !r.skipped && r.stageCleared > 0).length;
-  const ratio = correct / total;
+  const total = gameState.results.length;
+  const correctCount = gameState.results.filter(r => r.correct).length;
+  const ratio = correctCount / total;
 
-  let emoji = '🎉', title = '게임 완료!', sub = '정말 잘했어! 🐸';
-  if (ratio === 1) { emoji = '🏆'; title = '퍼펙트!'; sub = '모든 단어를 맞췄어! 최고야! 👑'; }
-  else if (ratio >= 0.6) { emoji = '🌟'; title = '훌륭해!'; sub = '잘했어! 조금만 더! 💪'; }
-  else if (ratio > 0) { emoji = '😊'; title = '수고했어!'; sub = '틀린 단어는 다시 해봐요! 화이팅! 🔥'; }
+  let emoji = '🎉', title = '퀴즈 완료!', sub = '정말 잘했어! 🐸';
+  if (ratio === 1) { emoji = '🏆'; title = '퍼펙트!'; sub = '모든 문제를 맞췄어! 최고야! 👑'; }
+  else if (ratio >= 0.7) { emoji = '🌟'; title = '훌륭해!'; sub = '잘했어! 거의 다 맞췄어! 💪'; }
+  else if (ratio >= 0.4) { emoji = '😊'; title = '수고했어!'; sub = '틀린 단어는 다시 도전! 화이팅! 🔥'; }
   else { emoji = '🤔'; title = '다시 도전!'; sub = '괜찮아, 연습하면 돼! 💫'; }
 
   document.getElementById('result-emoji').textContent = emoji;
   document.getElementById('result-title').textContent = title;
   document.getElementById('result-sub').textContent = sub;
-  document.getElementById('result-total-xp').textContent = gameState.xpEarned;
 
-  // 세부 내역
   const breakdown = document.getElementById('result-breakdown');
-  breakdown.innerHTML = `
-    <div class="game-result-row"><span>✅ 정답</span><span>${correct} / ${total} 개</span></div>`;
+  breakdown.innerHTML = `<div class="game-result-row"><span>✅ 정답</span><span>${correctCount} / ${total} 개</span></div>`;
+
+  const qtypeLabels = { A:'뜻→단어', B:'단어→뜻', C:'빈칸채우기' };
   gameState.results.forEach(r => {
-    const starsStr = r.skipped ? '건너뜀' : STARS_BY_STAGE[r.stageCleared] || '—';
-    const bonusStr = r.bonusXP ? ' +보너스' : '';
-    breakdown.innerHTML += `<div class="game-result-row"><span>${r.word}</span><span>${r.skipped ? '—' : starsStr + ' +'+(r.xp+(r.bonusXP||0))+'XP'}</span></div>`;
+    const icon = r.correct ? '✅' : (r.skipped ? '⏭️' : '❌');
+    const qtl = qtypeLabels[r.qtype] || '';
+    breakdown.innerHTML += `<div class="game-result-row"><span>${icon} ${r.word} <span style="font-size:10px;color:var(--muted)">(${qtl})</span></span><span style="color:${r.correct?'var(--green)':'var(--muted)'}">${r.correct ? '정답' : (r.skipped ? '건너뜀' : '오답')}</span></div>`;
   });
-  breakdown.innerHTML += `<div class="game-result-row" style="margin-top:4px;padding-top:8px;border-top:2px solid var(--border)"><span style="font-weight:900">총 XP</span><span style="color:var(--purple);font-size:16px">+${gameState.xpEarned} XP</span></div>`;
 
   // 게임 기록 저장
   const wgs = loadWordGameState();
   const today = getTestDate();
   const dateStr = (today.getMonth()+1)+'월 '+today.getDate()+'일';
   wgs.totalGames++;
-  wgs.totalCorrect += correct;
-  wgs.totalXP += gameState.xpEarned;
-  wgs.history.push({ date: dateStr, correct, total, xp: gameState.xpEarned, stars: correct });
+  wgs.totalCorrect += correctCount;
+  wgs.history.push({ date: dateStr, correct: correctCount, total, stars: correctCount });
   saveWordGameState(wgs);
-  saveState();
-  updateProgress();
 }
 
 function exitGame() {
@@ -1590,11 +1605,17 @@ function exitGame() {
   showScreen('word');
 }
 
-function showFeedback(type, emoji, msg, xpMsg) {
+function showFeedback(type, emoji, msg, answer) {
   const fb = document.getElementById('game-feedback');
   document.getElementById('fb-emoji').textContent = emoji;
   document.getElementById('fb-msg').textContent = msg;
-  document.getElementById('fb-xp').textContent = xpMsg;
+  const ansEl = document.getElementById('fb-answer');
+  if (answer) {
+    ansEl.innerHTML = answer;
+    ansEl.style.display = 'block';
+  } else {
+    ansEl.style.display = 'none';
+  }
   fb.className = 'game-feedback ' + type + ' show';
 }
 
@@ -1758,6 +1779,37 @@ function updateLevelCard() {
   wordList = loadWords();
   calcReward(); updateProgress(); buildStreakCalendar();
 })();
+
+// 게임 입력창 포커스 시 문제 카드가 보이도록 스크롤
+function scrollToInput() {
+  setTimeout(() => {
+    const scrollArea = document.getElementById('game-scroll-area');
+    const card = document.getElementById('hint-content');
+    if (scrollArea && card) {
+      // 문제 카드 상단이 보이도록 스크롤
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+}
+
+// 모바일 키보드 올라올 때 게임 스크롤 영역 조정
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    const active = document.activeElement;
+    if (!active) return;
+    const isGameScreen = document.getElementById('screen-game').classList.contains('active');
+
+    if (isGameScreen && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+      // 키보드가 올라오면 문제 카드부터 보이도록
+      setTimeout(() => {
+        const card = document.querySelector('.game-word-card');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    } else if (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') {
+      setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+    }
+  });
+}
 </script>
 </body>
 </html>
