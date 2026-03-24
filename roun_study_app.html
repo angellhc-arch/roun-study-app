@@ -693,54 +693,17 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 
     <!-- 단어 추가 폼 -->
     <div class="word-form-card">
-      <div class="word-form-title">🤖 단어만 입력하면 AI가 채워줘요!</div>
-
-      <!-- 단어 입력 + 버튼 한 줄 -->
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-        <input class="word-input" id="wi-word" placeholder="영어 단어 입력 (예: generous)" autocomplete="off" style="flex:1;margin-bottom:0"
-          onkeydown="if(event.key==='Enter')generateWordInfo()">
-        <button id="ai-gen-btn" onclick="generateWordInfo()"
-          style="padding:10px 14px;background:linear-gradient(135deg,#7B5CF5,#A855F7);color:white;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;flex-shrink:0">
-          ✨ AI 생성
-        </button>
+      <div class="word-form-title">➕ 단어 추가하기</div>
+      <div class="word-input-group" style="margin-bottom:10px">
+        <div class="word-input-label" style="margin-bottom:6px">📋 아래 형식으로 붙여넣기</div>
+        <div style="background:#F8F7FF;border-radius:10px;padding:10px 12px;font-size:11px;font-weight:700;color:#7B5CF5;margin-bottom:8px;line-height:1.8;border:1.5px dashed #C4B5FD">
+          단어: exercise<br>뜻: 운동, 연습하다<br>예문: I exercise every morning.
+        </div>
+        <textarea id="wi-bulk" class="word-input"
+          placeholder="단어: exercise&#10;뜻: 운동, 연습하다&#10;예문: I exercise every morning."
+          style="min-height:110px;resize:vertical;line-height:1.7;font-size:13px;padding:10px 12px"></textarea>
       </div>
-
-      <!-- AI 생성 결과 미리보기 (처음엔 숨김) -->
-      <div id="ai-preview" style="display:none;background:#F8F7FF;border:1.5px solid #C4B5FD;border-radius:12px;padding:13px 14px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:12px;font-weight:900;color:var(--purple)">✨ AI가 생성했어요!</div>
-          <button onclick="clearPreview()" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer">✕</button>
-        </div>
-
-        <!-- 뜻 -->
-        <div style="margin-bottom:12px">
-          <div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px">🇰🇷 뜻</div>
-          <div id="ai-meaning-display" style="font-size:14px;font-weight:800;color:var(--text);background:white;border-radius:8px;padding:8px 10px;border:1.5px solid var(--border)"></div>
-          <input class="word-input" id="wi-meaning" placeholder="뜻 수정..." style="margin-top:5px;font-size:12px;padding:7px 10px;display:none">
-          <button onclick="toggleMeaningEdit()" id="meaning-edit-btn" style="margin-top:4px;background:none;border:none;font-size:11px;font-weight:700;color:var(--purple);cursor:pointer;padding:0">✏️ 직접 수정</button>
-        </div>
-
-        <!-- 예문 선택 -->
-        <div style="margin-bottom:10px">
-          <div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:6px">📖 예문 선택 (하나를 골라요!)</div>
-          <div id="ai-example-choices" style="display:flex;flex-direction:column;gap:7px"></div>
-        </div>
-
-        <!-- 선택된 예문 표시 -->
-        <div id="selected-example-wrap" style="display:none;margin-bottom:8px">
-          <div style="font-size:10px;font-weight:800;color:var(--green);margin-bottom:4px">✅ 선택된 예문</div>
-          <div id="selected-example-display" style="font-size:13px;font-weight:700;color:#059669;background:#F0FDF4;border-radius:8px;padding:8px 10px;border:1.5px solid #86EFAC;font-style:italic"></div>
-        </div>
-      </div>
-
-      <!-- 로딩 상태 -->
-      <div id="ai-loading" style="display:none;text-align:center;padding:16px;background:#F8F7FF;border-radius:12px;margin-bottom:10px">
-        <div style="font-size:24px;margin-bottom:6px;animation:spin 1s linear infinite;display:inline-block">🤖</div>
-        <div style="font-size:13px;font-weight:800;color:var(--purple)">AI가 뜻과 예문을 만드는 중...</div>
-        <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:3px">잠깐만 기다려줘요!</div>
-      </div>
-
-      <button class="word-add-btn" id="wi-add-btn" onclick="addWord()" style="display:none">✅ 단어장에 추가!</button>
+      <button class="word-add-btn" onclick="addWord()">✅ 단어장에 추가!</button>
     </div>
 
     <!-- 샘플 단어 -->
@@ -1223,162 +1186,36 @@ function addSampleWords() {
 }
 
 // AI가 생성한 뜻/예문 임시 저장
-let aiGeneratedMeaning = '';
-let aiGeneratedExample = '';  // 최종 선택된 예문
-let aiExamples = [];          // AI가 생성한 예문 3개
-let meaningEditMode = false;
-
-function toggleMeaningEdit() {
-  meaningEditMode = !meaningEditMode;
-  const input = document.getElementById('wi-meaning');
-  const display = document.getElementById('ai-meaning-display');
-  const btn = document.getElementById('meaning-edit-btn');
-  if (meaningEditMode) {
-    input.style.display = 'block';
-    input.value = aiGeneratedMeaning;
-    display.style.display = 'none';
-    btn.textContent = '✓ 완료';
-  } else {
-    const edited = input.value.trim();
-    if (edited) aiGeneratedMeaning = edited;
-    display.textContent = aiGeneratedMeaning;
-    display.style.display = 'block';
-    input.style.display = 'none';
-    btn.textContent = '✏️ 직접 수정';
-  }
-}
-
-function selectExample(idx) {
-  aiGeneratedExample = aiExamples[idx];
-  // 선택 버튼 하이라이트
-  document.querySelectorAll('.ex-choice-btn').forEach((btn, i) => {
-    if (i === idx) {
-      btn.style.background = '#EDE9FE';
-      btn.style.borderColor = '#7B5CF5';
-      btn.style.color = '#5B21B6';
-    } else {
-      btn.style.background = 'white';
-      btn.style.borderColor = '#E5E7EB';
-      btn.style.color = '#374151';
-    }
-  });
-  // 선택된 예문 표시
-  document.getElementById('selected-example-display').textContent = aiGeneratedExample;
-  document.getElementById('selected-example-wrap').style.display = 'block';
-  document.getElementById('wi-add-btn').style.display = 'block';
-}
-
-async function generateWordInfo() {
-  const word = document.getElementById('wi-word').value.trim();
-  if (!word) { alert('영어 단어를 먼저 입력해주세요!'); return; }
-
-  document.getElementById('ai-loading').style.display = 'block';
-  document.getElementById('ai-preview').style.display = 'none';
-  document.getElementById('wi-add-btn').style.display = 'none';
-  document.getElementById('ai-gen-btn').disabled = true;
-  meaningEditMode = false;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: `영어 단어 "${word}"에 대해 초등~중등 수준으로 아래 JSON 형식으로만 답해줘. JSON 외 다른 텍스트는 절대 출력하지 마.
-
-{
-  "meaning": "한국어 뜻 (2~4가지, 쉬운 단어로, 예: 관대한, 너그러운, 풍부한)",
-  "examples": [
-    "예문1 (_____ 빈칸 포함, 일상적인 짧은 문장)",
-    "예문2 (_____ 빈칸 포함, 학교/공부 관련 문장)",
-    "예문3 (_____ 빈칸 포함, 감정/성격 관련 문장)"
-  ]
-}
-
-규칙:
-- meaning: 핵심 뜻 2~4가지, 쉬운 한국어
-- examples: 3개 각각 _____ 빈칸 필수, 서로 다른 맥락, 10단어 이내의 짧은 문장
-- 순수 JSON만 출력`
-        }]
-      })
-    });
-
-    const data = await response.json();
-    const text = data.content?.[0]?.text || '';
-    const cleaned = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(cleaned);
-
-    aiGeneratedMeaning = parsed.meaning || '';
-    aiExamples = (parsed.examples || []).slice(0, 3);
-    aiGeneratedExample = '';
-
-    // 뜻 표시
-    const meaningDisplay = document.getElementById('ai-meaning-display');
-    meaningDisplay.textContent = aiGeneratedMeaning;
-    meaningDisplay.style.display = 'block';
-    document.getElementById('wi-meaning').style.display = 'none';
-    document.getElementById('meaning-edit-btn').textContent = '✏️ 직접 수정';
-
-    // 예문 선택 버튼 렌더
-    const choicesEl = document.getElementById('ai-example-choices');
-    choicesEl.innerHTML = '';
-    aiExamples.forEach((ex, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'ex-choice-btn';
-      btn.style.cssText = 'width:100%;text-align:left;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:10px;background:white;font-size:12px;font-weight:700;color:#374151;cursor:pointer;font-family:Nunito,sans-serif;line-height:1.5;transition:all .15s;display:flex;align-items:flex-start;gap:8px';
-      btn.innerHTML = `<span style="font-size:14px;flex-shrink:0">${['①','②','③'][i]}</span><span style="font-style:italic">${ex}</span>`;
-      btn.onclick = () => selectExample(i);
-      choicesEl.appendChild(btn);
-    });
-
-    // 선택 초기화
-    document.getElementById('selected-example-wrap').style.display = 'none';
-    document.getElementById('wi-add-btn').style.display = 'none';
-
-    document.getElementById('ai-loading').style.display = 'none';
-    document.getElementById('ai-preview').style.display = 'block';
-
-  } catch (err) {
-    document.getElementById('ai-loading').style.display = 'none';
-    alert('AI 생성 중 오류가 났어요 😢\n잠시 후 다시 시도해보세요!');
-  } finally {
-    document.getElementById('ai-gen-btn').disabled = false;
-  }
-}
-
-function clearPreview() {
-  document.getElementById('ai-preview').style.display = 'none';
-  document.getElementById('wi-add-btn').style.display = 'none';
-  document.getElementById('wi-word').value = '';
-  document.getElementById('wi-meaning').value = '';
-  aiGeneratedMeaning = '';
-  aiGeneratedExample = '';
-  aiExamples = [];
-  meaningEditMode = false;
-}
-
 function addWord() {
-  const word = document.getElementById('wi-word').value.trim();
-  const meaning = (meaningEditMode
-    ? document.getElementById('wi-meaning').value.trim()
-    : aiGeneratedMeaning) || '';
-  const example = aiGeneratedExample;
-  if (!word || !meaning) { alert('단어와 뜻은 꼭 있어야 해요!'); return; }
-  if (!example) { alert('예문을 하나 선택해주세요! 📖'); return; }
+  const raw = (document.getElementById('wi-bulk').value || '').trim();
+  if (!raw) { alert('단어 정보를 입력해주세요!'); return; }
+
+  // 파싱: 각 줄에서 "키: 값" 추출 (대소문자·공백 유연하게)
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  let word = '', meaning = '', example = '';
+
+  lines.forEach(line => {
+    const colon = line.indexOf(':');
+    if (colon === -1) return;
+    const key = line.slice(0, colon).trim().toLowerCase();
+    const val = line.slice(colon + 1).trim();
+    if (['단어','word'].includes(key))         word    = val;
+    else if (['뜻','의미','meaning'].includes(key)) meaning = val;
+    else if (['예문','example'].includes(key)) example = val;
+  });
+
+  if (!word)    { alert('단어를 찾을 수 없어요!\n"단어: ..." 형식으로 입력해주세요.'); return; }
+  if (!meaning) { alert('뜻을 찾을 수 없어요!\n"뜻: ..." 형식으로 입력해주세요.'); return; }
+  if (!example) { alert('예문을 찾을 수 없어요!\n"예문: ..." 형식으로 입력해주세요.'); return; }
+
+  // 중복 체크
+  if (wordList.find(w => w.word.toLowerCase() === word.toLowerCase())) {
+    alert(`"${word}" 은(는) 이미 단어장에 있어요!`); return;
+  }
+
   wordList.push({ id: Date.now(), word, meaning, example });
   saveWords(wordList);
-  // 초기화
-  document.getElementById('wi-word').value = '';
-  document.getElementById('wi-meaning').value = '';
-  document.getElementById('ai-preview').style.display = 'none';
-  document.getElementById('wi-add-btn').style.display = 'none';
-  aiGeneratedMeaning = '';
-  aiGeneratedExample = '';
-  aiExamples = [];
-  meaningEditMode = false;
+  document.getElementById('wi-bulk').value = '';
   renderWordScreen();
 }
 
