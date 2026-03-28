@@ -1758,25 +1758,111 @@ function onPastDateChange() {
   // 체크리스트 렌더
   const list = document.getElementById('past-task-list');
   list.innerHTML = '';
+
+  // read2 현재 라벨/서브 (홈화면에서 변경됐을 수 있음)
+  let read2Label = document.getElementById('name-read2')?.textContent || '📖 독서 2회';
+  let read2Sub   = document.getElementById('sub-read2')?.textContent  || '소설/과학/역사/사회/철학 · 30분';
+  let flexLabel  = document.getElementById('name-flex')?.textContent  || '📝 국어/영상편집';
+
   ALL_TASKS.forEach(t => {
     if (isWE && t.weekendHide) return;
     const checked = existingCompleted.includes(t.key);
     const card = document.createElement('div');
     card.className = 'task-card';
     if (checked) card.style.borderColor = 'var(--green)';
-    card.innerHTML = `
-      <div class="task-row" onclick="togglePastTask('${t.key}', this)">
-        <div class="task-check ${checked ? 'done' : ''}" id="past-check-${t.key}">✓</div>
-        <div class="task-info">
-          <div class="task-name ${checked ? 'done' : ''}" id="past-name-${t.key}">${t.label}</div>
-          <div class="task-sub">${t.sub}</div>
+
+    // read2: 변경 버튼 + 패널
+    if (t.key === 'read2') {
+      card.innerHTML = `
+        <div class="task-row" onclick="togglePastTask('read2', this)">
+          <div class="task-check ${checked?'done':''}" id="past-check-read2">✓</div>
+          <div class="task-info">
+            <div class="flex-name-row">
+              <div class="task-name ${checked?'done':''}" id="past-name-read2">${read2Label}</div>
+              <button class="edit-btn" onclick="toggleEditPanel('past-read2-edit',event)">변경</button>
+            </div>
+            <div class="task-sub" id="past-sub-read2">${read2Sub}</div>
+          </div>
         </div>
-      </div>`;
+        <div class="edit-panel" id="past-read2-edit">
+          <div class="edit-panel-label">항목 선택</div>
+          <div class="subj-pills">
+            <button class="spill ${read2Label.includes('독서 2회')?'on':''}" onclick="setPastRead2('📖 독서 2회','소설/과학/역사/사회/철학 · 30분',this)">독서 2회</button>
+            <button class="spill ${read2Label.includes('낮잠')?'on':''}" onclick="setPastRead2('😴 낮잠','낮잠 = 독서 1회 인정',this)">낮잠으로 대체</button>
+          </div>
+        </div>`;
+
+    // flex: 변경 버튼 + 패널
+    } else if (t.key === 'flex') {
+      card.innerHTML = `
+        <div class="task-row" onclick="togglePastTask('flex', this)">
+          <div class="task-check ${checked?'done':''}" id="past-check-flex">✓</div>
+          <div class="task-info">
+            <div class="flex-name-row">
+              <div class="task-name ${checked?'done':''}" id="past-name-flex">${flexLabel}</div>
+              <button class="edit-btn" onclick="toggleEditPanel('past-flex-edit',event)">변경</button>
+            </div>
+            <div class="task-sub">40분</div>
+          </div>
+        </div>
+        <div class="edit-panel" id="past-flex-edit">
+          <div class="edit-panel-label">항목 이름 변경</div>
+          <div class="subj-pills">
+            <button class="spill ${flexLabel.includes('국어 / 영상편집')||flexLabel.includes('국어/영상편집')?'on':''}" onclick="setPastFlexName('📝 국어 / 영상편집',this)">국어 / 영상편집</button>
+            <button class="spill ${flexLabel.includes('국어')&&!flexLabel.includes('영상')?'on':''}" onclick="setPastFlexName('📝 국어',this)">국어</button>
+            <button class="spill ${flexLabel.includes('영상편집')&&!flexLabel.includes('국어')?'on':''}" onclick="setPastFlexName('🎬 영상편집',this)">영상편집</button>
+            <button class="spill ${flexLabel.includes('예습복습')?'on':''}" onclick="setPastFlexName('📖 예습복습',this)">예습복습</button>
+            <button class="spill ${flexLabel.includes('수학 추가')?'on':''}" onclick="setPastFlexName('📐 수학 추가',this)">수학 추가</button>
+          </div>
+          <input class="custom-input show" placeholder="직접 입력 후 엔터..."
+            onkeydown="if(event.key==='Enter'&&this.value.trim()){setPastFlexName(this.value.trim(),null);this.value='';}">
+        </div>`;
+
+    // 일반 항목
+    } else {
+      const label = t.key === 'read2' ? read2Label : t.label;
+      const sub   = t.key === 'read2' ? read2Sub   : t.sub;
+      card.innerHTML = `
+        <div class="task-row" onclick="togglePastTask('${t.key}', this)">
+          <div class="task-check ${checked?'done':''}" id="past-check-${t.key}">✓</div>
+          <div class="task-info">
+            <div class="task-name ${checked?'done':''}" id="past-name-${t.key}">${label}</div>
+            <div class="task-sub">${sub}</div>
+          </div>
+        </div>`;
+    }
     list.appendChild(card);
   });
 
   renderPastExtraList();
   calcPastReward();
+}
+
+function setPastRead2(name, sub, btn) {
+  document.getElementById('past-name-read2').textContent = name;
+  document.getElementById('past-sub-read2').textContent  = sub;
+  if (btn) {
+    btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+  }
+  document.getElementById('past-read2-edit').classList.remove('show');
+  // 홈 화면도 동기화
+  if (document.getElementById('name-read2')) {
+    setRead2(name, sub, null);
+  }
+}
+
+function setPastFlexName(name, btn) {
+  document.getElementById('past-name-flex').textContent = name;
+  if (btn) {
+    btn.closest('.subj-pills').querySelectorAll('.spill').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('past-flex-edit').classList.remove('show');
+  }
+  // 홈 화면도 동기화
+  if (document.getElementById('name-flex')) {
+    document.getElementById('name-flex').textContent = name;
+  }
 }
 
 function togglePastTask(key, row) {
