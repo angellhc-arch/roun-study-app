@@ -936,6 +936,11 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
   <div class="month-tab-wrap"><div class="month-tabs" id="month-tabs"></div></div>
   <div class="month-summary" id="month-summary"></div>
+  <!-- 이전 달 요약 -->
+  <div id="prev-month-summary" style="display:none;margin:8px 16px 0;background:var(--card);border-radius:var(--radius);border:1.5px solid #FDE68A;padding:12px 14px">
+    <div style="font-size:11px;font-weight:800;color:#92400E;margin-bottom:8px" id="prev-month-label">⬅️ 지난달 요약</div>
+    <div style="display:flex;gap:0" id="prev-month-stats"></div>
+  </div>
   <div class="hist-list" id="hist-list"></div>
   <div class="popup-overlay" id="day-detail-overlay" onclick="closeDayDetail(event)">
     <div class="popup" style="text-align:left;padding:20px 20px 34px">
@@ -964,31 +969,54 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   <div class="nav-item" id="nav-badge" onclick="showScreen('badge')"><div class="nav-icon">🏅</div><div class="nav-label">뱃지</div></div>
 </div>
 
-<!-- 지난 날 입력 바텀시트 -->
-<div class="popup-overlay" id="past-entry-overlay" onclick="if(event.target===this)closePastEntry()">
-  <div class="popup" style="text-align:left;padding:20px 20px 34px;max-height:85vh;overflow-y:auto">
-
-    <!-- 헤더 -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-size:16px;font-weight:900;color:var(--text)">📅 다른 날 학습 입력</div>
-      <button onclick="closePastEntry()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer">✕</button>
+<!-- ══════════════════ PAST ENTRY SCREEN ══════════════════ -->
+<div class="screen" id="screen-past" style="padding-bottom:80px">
+  <!-- 헤더 -->
+  <div class="header" style="padding-bottom:16px">
+    <div class="header-top">
+      <div>
+        <div class="greeting" id="past-greeting">지난 날 기록하기</div>
+        <div class="username" id="past-title-date">날짜를 선택해주세요</div>
+      </div>
+      <button onclick="closePastEntry()" style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);border-radius:20px;padding:7px 14px;color:white;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif">✕ 닫기</button>
     </div>
-
     <!-- 날짜 선택 -->
-    <div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;letter-spacing:.04em">날짜 선택</div>
+    <div style="margin-top:12px">
       <input type="date" id="past-date-input"
-        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;color:var(--text)"
+        style="width:100%;padding:9px 12px;border:1.5px solid rgba(255,255,255,.4);border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;color:var(--text);background:white"
         onchange="onPastDateChange()">
     </div>
+  </div>
 
-    <!-- 항목 체크리스트 -->
-    <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.04em">완료한 항목 선택</div>
-    <div id="past-task-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
+  <!-- 보상 요약 -->
+  <div class="reward-banner" style="margin-top:12px">
+    <div class="reward-top-row">
+      <div class="reward-today-block">
+        <div class="reward-icon">💰</div>
+        <div>
+          <div class="reward-label-sm">해당 날 보상</div>
+          <div class="reward-amount-sm" id="past-reward-display">0원</div>
+        </div>
+      </div>
+      <div class="today-status-txt" id="past-sessions-display">학습 0/7회&#10;기본 0원</div>
+    </div>
+  </div>
 
-    <!-- 저장 버튼 -->
+  <!-- 체크리스트 -->
+  <div class="section">
+    <div class="section-title">✅ 완료한 항목</div>
+    <div id="past-task-list"></div>
+
+    <!-- 추가 공부 -->
+    <div class="section-title" style="margin-top:6px">⚡ 추가 공부 <span style="font-weight:600;color:var(--gold)">(회당 +2,000원)</span></div>
+    <div id="past-extra-list"></div>
+    <button class="add-extra-btn" onclick="addPastExtra()">+ 추가 공부 입력하기</button>
+  </div>
+
+  <!-- 저장 버튼 (하단 고정) -->
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 16px 20px;background:white;border-top:1.5px solid var(--border)">
     <button onclick="savePastEntry()"
-      style="width:100%;padding:13px;background:linear-gradient(135deg,#7B5CF5,#A855F7);color:white;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif">
+      style="width:100%;padding:14px;background:linear-gradient(135deg,#7B5CF5,#A855F7);color:white;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif">
       ✅ 저장하기
     </button>
   </div>
@@ -1174,6 +1202,28 @@ function buildMonthTabs(){const tabs=document.getElementById('month-tabs');const
 function renderHistory(){const[y,mo]=selectedMonth.split('-').map(Number);const allData=getHistoryData();const now=getTestDate();const isCurrentMonth=y===now.getFullYear()&&mo===now.getMonth()+1;const daysInMonth=new Date(y,mo,0).getDate();const lastDay=isCurrentMonth?now.getDate():daysInMonth;const filtered=[];for(let dn=1;dn<=lastDay;dn++){const date=new Date(y,mo-1,dn);const key=y+'-'+String(mo).padStart(2,'0')+'-'+String(dn).padStart(2,'0');const rec=allData.find(d=>d.key===key);if(rec)filtered.push(rec);else filtered.push({key,date,isWE:date.getDay()===0||date.getDay()===6,completed:[],sessions:0,reward:0,subjects:[],status:'empty'});}
 const totalReward=filtered.reduce((a,b)=>a+b.reward,0);const completeDays=filtered.filter(d=>d.status==='complete').length;const totalSessions=filtered.reduce((a,b)=>a+b.sessions,0);
 document.getElementById('month-summary').innerHTML=`<div class="msm-item"><div class="msm-val">${totalReward.toLocaleString()}원</div><div class="msm-label">이달 보상</div></div><div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div><div class="msm-item"><div class="msm-val">${totalSessions}회</div><div class="msm-label">총 학습</div></div>`;
+
+// 지난달 요약
+const prevMo = mo === 1 ? 12 : mo - 1;
+const prevY  = mo === 1 ? y - 1 : y;
+const prevKeys = allData.filter(d => d.date.getFullYear()===prevY && d.date.getMonth()+1===prevMo);
+const prevSummaryEl = document.getElementById('prev-month-summary');
+const prevLabelEl   = document.getElementById('prev-month-label');
+const prevStatsEl   = document.getElementById('prev-month-stats');
+if (prevKeys.length > 0) {
+  const pReward   = prevKeys.reduce((a,b)=>a+b.reward,0);
+  const pComplete = prevKeys.filter(d=>d.status==='complete').length;
+  const pSessions = prevKeys.reduce((a,b)=>a+b.sessions,0);
+  prevLabelEl.textContent = '⬅️ ' + prevY + '년 ' + prevMo + '월';
+  prevStatsEl.innerHTML = `
+    <div class="msm-item"><div class="msm-val" style="color:var(--gold)">${pReward.toLocaleString()}원</div><div class="msm-label">지난달 보상</div></div>
+    <div class="msm-item"><div class="msm-val" style="color:var(--purple)">${pComplete}일</div><div class="msm-label">완료일</div></div>
+    <div class="msm-item"><div class="msm-val" style="color:var(--green)">${pSessions}회</div><div class="msm-label">총 학습</div></div>`;
+  prevSummaryEl.style.display = 'block';
+} else {
+  prevSummaryEl.style.display = 'none';
+}
+
 const list=document.getElementById('hist-list');list.innerHTML='';[...filtered].reverse().forEach(d=>{const dow=['일','월','화','수','목','금','토'][d.date.getDay()];const dn=d.date.getDate();const isToday=d.date.toDateString()===getTestDate().toDateString();const card=document.createElement('div');card.className='hist-day-card '+d.status;const statusLabel=d.status==='complete'?'모두 완료 🎉':d.status==='partial'?'일부 완료':'기록 없음';const subjChips=d.subjects.map(s=>`<span class="hist-schip">${s}</span>`).join('');card.innerHTML=`<div class="hist-day-row" onclick="openDayDetail('${d.key}')"><div class="hist-day-dot ${d.status}"><div class="hist-dot-day ${d.status}">${isToday?'오늘':dow}</div><div class="hist-dot-num ${d.status}">${dn}</div></div><div class="hist-day-info"><div class="hist-day-title">${mo}월 ${dn}일 (${dow})</div><div class="hist-day-sub">${statusLabel} · 학습 ${d.sessions}회</div></div><div class="hist-day-right"><div class="hist-reward${d.reward===0?' zero':''}">${d.reward>0?d.reward.toLocaleString()+'원':'—'}</div><div class="hist-sessions">${d.completed.length}/${Object.keys(TASK_NAMES).length}항목</div></div></div>${d.subjects.length>0?`<div class="hist-subj-chips">${subjChips}</div>`:''}`;list.appendChild(card);});}
 
 function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';document.getElementById('detail-reward').textContent=d?(d.reward>0?d.reward.toLocaleString()+'원':'0원'):'0원';const items=document.getElementById('detail-items');items.innerHTML='';Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
@@ -1199,6 +1249,12 @@ function showScreen(name){
   if(name==='stats')updateStatsScreen();
   if(name==='word')renderWordScreen();
   if(name==='badge'){updateLevelCard();renderBadges();}
+  // past 화면은 네비 숨김
+  if(name==='past'){
+    document.querySelector('.bottom-nav').style.display='none';
+  } else {
+    document.querySelector('.bottom-nav').style.display='flex';
+  }
 }
 
 function applyDateSettings(){const d=getTestDate();const we=isWeekendDate(d);const dow=['일','월','화','수','목','금','토'][d.getDay()];const dateStr=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+dow+')';if(we){document.getElementById('day-info').textContent='🏖️ 주말 ('+dateStr+') — 글쓰기 10~15줄';document.getElementById('write-sub').textContent='책소개→내용요약→인상깊은부분→나의생각→결론 (10~15줄)';const wh=document.getElementById('write-reward-hint');if(wh)wh.textContent='주말 +2,000원 🎉';const cEng2=document.getElementById('card-eng2');const cMath2=document.getElementById('card-math2');const cExercise=document.getElementById('card-exercise');if(cEng2)cEng2.style.display='none';if(cMath2)cMath2.style.display='none';if(cExercise)cExercise.style.display='none';tasks.eng2.sessions=0;tasks.math2.sessions=0;tasks.exercise.sessions=0;}else{document.getElementById('day-info').textContent='📅 평일 ('+dateStr+') — 글쓰기 5~6줄';}}
@@ -1639,130 +1695,212 @@ function showGameResult() {
 }
 
 // ════════════════════════════════════════
-//  지난 날 학습 입력
+//  지난 날 학습 입력 (풀스크린)
 // ════════════════════════════════════════
 const ALL_TASKS = [
-  { key:'write',    label:'✏️ 글쓰기',        sessions:0 },
-  { key:'miracle',  label:'🌅 미라클 모닝',   sessions:0 },
-  { key:'shower',   label:'🚿 아침 샤워',     sessions:0 },
-  { key:'read1',    label:'📖 독서 1회',       sessions:1 },
-  { key:'read2',    label:'📖 독서 2회',       sessions:1 },
-  { key:'eng1',     label:'🎧 영어 1회',       sessions:1 },
-  { key:'eng2',     label:'🎧 영어 2회',       sessions:1 },
-  { key:'math1',    label:'📐 수학 1회',       sessions:1 },
-  { key:'math2',    label:'📐 수학 2회',       sessions:1 },
-  { key:'flex',     label:'📝 국어/영상편집',  sessions:1 },
-  { key:'exercise', label:'🏃 운동',           sessions:1 },
+  { key:'write',    label:'✏️ 글쓰기',        sub:'평일 +1,000원 / 주말 +2,000원' },
+  { key:'miracle',  label:'🌅 미라클 모닝',   sub:'6:15 이전 기상' },
+  { key:'shower',   label:'🚿 아침 샤워',     sub:'평일 +1,000원 / 주말 +2,000원' },
+  { key:'read1',    label:'📖 독서 1회',       sub:'30분' },
+  { key:'read2',    label:'📖 독서 2회',       sub:'30분' },
+  { key:'eng1',     label:'🎧 영어 1회',       sub:'40분' },
+  { key:'eng2',     label:'🎧 영어 2회',       sub:'40분', weekendHide:true },
+  { key:'math1',    label:'📐 수학 1회',       sub:'40분' },
+  { key:'math2',    label:'📐 수학 2회',       sub:'40분', weekendHide:true },
+  { key:'flex',     label:'📝 국어/영상편집',  sub:'40분' },
+  { key:'exercise', label:'🏃 운동',           sub:'선택 · 공부 1회 인정', weekendHide:true },
 ];
 
+let pastExtraItems = [];
+let pastExtraCounter = 0;
+
 function openPastEntry() {
-  // 날짜 기본값: 어제
+  pastExtraItems = [];
+  pastExtraCounter = 0;
+  // 어제 날짜 기본값
   const yest = new Date(getTestDate());
   yest.setDate(yest.getDate() - 1);
-  const yyyy = yest.getFullYear();
-  const mm   = String(yest.getMonth() + 1).padStart(2, '0');
-  const dd   = String(yest.getDate()).padStart(2, '0');
-  document.getElementById('past-date-input').value = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('past-date-input').value =
+    yest.getFullYear() + '-' + String(yest.getMonth()+1).padStart(2,'0') + '-' + String(yest.getDate()).padStart(2,'0');
+  showScreen('past');
   onPastDateChange();
-  document.getElementById('past-entry-overlay').classList.add('show');
 }
 
 function closePastEntry() {
-  document.getElementById('past-entry-overlay').classList.remove('show');
+  showScreen('home');
 }
 
 function onPastDateChange() {
   const dateVal = document.getElementById('past-date-input').value;
   if (!dateVal) return;
 
-  // 최대 날짜: 어제
-  const yest = new Date(getTestDate()); yest.setDate(yest.getDate() - 1);
-  if (new Date(dateVal) > yest) {
+  const d = new Date(dateVal + 'T00:00:00');
+  const today = getTestDate();
+  today.setHours(0,0,0,0);
+  if (d >= today) {
     alert('오늘 이전 날짜만 선택할 수 있어요!');
     return;
   }
 
-  // 기존 기록 불러오기
-  const state = loadState();
-  const history = state?.history || {};
-  const existing = history[dateVal];
-  const existingCompleted = existing?.completed || [];
-
-  // 주말 여부
-  const d = new Date(dateVal);
+  const dow = ['일','월','화','수','목','금','토'][d.getDay()];
   const isWE = d.getDay() === 0 || d.getDay() === 6;
+  document.getElementById('past-greeting').textContent = isWE ? '🏖️ 주말 기록' : '📅 평일 기록';
+  document.getElementById('past-title-date').textContent =
+    (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + dow + ')';
+
+  // 기존 기록 복원
+  const state = loadState();
+  const existing = state?.history?.[dateVal];
+  const existingCompleted = existing?.completed || [];
+  pastExtraItems = (existing?.extraItems || []).map(e => ({...e}));
+  pastExtraCounter = pastExtraItems.length ? Math.max(...pastExtraItems.map(e=>e.id)) : 0;
 
   // 체크리스트 렌더
   const list = document.getElementById('past-task-list');
   list.innerHTML = '';
   ALL_TASKS.forEach(t => {
-    // 주말엔 영어2·수학2 제외
-    if (isWE && (t.key === 'eng2' || t.key === 'math2')) return;
+    if (isWE && t.weekendHide) return;
     const checked = existingCompleted.includes(t.key);
-    const row = document.createElement('label');
-    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s';
-    row.innerHTML = `
-      <input type="checkbox" data-key="${t.key}" ${checked ? 'checked' : ''}
-        style="width:18px;height:18px;accent-color:var(--purple);flex-shrink:0;cursor:pointer">
-      <span style="font-size:13px;font-weight:700;color:var(--text)">${t.label}</span>`;
-    row.querySelector('input').onchange = (e) => {
-      row.style.borderColor = e.target.checked ? 'var(--purple)' : 'var(--border)';
-      row.style.background  = e.target.checked ? 'var(--purple-light)' : 'white';
-    };
-    if (checked) {
-      row.style.borderColor = 'var(--purple)';
-      row.style.background  = 'var(--purple-light)';
-    }
-    list.appendChild(row);
+    const card = document.createElement('div');
+    card.className = 'task-card';
+    if (checked) card.style.borderColor = 'var(--green)';
+    card.innerHTML = `
+      <div class="task-row" onclick="togglePastTask('${t.key}', this)">
+        <div class="task-check ${checked ? 'done' : ''}" id="past-check-${t.key}">✓</div>
+        <div class="task-info">
+          <div class="task-name ${checked ? 'done' : ''}" id="past-name-${t.key}">${t.label}</div>
+          <div class="task-sub">${t.sub}</div>
+        </div>
+      </div>`;
+    list.appendChild(card);
   });
+
+  renderPastExtraList();
+  calcPastReward();
+}
+
+function togglePastTask(key, row) {
+  const check = document.getElementById('past-check-' + key);
+  const name  = document.getElementById('past-name-' + key);
+  const card  = row.closest('.task-card');
+  const isDone = check.classList.contains('done');
+  if (isDone) {
+    check.classList.remove('done');
+    name.classList.remove('done');
+    card.style.borderColor = '';
+  } else {
+    check.classList.add('done');
+    name.classList.add('done');
+    card.style.borderColor = 'var(--green)';
+  }
+  calcPastReward();
+}
+
+function addPastExtra() {
+  pastExtraCounter++;
+  pastExtraItems.push({ id: pastExtraCounter, done: true });
+  renderPastExtraList();
+  calcPastReward();
+}
+
+function deletePastExtra(id) {
+  pastExtraItems = pastExtraItems.filter(e => e.id !== id);
+  renderPastExtraList();
+  calcPastReward();
+}
+
+function renderPastExtraList() {
+  const el = document.getElementById('past-extra-list');
+  el.innerHTML = '';
+  pastExtraItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'extra-item';
+    div.innerHTML = `
+      <div class="extra-row">
+        <div class="extra-check done">✓</div>
+        <div class="extra-name">📚 추가 공부 ${item.id}회</div>
+        <div class="extra-badge done">+2,000원</div>
+        <button class="extra-del" onclick="deletePastExtra(${item.id})">✕</button>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function calcPastReward() {
+  const dateVal = document.getElementById('past-date-input').value;
+  if (!dateVal) return;
+  const d = new Date(dateVal + 'T00:00:00');
+  const isWE = d.getDay() === 0 || d.getDay() === 6;
+
+  const checkedKeys = [...document.querySelectorAll('#past-task-list .task-check.done')]
+    .map(el => el.id.replace('past-check-', ''));
+
+  let sessions = 0;
+  checkedKeys.forEach(k => {
+    if (k === 'write') sessions += isWE ? 2 : 0;
+    else if (['read1','read2','eng1','eng2','math1','math2','flex','exercise'].includes(k)) sessions += 1;
+  });
+
+  let base = sessions >= 7 ? 5000 : sessions === 6 ? 4000 : sessions * 500;
+  let bonus = 0;
+  if (checkedKeys.includes('miracle')) bonus += isWE ? 1000 : 500;
+  if (checkedKeys.includes('shower'))  bonus += isWE ? 2000 : 1000;
+  if (checkedKeys.includes('write'))   bonus += isWE ? 2000 : 1000;
+  bonus += pastExtraItems.length * 2000;
+
+  const total = base + bonus;
+  document.getElementById('past-reward-display').textContent = total.toLocaleString() + '원';
+  document.getElementById('past-sessions-display').textContent =
+    '학습 ' + sessions + '/7회\n기본 ' + base.toLocaleString() + '원';
 }
 
 function savePastEntry() {
   const dateVal = document.getElementById('past-date-input').value;
   if (!dateVal) { alert('날짜를 선택해주세요!'); return; }
 
-  const checked = [...document.querySelectorAll('#past-task-list input[type=checkbox]:checked')]
-    .map(el => el.dataset.key);
-
-  const state = loadState() || {};
-  const history = state.history || {};
-
-  // 해당 날짜 세션 수 계산
-  const d = new Date(dateVal);
+  const d = new Date(dateVal + 'T00:00:00');
   const isWE = d.getDay() === 0 || d.getDay() === 6;
+
+  const checkedKeys = [...document.querySelectorAll('#past-task-list .task-check.done')]
+    .map(el => el.id.replace('past-check-', ''));
+
   let sessions = 0;
-  checked.forEach(k => {
-    const t = ALL_TASKS.find(t => t.key === k);
-    if (!t) return;
+  checkedKeys.forEach(k => {
     if (k === 'write') sessions += isWE ? 2 : 0;
     else if (['read1','read2','eng1','eng2','math1','math2','flex','exercise'].includes(k)) sessions += 1;
   });
 
-  // 보상 계산
   let reward = sessions >= 7 ? 5000 : sessions === 6 ? 4000 : sessions * 500;
-  if (checked.includes('miracle')) reward += isWE ? 1000 : 500;
-  if (checked.includes('shower'))  reward += isWE ? 2000 : 1000;
-  if (checked.includes('write'))   reward += isWE ? 2000 : 1000;
+  if (checkedKeys.includes('miracle')) reward += isWE ? 1000 : 500;
+  if (checkedKeys.includes('shower'))  reward += isWE ? 2000 : 1000;
+  if (checkedKeys.includes('write'))   reward += isWE ? 2000 : 1000;
+  reward += pastExtraItems.length * 2000;
 
-  if (checked.length === 0) {
+  const state = loadState() || {};
+  const history = state.history || {};
+
+  if (checkedKeys.length === 0 && pastExtraItems.length === 0) {
     delete history[dateVal];
   } else {
     history[dateVal] = {
       date: dateVal,
-      completed: checked,
+      completed: checkedKeys,
       sessions,
       reward,
       xp: state.xp || 0,
+      extraItems: pastExtraItems.map(e => ({...e})),
     };
   }
 
   localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, history }));
-  closePastEntry();
-
-  // 기록 화면 갱신
   const dow = ['일','월','화','수','목','금','토'][d.getDay()];
-  const [y, m, dd2] = dateVal.split('-');
-  alert(`✅ ${m}월 ${parseInt(dd2)}일 (${dow}) 기록이 저장됐어요!`);
+  closePastEntry();
+  // 홈 화면 갱신
+  calcReward(); updateProgress();
+  showPopup('_past_saved');
+  POPUPS['_past_saved'] = ['✅', '저장 완료!',
+    (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + dow + ') 기록이 저장됐어요!'];
+  showPopup('_past_saved');
 }
 
 function exitGame() {
