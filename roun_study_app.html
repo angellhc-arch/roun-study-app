@@ -655,6 +655,11 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="section-title" style="margin-top:6px">⚡ 추가 공부 <span style="font-weight:600;color:var(--gold)">(회당 +2,000원)</span></div>
     <div id="extra-list"></div>
     <button class="add-extra-btn" onclick="addExtra()">+ 추가 공부 입력하기</button>
+
+    <!-- 지난 날 입력 버튼 -->
+    <button onclick="openPastEntry()" style="display:block;width:calc(100% - 32px);margin:8px 16px 0;padding:11px;border:2px dashed #FDE68A;border-radius:var(--radius);background:transparent;color:#B45309;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;text-align:center">
+      📅 다른 날 학습 내용 입력하기
+    </button>
     <div style="height:8px"></div>
   </div>
 </div>
@@ -957,6 +962,36 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   <div class="nav-item" id="nav-history" onclick="showScreen('history')"><div class="nav-icon">📖</div><div class="nav-label">기록</div></div>
   <div class="nav-item" id="nav-stats" onclick="showScreen('stats')"><div class="nav-icon">📊</div><div class="nav-label">통계</div></div>
   <div class="nav-item" id="nav-badge" onclick="showScreen('badge')"><div class="nav-icon">🏅</div><div class="nav-label">뱃지</div></div>
+</div>
+
+<!-- 지난 날 입력 바텀시트 -->
+<div class="popup-overlay" id="past-entry-overlay" onclick="if(event.target===this)closePastEntry()">
+  <div class="popup" style="text-align:left;padding:20px 20px 34px;max-height:85vh;overflow-y:auto">
+
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:900;color:var(--text)">📅 다른 날 학습 입력</div>
+      <button onclick="closePastEntry()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer">✕</button>
+    </div>
+
+    <!-- 날짜 선택 -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;letter-spacing:.04em">날짜 선택</div>
+      <input type="date" id="past-date-input"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;color:var(--text)"
+        onchange="onPastDateChange()">
+    </div>
+
+    <!-- 항목 체크리스트 -->
+    <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.04em">완료한 항목 선택</div>
+    <div id="past-task-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
+
+    <!-- 저장 버튼 -->
+    <button onclick="savePastEntry()"
+      style="width:100%;padding:13px;background:linear-gradient(135deg,#7B5CF5,#A855F7);color:white;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif">
+      ✅ 저장하기
+    </button>
+  </div>
 </div>
 
 <!-- 일반 팝업 -->
@@ -1408,7 +1443,7 @@ function renderTypeA(q) {
   showInputArea();
   const inp = document.getElementById('game-answer');
   inp.value = ''; inp.className = 'game-answer-input'; inp.disabled = false;
-  inp.placeholder = '영어 단어를 입력해봐요!';
+  inp.placeholder = '여기에 입력하세요';
   setTimeout(() => { inp.focus(); inp.scrollIntoView({ behavior:'smooth', block:'center' }); }, 150);
 }
 
@@ -1444,16 +1479,22 @@ function renderTypeB(q) {
 function renderTypeC(q) {
   document.getElementById('hint-label').textContent = '빈칸에 알맞은 단어를 써봐요!';
   const exWithBlank = q.example || q.word + '을(를) 사용한 문장';
-  // 예문 + 해석 함께 표시
+
+  // showInputArea 먼저 호출 (스타일 초기화 포함)
+  showInputArea();
+
+  // 그 다음 innerHTML 세팅 (덮어쓰기 방지)
   const hc = document.getElementById('hint-content');
   hc.className = 'game-hint-text example';
   hc.style.fontSize = ''; hc.style.fontWeight = ''; hc.style.color = '';
-  hc.innerHTML = `<div>${exWithBlank}</div>${q.translation ? `<div style="font-size:12px;color:#9CA3AF;font-weight:600;margin-top:6px;font-style:normal">🇰🇷 ${q.translation}</div>` : ''}`;
+  hc.innerHTML = `<div style="font-style:italic">${exWithBlank}</div>`
+    + (q.translation
+      ? `<div style="font-size:12px;color:#9CA3AF;font-weight:700;margin-top:8px;font-style:normal">🇰🇷 ${q.translation}</div>`
+      : '');
 
-  showInputArea();
   const inp = document.getElementById('game-answer');
   inp.value = ''; inp.className = 'game-answer-input'; inp.disabled = false;
-  inp.placeholder = '빈칸(_____) 에 들어갈 단어를 써봐요!';
+  inp.placeholder = '여기에 입력하세요';
   setTimeout(() => { inp.focus(); inp.scrollIntoView({ behavior:'smooth', block:'center' }); }, 150);
 }
 
@@ -1461,9 +1502,6 @@ function showInputArea() {
   document.getElementById('q-input-area').style.display = 'block';
   document.getElementById('q-choice-area').style.display = 'none';
   document.getElementById('q-submit-row').style.display = 'flex';
-  // hint-content 스타일 초기화
-  const hc = document.getElementById('hint-content');
-  hc.style.fontSize = ''; hc.style.fontWeight = ''; hc.style.color = '';
 }
 
 function showChoiceArea() {
@@ -1598,6 +1636,133 @@ function showGameResult() {
   wgs.totalCorrect += correctCount;
   wgs.history.push({ date: dateStr, correct: correctCount, total, stars: correctCount });
   saveWordGameState(wgs);
+}
+
+// ════════════════════════════════════════
+//  지난 날 학습 입력
+// ════════════════════════════════════════
+const ALL_TASKS = [
+  { key:'write',    label:'✏️ 글쓰기',        sessions:0 },
+  { key:'miracle',  label:'🌅 미라클 모닝',   sessions:0 },
+  { key:'shower',   label:'🚿 아침 샤워',     sessions:0 },
+  { key:'read1',    label:'📖 독서 1회',       sessions:1 },
+  { key:'read2',    label:'📖 독서 2회',       sessions:1 },
+  { key:'eng1',     label:'🎧 영어 1회',       sessions:1 },
+  { key:'eng2',     label:'🎧 영어 2회',       sessions:1 },
+  { key:'math1',    label:'📐 수학 1회',       sessions:1 },
+  { key:'math2',    label:'📐 수학 2회',       sessions:1 },
+  { key:'flex',     label:'📝 국어/영상편집',  sessions:1 },
+  { key:'exercise', label:'🏃 운동',           sessions:1 },
+];
+
+function openPastEntry() {
+  // 날짜 기본값: 어제
+  const yest = new Date(getTestDate());
+  yest.setDate(yest.getDate() - 1);
+  const yyyy = yest.getFullYear();
+  const mm   = String(yest.getMonth() + 1).padStart(2, '0');
+  const dd   = String(yest.getDate()).padStart(2, '0');
+  document.getElementById('past-date-input').value = `${yyyy}-${mm}-${dd}`;
+  onPastDateChange();
+  document.getElementById('past-entry-overlay').classList.add('show');
+}
+
+function closePastEntry() {
+  document.getElementById('past-entry-overlay').classList.remove('show');
+}
+
+function onPastDateChange() {
+  const dateVal = document.getElementById('past-date-input').value;
+  if (!dateVal) return;
+
+  // 최대 날짜: 어제
+  const yest = new Date(getTestDate()); yest.setDate(yest.getDate() - 1);
+  if (new Date(dateVal) > yest) {
+    alert('오늘 이전 날짜만 선택할 수 있어요!');
+    return;
+  }
+
+  // 기존 기록 불러오기
+  const state = loadState();
+  const history = state?.history || {};
+  const existing = history[dateVal];
+  const existingCompleted = existing?.completed || [];
+
+  // 주말 여부
+  const d = new Date(dateVal);
+  const isWE = d.getDay() === 0 || d.getDay() === 6;
+
+  // 체크리스트 렌더
+  const list = document.getElementById('past-task-list');
+  list.innerHTML = '';
+  ALL_TASKS.forEach(t => {
+    // 주말엔 영어2·수학2 제외
+    if (isWE && (t.key === 'eng2' || t.key === 'math2')) return;
+    const checked = existingCompleted.includes(t.key);
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s';
+    row.innerHTML = `
+      <input type="checkbox" data-key="${t.key}" ${checked ? 'checked' : ''}
+        style="width:18px;height:18px;accent-color:var(--purple);flex-shrink:0;cursor:pointer">
+      <span style="font-size:13px;font-weight:700;color:var(--text)">${t.label}</span>`;
+    row.querySelector('input').onchange = (e) => {
+      row.style.borderColor = e.target.checked ? 'var(--purple)' : 'var(--border)';
+      row.style.background  = e.target.checked ? 'var(--purple-light)' : 'white';
+    };
+    if (checked) {
+      row.style.borderColor = 'var(--purple)';
+      row.style.background  = 'var(--purple-light)';
+    }
+    list.appendChild(row);
+  });
+}
+
+function savePastEntry() {
+  const dateVal = document.getElementById('past-date-input').value;
+  if (!dateVal) { alert('날짜를 선택해주세요!'); return; }
+
+  const checked = [...document.querySelectorAll('#past-task-list input[type=checkbox]:checked')]
+    .map(el => el.dataset.key);
+
+  const state = loadState() || {};
+  const history = state.history || {};
+
+  // 해당 날짜 세션 수 계산
+  const d = new Date(dateVal);
+  const isWE = d.getDay() === 0 || d.getDay() === 6;
+  let sessions = 0;
+  checked.forEach(k => {
+    const t = ALL_TASKS.find(t => t.key === k);
+    if (!t) return;
+    if (k === 'write') sessions += isWE ? 2 : 0;
+    else if (['read1','read2','eng1','eng2','math1','math2','flex','exercise'].includes(k)) sessions += 1;
+  });
+
+  // 보상 계산
+  let reward = sessions >= 7 ? 5000 : sessions === 6 ? 4000 : sessions * 500;
+  if (checked.includes('miracle')) reward += isWE ? 1000 : 500;
+  if (checked.includes('shower'))  reward += isWE ? 2000 : 1000;
+  if (checked.includes('write'))   reward += isWE ? 2000 : 1000;
+
+  if (checked.length === 0) {
+    delete history[dateVal];
+  } else {
+    history[dateVal] = {
+      date: dateVal,
+      completed: checked,
+      sessions,
+      reward,
+      xp: state.xp || 0,
+    };
+  }
+
+  localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, history }));
+  closePastEntry();
+
+  // 기록 화면 갱신
+  const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+  const [y, m, dd2] = dateVal.split('-');
+  alert(`✅ ${m}월 ${parseInt(dd2)}일 (${dow}) 기록이 저장됐어요!`);
 }
 
 function exitGame() {
