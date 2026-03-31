@@ -1040,7 +1040,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 let _testDate = null;
 function getTestDate() { return _testDate ? new Date(_testDate) : new Date(); }
 function isWeekendDate(d) { return d.getDay()===0 || d.getDay()===6; }
-const WE = isWeekendDate(getTestDate());
+let WE = isWeekendDate(getTestDate());
 
 const tasks = {
   miracle:{done:false}, shower:{done:false},
@@ -1231,7 +1231,7 @@ function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailD
 function closeDayDetailDirect(){document.getElementById('day-detail-overlay').classList.remove('show');}
 
 function updateHistorySummary(){const state=loadState();const history=state?.history||{};const totalReward=calcTotalAccum(history);const bestStreak=calcBestStreak(history);const totalDays=Object.values(history).filter(r=>r.sessions>=6).length;const el1=document.getElementById('hist-total-reward');const el2=document.getElementById('hist-best-streak');const el3=document.getElementById('hist-total-days');if(el1)el1.textContent=totalReward.toLocaleString()+'원';if(el2)el2.textContent=bestStreak+'일';if(el3)el3.textContent=totalDays+'일';}
-function calcBestStreak(history){const dates=Object.keys(history).filter(k=>history[k].sessions>=6).sort();if(!dates.length)return 0;let best=1,cur=1;for(let i=1;i<dates.length;i++){const prev=new Date(dates[i-1]);const curr=new Date(dates[i]);const diff=(curr-prev)/(1000*60*60*24);if(diff===1){cur++;best=Math.max(best,cur);}else cur=1;}return best;}
+function calcBestStreak(history){const dates=Object.keys(history).filter(k=>history[k].sessions>=6).sort();if(!dates.length)return 0;let best=1,cur=1;for(let i=1;i<dates.length;i++){const prev=new Date(dates[i-1]+'T00:00:00');const curr=new Date(dates[i]+'T00:00:00');const diff=(curr-prev)/(1000*60*60*24);if(diff===1){cur++;best=Math.max(best,cur);}else cur=1;}return best;}
 
 function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';const subjectCounts={read:0,eng:0,math:0,write:0};monthKeys.forEach(k=>{const rec=history[k];if(!rec?.completed)return;if(rec.completed.includes('read1'))subjectCounts.read++;if(rec.completed.includes('read2'))subjectCounts.read++;if(rec.completed.includes('eng1'))subjectCounts.eng++;if(rec.completed.includes('eng2'))subjectCounts.eng++;if(rec.completed.includes('math1'))subjectCounts.math++;if(rec.completed.includes('math2'))subjectCounts.math++;if(rec.completed.includes('write'))subjectCounts.write++;});const maxCount=Math.max(...Object.values(subjectCounts),1);Object.entries(subjectCounts).forEach(([k,v])=>{const bar=document.getElementById('bar-'+k);const cnt=document.getElementById('cnt-'+k);if(bar)bar.style.width=(v/maxCount*100)+'%';if(cnt)cnt.textContent=v+'회';});buildStreakCalendar();}
 
@@ -1257,7 +1257,42 @@ function showScreen(name){
   }
 }
 
-function applyDateSettings(){const d=getTestDate();const we=isWeekendDate(d);const dow=['일','월','화','수','목','금','토'][d.getDay()];const dateStr=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+dow+')';if(we){document.getElementById('day-info').textContent='🏖️ 주말 ('+dateStr+') — 글쓰기 10~15줄';document.getElementById('write-sub').textContent='책소개→내용요약→인상깊은부분→나의생각→결론 (10~15줄)';const wh=document.getElementById('write-reward-hint');if(wh)wh.textContent='주말 +2,000원 🎉';const cEng2=document.getElementById('card-eng2');const cMath2=document.getElementById('card-math2');const cExercise=document.getElementById('card-exercise');if(cEng2)cEng2.style.display='none';if(cMath2)cMath2.style.display='none';if(cExercise)cExercise.style.display='none';tasks.eng2.sessions=0;tasks.math2.sessions=0;tasks.exercise.sessions=0;}else{document.getElementById('day-info').textContent='📅 평일 ('+dateStr+') — 글쓰기 5~6줄';}}
+function applyDateSettings(){
+  const d = getTestDate();
+  WE = isWeekendDate(d); // 매번 재계산 (타임존 문제 방지)
+  tasks.write.sessions = WE ? 2 : 0; // 글쓰기 세션 업데이트
+  const dow=['일','월','화','수','목','금','토'][d.getDay()];
+  const dateStr=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+dow+')';
+  if(WE){
+    document.getElementById('day-info').textContent='🏖️ 주말 ('+dateStr+') — 글쓰기 10~15줄';
+    document.getElementById('write-sub').textContent='책소개→내용요약→인상깊은부분→나의생각→결론 (10~15줄)';
+    const wh=document.getElementById('write-reward-hint');
+    if(wh)wh.textContent='주말 +2,000원 🎉';
+    // 주말: 영어2·수학2 숨기기, 운동은 표시(공부 1회 인정)
+    const cEng2=document.getElementById('card-eng2');
+    const cMath2=document.getElementById('card-math2');
+    const cExercise=document.getElementById('card-exercise');
+    if(cEng2)cEng2.style.display='none';
+    if(cMath2)cMath2.style.display='none';
+    if(cExercise)cExercise.style.display=''; // 주말에도 운동 표시
+    tasks.eng2.sessions=0;
+    tasks.math2.sessions=0;
+    tasks.exercise.sessions=1; // 주말 운동도 공부 1회 인정
+  } else {
+    document.getElementById('day-info').textContent='📅 평일 ('+dateStr+') — 글쓰기 5~6줄';
+    const wh=document.getElementById('write-reward-hint');
+    if(wh)wh.textContent='평일 +1,000원';
+    const cEng2=document.getElementById('card-eng2');
+    const cMath2=document.getElementById('card-math2');
+    const cExercise=document.getElementById('card-exercise');
+    if(cEng2)cEng2.style.display='';
+    if(cMath2)cMath2.style.display='';
+    if(cExercise)cExercise.style.display='';
+    tasks.eng2.sessions=1;
+    tasks.math2.sessions=1;
+    tasks.exercise.sessions=1;
+  }
+}
 
 // ════════════════════════════════════════
 //  WORD GAME SYSTEM
@@ -1708,7 +1743,7 @@ const ALL_TASKS = [
   { key:'math1',    label:'📐 수학 1회',       sub:'40분' },
   { key:'math2',    label:'📐 수학 2회',       sub:'40분', weekendHide:true },
   { key:'flex',     label:'📝 국어/영상편집',  sub:'40분' },
-  { key:'exercise', label:'🏃 운동',           sub:'선택 · 공부 1회 인정', weekendHide:true },
+  { key:'exercise', label:'🏃 운동',           sub:'공부 1회로 인정' },
 ];
 
 let pastExtraItems = [];
