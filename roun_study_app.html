@@ -416,6 +416,66 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 
   <div class="day-info" id="day-info">📅 평일 — 글쓰기 5~6줄</div>
 
+  <!-- 연속기록 대시보드 -->
+  <div style="margin:10px 16px 0;background:white;border-radius:var(--radius);border:1.5px solid var(--border);padding:12px 14px">
+    <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:10px;letter-spacing:.04em">🔥 연속 기록 현황</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="streak-dashboard-inner">
+      <div style="background:#F5F3FF;border-radius:12px;padding:10px 8px;text-align:center">
+        <div style="font-size:9px;font-weight:800;color:var(--muted);margin-bottom:4px">📚 미션</div>
+        <div style="font-size:22px;font-weight:900;color:var(--purple)" id="sd-mission">0</div>
+        <div style="font-size:9px;font-weight:700;color:var(--muted);margin-top:2px" id="sd-mission-next">10일까지 10일</div>
+      </div>
+      <div style="background:#FFFBEB;border-radius:12px;padding:10px 8px;text-align:center">
+        <div style="font-size:9px;font-weight:800;color:var(--muted);margin-bottom:4px">🌅 미라클</div>
+        <div style="font-size:22px;font-weight:900;color:#F59E0B" id="sd-miracle">0</div>
+        <div style="font-size:9px;font-weight:700;color:var(--muted);margin-top:2px" id="sd-miracle-next">10일까지 10일</div>
+      </div>
+      <div style="background:#EFF6FF;border-radius:12px;padding:10px 8px;text-align:center">
+        <div style="font-size:9px;font-weight:800;color:var(--muted);margin-bottom:4px">🚿 샤워</div>
+        <div style="font-size:22px;font-weight:900;color:#0EA5E9" id="sd-shower">0</div>
+        <div style="font-size:9px;font-weight:700;color:var(--muted);margin-top:2px" id="sd-shower-next">10일까지 10일</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 규칙 표 (토글) -->
+  <div style="margin:6px 16px 0">
+    <button onclick="toggleRuleTable()" id="rule-table-btn" style="width:100%;background:var(--purple-light);border:none;border-radius:var(--radius-sm);padding:7px 12px;font-size:11px;font-weight:800;color:var(--purple);cursor:pointer;font-family:'Nunito',sans-serif;text-align:left">
+      📋 보상 규칙 보기 ▾
+    </button>
+    <div id="rule-table" style="display:none;background:white;border:1.5px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:12px 14px">
+      <table style="width:100%;border-collapse:collapse;font-family:'Nunito',sans-serif">
+        <thead>
+          <tr style="background:#F8F7FF">
+            <th style="padding:6px 6px;text-align:left;font-size:10px;font-weight:900;color:var(--muted);border-bottom:1.5px solid var(--border)">항목</th>
+            <th style="padding:6px 6px;text-align:center;font-size:10px;font-weight:900;color:var(--muted);border-bottom:1.5px solid var(--border)">기본 보상</th>
+            <th style="padding:6px 6px;text-align:center;font-size:10px;font-weight:900;color:var(--muted);border-bottom:1.5px solid var(--border)">10일마다 축하금</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #F3F4F6">
+            <td style="padding:7px 6px;font-weight:800;font-size:11px">🔥 미션 연속</td>
+            <td style="padding:7px 6px;text-align:center;color:var(--muted);font-size:10px">—</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:10px;color:var(--purple)">10일 1만 / 20일 2만 / 30일 3만</td>
+          </tr>
+          <tr style="border-bottom:1px solid #F3F4F6">
+            <td style="padding:7px 6px;font-weight:800;font-size:11px">🌅 미라클 모닝</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:#F59E0B">500원/일</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:var(--green)">+5,000원</td>
+          </tr>
+          <tr style="border-bottom:1px solid #F3F4F6">
+            <td style="padding:7px 6px;font-weight:800;font-size:11px">🚿 아침 샤워</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:#0EA5E9">1,000원/일</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:var(--green)">+5,000원</td>
+          </tr>
+          <tr>
+            <td colspan="3" style="padding:7px 6px;font-size:10px;color:var(--muted);font-weight:700;line-height:1.5">* 평일 미달성 → 연속 0 초기화<br>* 주말 미달성 → 연속 유지 (패스)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <div id="xp-penalty-banner" style="display:none;margin:8px 16px 0;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius-sm);padding:11px 14px">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:20px">⚠️</span>
@@ -484,7 +544,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div class="task-check" id="check-miracle">✓</div>
         <div class="task-info">
           <div class="task-name" id="name-miracle">🌅 미라클 모닝</div>
-          <div class="task-sub">6:15 이전 기상 +500원</div>
+          <div class="task-sub" id="sub-miracle">6:15 이전 기상 · 연속 0일</div>
         </div>
         <div class="task-badge gold" id="badge-miracle">+500원</div>
         <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+30XP</span>
@@ -495,7 +555,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div class="task-check" id="check-shower">✓</div>
         <div class="task-info">
           <div class="task-name" id="name-shower">🚿 아침 샤워</div>
-          <div class="task-sub">샤워 +1,000원 · 미라클모닝+샤워 합계 1,500원</div>
+          <div class="task-sub" id="sub-shower">연속 0일 · 10일 달성 시 2배!</div>
         </div>
         <div class="task-badge gold" id="badge-shower">+1,000원</div>
         <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+20XP</span>
@@ -1022,6 +1082,25 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
 </div>
 
+<!-- 스트릭 마일스톤 축하 팝업 -->
+<div class="popup-overlay" id="streak-celebrate-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="popup">
+    <div class="popup-emoji" id="sc-emoji">🎉</div>
+    <div class="popup-title" id="sc-title">연속 달성!</div>
+    <div class="popup-msg" id="sc-msg"></div>
+    <div style="background:linear-gradient(135deg,#FEF3C7,#FFF7ED);border-radius:14px;padding:16px;margin-bottom:12px;text-align:center">
+      <div style="font-size:12px;font-weight:800;color:#92400E;margin-bottom:4px" id="sc-label">🎁 연속 달성 보상</div>
+      <div style="font-size:26px;font-weight:900;color:#F59E0B"><span id="sc-days">0</span>일 달성!</div>
+      <div style="font-size:22px;font-weight:900;color:#D97706;margin-top:4px">+<span id="sc-reward">0</span>원 지급!</div>
+      <div style="font-size:11px;font-weight:700;color:#92400E;margin-top:6px">누적 보상에 자동으로 추가됐어요 💰</div>
+    </div>
+    <div id="sc-remaining" style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:10px;text-align:center"></div>
+    <button class="popup-btn" onclick="document.getElementById('streak-celebrate-overlay').classList.remove('show');checkStreakMilestoneCelebration();calcReward();updateProgress();">
+      🙌 감사합니다!
+    </button>
+  </div>
+</div>
+
 <!-- 일반 팝업 -->
 <div class="popup-overlay" id="popup" onclick="closePopup(event)">
   <div class="popup">
@@ -1067,6 +1146,17 @@ const XP_GAINS = { miracle:30,shower:20,read1:25,read2:25,eng1:40,eng2:40,math1:
 
 function getXPLevel(xpVal) { for(let i=XP_PER_LEVEL.length-1;i>=0;i--){if(xpVal>=XP_PER_LEVEL[i])return i;} return 0; }
 
+// 스트릭 마일스톤 보상 테이블
+// 10일 주기: 10→1만, 20→2만, 30→3만, 40→1만, 50→2만, ...
+function getStreakMilestoneReward(streak) {
+  if (streak <= 0 || streak % 10 !== 0) return 0;
+  const cycle = streak % 30;
+  if (cycle === 10) return 10000;
+  if (cycle === 20) return 20000;
+  if (cycle === 0)  return 30000;
+  return 0;
+}
+
 function saveState() {
   const d=getTestDate();
   const todayKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
@@ -1076,23 +1166,83 @@ function saveState() {
   const extraDone=extraItems.filter(e=>e.done);
   if(completedToday.length===0&&extraDone.length===0){delete history[todayKey];}
   else{history[todayKey]={date:todayKey,completed:completedToday,sessions:calcSessions(),reward:calcTotalReward(),xp,extraItems:extraDone.map(e=>({...e}))}}
+
   const streak=calcStreak(history,d);
-  localStorage.setItem(STORE_KEY,JSON.stringify({xp,totalAccum:calcTotalAccum(history),streak,history,lastDate:todayKey,flexName:document.getElementById('name-flex')?.textContent||''}));
+
+  // 미션 스트릭 마일스톤 보상 체크
+  const claimedBonuses = state.claimedBonuses || {};
+  const bonusReward = getStreakMilestoneReward(streak);
+  if (bonusReward > 0 && !claimedBonuses['mission-'+streak]) {
+    claimedBonuses['mission-'+streak] = { reward: bonusReward, date: todayKey, type:'mission' };
+    history['bonus-streak-' + streak] = { date: todayKey, reward: bonusReward, isStreakBonus: true, streakDays: streak };
+  }
+
+  // 미라클 모닝 습관 마일스톤 보상
+  const mStreak = calcHabitStreak('miracle', history, d);
+  const mHabitReward = getHabitMilestoneReward(mStreak);
+  if (mHabitReward > 0 && completedToday.includes('miracle') && !claimedBonuses['miracle-'+mStreak]) {
+    claimedBonuses['miracle-'+mStreak] = { reward: mHabitReward, date: todayKey, type:'miracle' };
+    history['bonus-miracle-' + mStreak] = { date: todayKey, reward: mHabitReward, isHabitBonus: true, habitKey:'miracle', streakDays: mStreak };
+  }
+
+  // 아침 샤워 습관 마일스톤 보상
+  const sStreak = calcHabitStreak('shower', history, d);
+  const sHabitReward = getHabitMilestoneReward(sStreak);
+  if (sHabitReward > 0 && completedToday.includes('shower') && !claimedBonuses['shower-'+sStreak]) {
+    claimedBonuses['shower-'+sStreak] = { reward: sHabitReward, date: todayKey, type:'shower' };
+    history['bonus-shower-' + sStreak] = { date: todayKey, reward: sHabitReward, isHabitBonus: true, habitKey:'shower', streakDays: sStreak };
+  }
+
+  localStorage.setItem(STORE_KEY,JSON.stringify({xp,totalAccum:calcTotalAccum(history),streak,history,lastDate:todayKey,flexName:document.getElementById('name-flex')?.textContent||'',claimedBonuses}));
 }
 
 function calcTotalReward() {
   const s=calcSessions(); let base=s>=7?5000:s===6?4000:s*500; let bonus=0;
-  const mBonus=WE?1000:500; const shBonus=WE?2000:1000; const writeReward=WE?2000:1000;
-  if(tasks.miracle.done)bonus+=mBonus; if(tasks.shower.done)bonus+=shBonus;
+  const writeReward=WE?2000:1000;
+  if(tasks.miracle.done)bonus+=getMiracleBonus();
+  if(tasks.shower.done)bonus+=getShowerBonus();
   if(tasks.write.done)bonus+=writeReward;
   bonus+=extraItems.filter(e=>e.done).length*2000;
   return base+bonus;
 }
-function calcStreak(history,today) {
-  let streak=0; const d=new Date(today);
-  while(true){const key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0'); const rec=history[key]; if(rec&&rec.sessions>=6){streak++;d.setDate(d.getDate()-1);}else break;} return streak;
+function calcStreak(history, today) {
+  // 규칙:
+  // - 평일(월~금): 6회 이상 → 연속 +1 / 미만 → 즉시 0
+  // - 주말(토·일): 6회 이상 → 연속 +1 / 미만 → 연속 유지(패스)
+  let streak = 0;
+  const d = new Date(today);
+  d.setHours(0, 0, 0, 0);
+
+  while (true) {
+    const key = d.getFullYear() + '-' +
+      (d.getMonth()+1).toString().padStart(2,'0') + '-' +
+      d.getDate().toString().padStart(2,'0');
+    const dow = d.getDay(); // 0=일, 6=토
+    const isWE = dow === 0 || dow === 6;
+    const rec = history[key];
+    const sessions = rec?.sessions || 0;
+
+    if (sessions >= 6) {
+      // 6회 이상 달성: 평일/주말 모두 +1
+      streak++;
+    } else if (isWE) {
+      // 주말 미달성: 연속 유지(패스), 단 streak이 0이면 패스 안 함
+      // (아직 streak을 쌓지 않은 상태에서 주말 패스가 연속을 만들면 안 됨)
+      if (streak === 0) break;
+      // 주말은 그냥 넘어감 (streak 유지)
+    } else {
+      // 평일 미달성: 즉시 종료
+      break;
+    }
+
+    d.setDate(d.getDate() - 1);
+    if (streak > 400) break; // 안전장치
+  }
+  return streak;
 }
-function calcTotalAccum(history) { return Object.values(history).reduce((sum,r)=>sum+(r.reward||0),0); }
+function calcTotalAccum(history) {
+  return Object.values(history).reduce((sum,r) => sum + (r.reward||0), 0);
+}
 function calcSessions() {
   let s=0; ['math1','math2','eng1','eng2','flex','read1','read2','exercise'].forEach(k=>{if(tasks[k].done)s+=tasks[k].sessions;});
   if(WE&&tasks.write.done)s+=2; return s;
@@ -1107,9 +1257,20 @@ function restoreToday(state) {
 
 function calcReward() {
   const s=calcSessions(); let base=s>=7?5000:s===6?4000:s*500; let bonus=0; const chips=[];
-  const mBonus=WE?1000:500; const shBonus=WE?2000:1000; const writeReward=WE?2000:1000;
-  if(tasks.miracle.done){bonus+=mBonus;chips.push({t:'🌅 미라클 +'+mBonus.toLocaleString()+'원',c:''});}
-  if(tasks.shower.done){bonus+=shBonus;chips.push({t:'🚿 샤워 +'+shBonus.toLocaleString()+'원',c:''});}
+  const writeReward=WE?2000:1000;
+  const _st=loadState(); const _h=_st?.history||{}; const today=getTestDate();
+  const mStreak=calcHabitStreak('miracle',_h,today);
+  const sStreak=calcHabitStreak('shower',_h,today);
+  const mBonus=getMiracleBonus();
+  const shBonus=getShowerBonus();
+  if(tasks.miracle.done){
+    bonus+=mBonus;
+    chips.push({t:'🌅 미라클 +'+mBonus.toLocaleString()+'원'+(mStreak>=10?' 🔥'+mStreak+'일':''),c:''});
+  }
+  if(tasks.shower.done){
+    bonus+=shBonus;
+    chips.push({t:'🚿 샤워 +'+shBonus.toLocaleString()+'원'+(sStreak>=10?' 🔥'+sStreak+'일':''),c:''});
+  }
   if(tasks.write.done){bonus+=writeReward;chips.push({t:'✏️ 글쓰기 +'+writeReward.toLocaleString()+'원',c:'g'});}
   const extraDone=extraItems.filter(e=>e.done).length; const extraBonus=extraDone*2000;
   if(extraDone>0){bonus+=extraBonus;chips.push({t:'⚡ 추가공부 '+extraDone+'회 +'+extraBonus.toLocaleString()+'원',c:'g'});}
@@ -1119,10 +1280,10 @@ function calcReward() {
   const ce=document.getElementById('reward-chips'); ce.innerHTML='';
   if(base>0){const c=document.createElement('div');c.className='rchip p';c.textContent='기본 '+base.toLocaleString()+'원';ce.appendChild(c);}
   chips.forEach(ch=>{const c=document.createElement('div');c.className='rchip '+ch.c;c.textContent=ch.t;ce.appendChild(c);});
-  const state=loadState(); const history=state?.history||{}; const d=getTestDate();
-  const todayKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
-  const pastAccum=Object.entries(history).filter(([k])=>k!==todayKey).reduce((sum,[,r])=>sum+(r.reward||0),0);
+  const todayKey=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
+  const pastAccum=Object.entries(_h).filter(([k])=>k!==todayKey).reduce((sum,[,r])=>sum+(r.reward||0),0);
   document.getElementById('accum-reward').textContent=(pastAccum+total).toLocaleString()+'원';
+  updateHabitStreakUI();
 }
 
 function updateProgress() {
@@ -1144,8 +1305,18 @@ function updateProgress() {
 }
 
 const POPUPS={
-  miracle:['🌅','미라클 모닝!','6:15 이전 기상! +500원!'],
-  shower:['🚿','아침 샤워!','샤워 +1,000원!'],
+  miracle:['🌅','미라클 모닝!', () => {
+    const _h=loadState()?.history||{}; const _td=getTestDate();
+    const ms=calcHabitStreak('miracle',_h,_td);
+    const next=Math.ceil((ms+1)/10)*10;
+    return ms>0 ? `${ms}일 연속 달성! · ${next-ms}일 후 축하금 +5,000원 🎁` : `6:15 이전 기상! +500원`;
+  }],
+  shower:['🚿','아침 샤워!', () => {
+    const _h=loadState()?.history||{}; const _td=getTestDate();
+    const ss=calcHabitStreak('shower',_h,_td);
+    const next=Math.ceil((ss+1)/10)*10;
+    return ss>0 ? `${ss}일 연속 달성! · ${next-ss}일 후 축하금 +5,000원 🎁` : `샤워 +1,000원`;
+  }],
   math1:['📐','수학 1회 완료!','집중해서 풀었지? 💪'],
   math2:['📐','수학 2회 완료!','오늘 수학 모두 끝! 🎉'],
   eng1:['🎧','영어 1회 완료!','듣기+읽기+번역 완료!'],
@@ -1187,7 +1358,41 @@ function changeExtraSubj(id,val){const item=extraItems.find(e=>e.id===id);if(ite
 function renderExtraList(){const el=document.getElementById('extra-list');el.innerHTML='';extraItems.forEach(item=>{const div=document.createElement('div');div.className='extra-item';const opts=SUBJ_OPTIONS.map(s=>`<option value="${s}"${item.subj===s?' selected':''}>${s}</option>`).join('');div.innerHTML=`<div class="extra-row"><div class="extra-check${item.done?' done':''}" onclick="toggleExtra(${item.id})">✓</div><div class="extra-name${item.done?' done':''}">📚 추가 공부 ${item.id}회</div><select class="extra-subj-select" onchange="changeExtraSubj(${item.id},this.value)">${opts}</select><div class="extra-badge${item.done?' done':''}">+2,000원</div><button class="extra-del" onclick="deleteExtra(${item.id})">✕</button></div>`;el.appendChild(div);});}
 POPUPS['_extra']=['⚡','추가 공부 완료!','대단해! 추가 공부 +2,000원!'];
 
-function buildStreakCalendar(){const cal=document.getElementById('streak-calendar');if(!cal)return;cal.innerHTML='';const state=loadState();const history=state?.history||{};const today=getTestDate();for(let i=19;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');const dow=['일','월','화','수','목','금','토'][d.getDay()];const label=i===0?'오늘':dow;const rec=history[key];let status='miss';if(i===0)status='today';else if(rec&&rec.sessions>=6)status='done';else if(rec&&rec.sessions>0)status='partial';const dot=document.createElement('div');dot.className='streak-dot '+status;dot.textContent=label;cal.appendChild(dot);}}
+function buildStreakCalendar(){
+  const cal=document.getElementById('streak-calendar');
+  if(!cal)return;
+  cal.innerHTML='';
+  const state=loadState();
+  const history=state?.history||{};
+  const today=getTestDate();
+
+  for(let i=19;i>=0;i--){
+    const d=new Date(today);
+    d.setDate(d.getDate()-i);
+    const key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+    const dow=['일','월','화','수','목','금','토'][d.getDay()];
+    const label=i===0?'오늘':dow;
+    const isWE=d.getDay()===0||d.getDay()===6;
+    const rec=history[key];
+    const sessions=rec?.sessions||0;
+
+    let status;
+    if(i===0)            status='today';
+    else if(sessions>=6) status='done';
+    else if(isWE)        status='miss'; // 주말 미달성: 회색이지만 연속 유지 (툴팁으로 안내)
+    else                 status='miss';
+
+    const dot=document.createElement('div');
+    dot.className='streak-dot '+status;
+    // 주말 미달성은 회색이지만 패스 표시
+    if(i!==0 && isWE && sessions<6){
+      dot.style.opacity='0.4';
+      dot.title='주말 패스 (연속 유지)';
+    }
+    dot.textContent=label;
+    cal.appendChild(dot);
+  }
+}
 
 // History
 const TASK_NAMES={miracle:'🌅 미라클 모닝',shower:'🚿 아침 샤워',read1:'📖 독서 1회',read2:'📖 독서 2회',eng1:'🎧 영어 1회',eng2:'🎧 영어 2회',math1:'📐 수학 1회',math2:'📐 수학 2회',flex:'📝 국어/영상편집',exercise:'🏃 운동',write:'✏️ 글쓰기'};
@@ -1231,7 +1436,35 @@ function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailD
 function closeDayDetailDirect(){document.getElementById('day-detail-overlay').classList.remove('show');}
 
 function updateHistorySummary(){const state=loadState();const history=state?.history||{};const totalReward=calcTotalAccum(history);const bestStreak=calcBestStreak(history);const totalDays=Object.values(history).filter(r=>r.sessions>=6).length;const el1=document.getElementById('hist-total-reward');const el2=document.getElementById('hist-best-streak');const el3=document.getElementById('hist-total-days');if(el1)el1.textContent=totalReward.toLocaleString()+'원';if(el2)el2.textContent=bestStreak+'일';if(el3)el3.textContent=totalDays+'일';}
-function calcBestStreak(history){const dates=Object.keys(history).filter(k=>history[k].sessions>=6).sort();if(!dates.length)return 0;let best=1,cur=1;for(let i=1;i<dates.length;i++){const prev=new Date(dates[i-1]+'T00:00:00');const curr=new Date(dates[i]+'T00:00:00');const diff=(curr-prev)/(1000*60*60*24);if(diff===1){cur++;best=Math.max(best,cur);}else cur=1;}return best;}
+function calcBestStreak(history) {
+  // 모든 날짜를 순서대로 순회하며 새 규칙 적용
+  const allDates = [];
+  const oldest = Object.keys(history).sort()[0];
+  if (!oldest) return 0;
+  const start = new Date(oldest + 'T00:00:00');
+  const end   = new Date(); end.setHours(0,0,0,0);
+  const cur = new Date(start);
+  while (cur <= end) {
+    allDates.push(cur.toISOString().slice(0,10));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  let best = 0, streak = 0;
+  for (const key of allDates) {
+    const d = new Date(key + 'T00:00:00');
+    const isWE = d.getDay() === 0 || d.getDay() === 6;
+    const sessions = history[key]?.sessions || 0;
+    if (sessions >= 6) {
+      streak++;
+      best = Math.max(best, streak);
+    } else if (isWE && streak > 0) {
+      // 주말 미달성: 유지
+    } else {
+      streak = 0;
+    }
+  }
+  return best;
+}
 
 function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';const subjectCounts={read:0,eng:0,math:0,write:0};monthKeys.forEach(k=>{const rec=history[k];if(!rec?.completed)return;if(rec.completed.includes('read1'))subjectCounts.read++;if(rec.completed.includes('read2'))subjectCounts.read++;if(rec.completed.includes('eng1'))subjectCounts.eng++;if(rec.completed.includes('eng2'))subjectCounts.eng++;if(rec.completed.includes('math1'))subjectCounts.math++;if(rec.completed.includes('math2'))subjectCounts.math++;if(rec.completed.includes('write'))subjectCounts.write++;});const maxCount=Math.max(...Object.values(subjectCounts),1);Object.entries(subjectCounts).forEach(([k,v])=>{const bar=document.getElementById('bar-'+k);const cnt=document.getElementById('cnt-'+k);if(bar)bar.style.width=(v/maxCount*100)+'%';if(cnt)cnt.textContent=v+'회';});buildStreakCalendar();}
 
@@ -2202,7 +2435,183 @@ function updateLevelCard() {
   else g.textContent = '오늘 하루도 고생했어! 🌙';
   wordList = loadWords();
   calcReward(); updateProgress(); buildStreakCalendar();
+
+  // 스트릭 마일스톤 달성 축하 알림 (아직 알림 안 보낸 경우)
+  checkStreakMilestoneCelebration();
 })();
+
+function renderStreakDashboard(mStreak, sStreak) {
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+  const missionStreak = calcStreak(history, today);
+
+  const mNext = Math.ceil((missionStreak + 1) / 10) * 10;
+  const miNext = Math.ceil((mStreak + 1) / 10) * 10;
+  const sNext  = Math.ceil((sStreak  + 1) / 10) * 10;
+
+  const sdM = document.getElementById('sd-mission');
+  const sdMN = document.getElementById('sd-mission-next');
+  const sdMi = document.getElementById('sd-miracle');
+  const sdMiN = document.getElementById('sd-miracle-next');
+  const sdS = document.getElementById('sd-shower');
+  const sdSN = document.getElementById('sd-shower-next');
+
+  if (sdM) sdM.textContent = missionStreak + '일';
+  if (sdMN) sdMN.textContent = missionStreak % 10 === 0 && missionStreak > 0
+    ? '🎉 달성!' : `${mNext - missionStreak}일 후 보상`;
+  if (sdMi) { sdMi.textContent = mStreak + '일'; sdMi.style.color = mStreak >= 10 ? '#F59E0B' : '#F59E0B'; }
+  if (sdMiN) sdMiN.textContent = mStreak % 10 === 0 && mStreak > 0
+    ? '🎉 달성!' : `${miNext - mStreak}일 후 +5,000원`;
+  if (sdS) sdS.textContent = sStreak + '일';
+  if (sdSN) sdSN.textContent = sStreak % 10 === 0 && sStreak > 0
+    ? '🎉 달성!' : `${sNext - sStreak}일 후 +5,000원`;
+}
+
+function toggleRuleTable() {
+  const tbl = document.getElementById('rule-table');
+  const btn = document.getElementById('rule-table-btn');
+  const isOpen = tbl.style.display !== 'none';
+  tbl.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '📋 보상 규칙 보기 ▾' : '📋 보상 규칙 닫기 ▴';
+}
+
+// ─── 미라클모닝 / 샤워 연속 계산 (미션 스트릭과 동일한 주말 규칙) ───
+function calcHabitStreak(habitKey, history, today) {
+  // habitKey: 'miracle' 또는 'shower'
+  // 평일 미달성 → 0, 주말 미달성 → 유지, 달성 → +1
+  let streak = 0;
+  const d = new Date(today);
+  d.setHours(0, 0, 0, 0);
+
+  while (true) {
+    const key = d.getFullYear() + '-' +
+      (d.getMonth()+1).toString().padStart(2,'0') + '-' +
+      d.getDate().toString().padStart(2,'0');
+    const dow = d.getDay();
+    const isWE = dow === 0 || dow === 6;
+    const rec = history[key];
+    const done = rec?.completed?.includes(habitKey) || false;
+
+    if (done) {
+      streak++;
+    } else if (isWE && streak > 0) {
+      // 주말 미달성: 유지 (패스)
+    } else {
+      break;
+    }
+
+    d.setDate(d.getDate() - 1);
+    if (streak > 400) break;
+  }
+  return streak;
+}
+
+function getMiracleBonus() { return 500; }  // 평일/주말 동일 500원
+function getShowerBonus()  { return 1000; } // 평일/주말 동일 1,000원
+
+// 미라클/샤워 10일 연속 축하금 (10·20·30일마다 5,000원)
+function getHabitMilestoneReward(streak) {
+  return (streak > 0 && streak % 10 === 0) ? 5000 : 0;
+}
+
+function updateHabitStreakUI() {
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+
+  const mStreak = calcHabitStreak('miracle', history, today);
+  const sStreak = calcHabitStreak('shower',  history, today);
+  const mNextMilestone = Math.ceil((mStreak + 1) / 10) * 10;
+  const sNextMilestone = Math.ceil((sStreak + 1) / 10) * 10;
+
+  // 미라클 카드 sub 텍스트
+  const subM = document.getElementById('sub-miracle');
+  if (subM) {
+    subM.textContent = mStreak > 0
+      ? `🔥 ${mStreak}일 연속 · ${mNextMilestone - mStreak}일 후 축하금 +5,000원`
+      : `6:15 이전 기상 · 10일 연속마다 +5,000원`;
+  }
+  const badgeM = document.getElementById('badge-miracle');
+  if (badgeM) badgeM.textContent = '+500원';
+
+  // 샤워 카드 sub 텍스트
+  const subS = document.getElementById('sub-shower');
+  if (subS) {
+    subS.textContent = sStreak > 0
+      ? `🔥 ${sStreak}일 연속 · ${sNextMilestone - sStreak}일 후 축하금 +5,000원`
+      : `연속 0일 · 10일 연속마다 +5,000원`;
+  }
+  const badgeS = document.getElementById('badge-shower');
+  if (badgeS) badgeS.textContent = '+1,000원';
+
+  // 연속기록 대시보드 카드 업데이트
+  renderStreakDashboard(mStreak, sStreak);
+
+  return { mStreak, sStreak };
+}
+
+
+function checkStreakMilestoneCelebration() {
+  const state = loadState();
+  if (!state) return;
+  const claimedBonuses = state.claimedBonuses || {};
+
+  // 아직 팝업 안 보낸 마일스톤 찾기 (미션 + 미라클 + 샤워)
+  const uncelebrated = Object.entries(claimedBonuses)
+    .filter(([, info]) => !info.celebrated)
+    .sort((a, b) => (a[1].date || '').localeCompare(b[1].date || ''));
+
+  if (uncelebrated.length === 0) return;
+
+  // 큐에 넣고 순차 표시 (첫 번째만)
+  const [key, info] = uncelebrated[0];
+  const reward = info.reward;
+  const type   = info.type || 'mission';
+
+  claimedBonuses[key].celebrated = true;
+  localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, claimedBonuses }));
+
+  setTimeout(() => showHabitCelebration(type, info.streakDays || 0, reward, uncelebrated.length - 1), 600);
+}
+
+function showHabitCelebration(type, days, reward, remaining) {
+  const overlay = document.getElementById('streak-celebrate-overlay');
+  document.getElementById('sc-days').textContent = days;
+  document.getElementById('sc-reward').textContent = reward.toLocaleString();
+
+  const configs = {
+    mission: {
+      emoji: days >= 100 ? '👑' : days >= 50 ? '🚀' : days >= 30 ? '🏆' : '🎉',
+      title: `미션 ${days}일 연속 달성!`,
+      msg: days >= 30 ? '한 달 이상 꾸준히 했어! 정말 대단해! 🌟'
+         : days >= 20 ? '믿을 수 없어! 로운이 짱! 👑'
+         : '꾸준함이 최고야! 🔥',
+      label: '🔥 미션 연속 달성 보상'
+    },
+    miracle: {
+      emoji: '🌅',
+      title: `미라클 모닝 ${days}일 연속!`,
+      msg: '일찍 일어나는 습관, 최고야! ☀️',
+      label: '🌅 미라클 모닝 연속 축하금'
+    },
+    shower: {
+      emoji: '🚿',
+      title: `아침 샤워 ${days}일 연속!`,
+      msg: '매일 아침 샤워 습관, 대단해! 💪',
+      label: '🚿 아침 샤워 연속 축하금'
+    },
+  };
+  const cfg = configs[type] || configs.mission;
+
+  document.getElementById('sc-emoji').textContent = cfg.emoji;
+  document.getElementById('sc-title').textContent = cfg.title;
+  document.getElementById('sc-msg').textContent = cfg.msg;
+  document.getElementById('sc-label').textContent = cfg.label;
+  document.getElementById('sc-remaining').textContent =
+    remaining > 0 ? `(+${remaining}개 알림이 더 있어요)` : '';
+  overlay.classList.add('show');
+}
 
 // 게임 입력창 포커스 시 문제 카드가 보이도록 스크롤
 function scrollToInput() {
