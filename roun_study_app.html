@@ -1301,8 +1301,12 @@ function calcAlbaMonthCount(yr, mo) {
     }).length;
 }
 function calcSessions() {
-  let s=0; ['math1','math2','eng1','eng2','flex','read1','read2','exercise'].forEach(k=>{if(tasks[k].done)s+=tasks[k].sessions;});
-  if(WE&&tasks.write.done)s+=2; return s;
+  let s=0;
+  ['math1','math2','eng1','eng2','flex','read1','read2','exercise'].forEach(k=>{
+    if(tasks[k]&&tasks[k].done) s+=tasks[k].sessions;
+  });
+  if(WE&&tasks.write.done)s+=2;
+  return s;
 }
 function restoreToday(state) {
   const d=getTestDate(); const todayKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
@@ -1589,30 +1593,40 @@ function applyDateSettings(){
   const dow=['일','월','화','수','목','금','토'][d.getDay()];
   const dateStr=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+dow+')';
   if(WE){
-    document.getElementById('day-info').textContent='🏖️ 주말 ('+dateStr+') — 글쓰기 10~15줄';
+    document.getElementById('day-info').textContent='🏖️ 주말 ('+dateStr+') — 글쓰기 또는 영어·수학 추가 가능';
     document.getElementById('write-sub').textContent='책소개→내용요약→인상깊은부분→나의생각→결론 (10~15줄)';
     const wh=document.getElementById('write-reward-hint');
     if(wh)wh.textContent='주말 +2,000원 🎉';
-    // 주말: 영어2·수학2 숨기기, 운동은 표시(공부 1회 인정)
+    // 주말: 영어2·수학2를 "추가" 선택지로 표시, 운동도 표시
     const cEng2=document.getElementById('card-eng2');
     const cMath2=document.getElementById('card-math2');
     const cExercise=document.getElementById('card-exercise');
-    if(cEng2)cEng2.style.display='none';
-    if(cMath2)cMath2.style.display='none';
-    if(cExercise)cExercise.style.display=''; // 주말에도 운동 표시
-    tasks.eng2.sessions=0;
-    tasks.math2.sessions=0;
-    tasks.exercise.sessions=1; // 주말 운동도 공부 1회 인정
+    if(cEng2){ cEng2.style.display=''; cEng2.style.borderColor='#BFDBFE'; }
+    if(cMath2){ cMath2.style.display=''; cMath2.style.borderColor='#DDD6FE'; }
+    if(cExercise)cExercise.style.display='';
+    // 라벨을 "추가" 로 변경
+    const nEng2=document.getElementById('name-eng2');
+    const nMath2=document.getElementById('name-math2');
+    if(nEng2)nEng2.textContent='🎧 영어 2회 (추가)';
+    if(nMath2)nMath2.textContent='📐 수학 2회 (추가)';
+    tasks.eng2.sessions=1;
+    tasks.math2.sessions=1;
+    tasks.exercise.sessions=1;
   } else {
     document.getElementById('day-info').textContent='📅 평일 ('+dateStr+') — 글쓰기 5~6줄';
     const wh=document.getElementById('write-reward-hint');
     if(wh)wh.textContent='평일 +1,000원';
+    // 평일: 영어2·수학2 정상 표시, 라벨 원복
     const cEng2=document.getElementById('card-eng2');
     const cMath2=document.getElementById('card-math2');
     const cExercise=document.getElementById('card-exercise');
-    if(cEng2)cEng2.style.display='';
-    if(cMath2)cMath2.style.display='';
+    if(cEng2){ cEng2.style.display=''; cEng2.style.borderColor=''; }
+    if(cMath2){ cMath2.style.display=''; cMath2.style.borderColor=''; }
     if(cExercise)cExercise.style.display='';
+    const nEng2=document.getElementById('name-eng2');
+    const nMath2=document.getElementById('name-math2');
+    if(nEng2)nEng2.textContent='🎧 영어 2회';
+    if(nMath2)nMath2.textContent='📐 수학 2회';
     tasks.eng2.sessions=1;
     tasks.math2.sessions=1;
     tasks.exercise.sessions=1;
@@ -2027,7 +2041,7 @@ function showGameResult() {
 
   const total = gameState.results.length;
   const correctCount = gameState.results.filter(r => r.correct).length;
-  const ratio = correctCount / total;
+  const ratio = total > 0 ? correctCount / total : 0;
 
   let emoji = '🎉', title = '퀴즈 완료!', sub = '정말 잘했어! 🐸';
   if (ratio === 1) { emoji = '🏆'; title = '퍼펙트!'; sub = '모든 문제를 맞췄어! 최고야! 👑'; }
@@ -2039,8 +2053,34 @@ function showGameResult() {
   document.getElementById('result-title').textContent = title;
   document.getElementById('result-sub').textContent = sub;
 
+  // ── XP 계산 (최대 40XP, 하루 100XP 한도) ──
+  const rawXP = Math.round(ratio * 40); // 정답률 × 40
+  const today = getTestDate();
+  const todayKey = today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
+  const wgs = loadWordGameState();
+  // 오늘 이미 얻은 단어게임 XP 합산
+  const todayWordXP = (wgs.history || [])
+    .filter(h => h.dateKey === todayKey)
+    .reduce((s, h) => s + (h.xpGained || 0), 0);
+  const remaining = Math.max(0, 100 - todayWordXP);
+  const gainedXP = Math.min(rawXP, remaining);
+
+  // 전체 XP에 반영
+  xp += gainedXP;
+  saveState();
+
+  // 결과 상세 표시
   const breakdown = document.getElementById('result-breakdown');
-  breakdown.innerHTML = `<div class="game-result-row"><span>✅ 정답</span><span>${correctCount} / ${total} 개</span></div>`;
+  breakdown.innerHTML = `
+    <div class="game-result-row"><span>✅ 정답</span><span>${correctCount} / ${total} 개</span></div>
+    <div class="game-result-row" style="background:#F5F3FF;border-radius:8px;padding:6px 8px;margin-top:4px">
+      <span>⭐ 획득 XP</span>
+      <span style="color:var(--purple);font-weight:900">
+        +${gainedXP} XP
+        ${gainedXP < rawXP ? `<span style="font-size:10px;color:var(--muted)">(오늘 한도 ${100-remaining+gainedXP}/100)</span>` : ''}
+      </span>
+    </div>
+    ${todayWordXP + gainedXP >= 100 ? '<div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;text-align:center">오늘 단어게임 XP 최대 달성! 🎊</div>' : `<div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;text-align:center">오늘 남은 단어게임 XP: ${100 - todayWordXP - gainedXP}/100</div>`}`;
 
   const qtypeLabels = { A:'뜻→단어', B:'단어→뜻', C:'빈칸채우기' };
   gameState.results.forEach(r => {
@@ -2050,13 +2090,17 @@ function showGameResult() {
   });
 
   // 게임 기록 저장
-  const wgs = loadWordGameState();
-  const today = getTestDate();
   const dateStr = (today.getMonth()+1)+'월 '+today.getDate()+'일';
   wgs.totalGames++;
   wgs.totalCorrect += correctCount;
-  wgs.history.push({ date: dateStr, correct: correctCount, total, stars: correctCount });
+  wgs.totalXP = (wgs.totalXP || 0) + gainedXP;
+  wgs.history.push({ date: dateStr, dateKey: todayKey, correct: correctCount, total, xpGained: gainedXP });
   saveWordGameState(wgs);
+
+  // 단어게임 통계 갱신
+  document.getElementById('wg-total-games').textContent = wgs.totalGames;
+  document.getElementById('wg-total-words').textContent = wgs.totalCorrect;
+  document.getElementById('wg-total-xp').textContent = wgs.totalXP;
 }
 
 // ════════════════════════════════════════
@@ -2065,13 +2109,13 @@ function showGameResult() {
 const ALL_TASKS = [
   { key:'write',    label:'✏️ 글쓰기',        sub:'평일 +1,000원 / 주말 +2,000원' },
   { key:'miracle',  label:'🌅 미라클 모닝',   sub:'6:15 이전 기상' },
-  { key:'shower',   label:'🚿 아침 샤워',     sub:'평일 +1,000원 / 주말 +2,000원' },
+  { key:'shower',   label:'🚿 아침 샤워',     sub:'+1,000원' },
   { key:'read1',    label:'📖 독서 1회',       sub:'30분' },
   { key:'read2',    label:'📖 독서 2회',       sub:'30분' },
   { key:'eng1',     label:'🎧 영어 1회',       sub:'40분' },
-  { key:'eng2',     label:'🎧 영어 2회',       sub:'40분', weekendHide:true },
+  { key:'eng2',     label:'🎧 영어 2회',       sub:'40분 (주말엔 추가 선택)' },
   { key:'math1',    label:'📐 수학 1회',       sub:'40분' },
-  { key:'math2',    label:'📐 수학 2회',       sub:'40분', weekendHide:true },
+  { key:'math2',    label:'📐 수학 2회',       sub:'40분 (주말엔 추가 선택)' },
   { key:'flex',     label:'📝 국어/영상편집',  sub:'40분' },
   { key:'exercise', label:'🏃 운동',           sub:'공부 1회로 인정' },
 ];
@@ -2130,7 +2174,7 @@ function onPastDateChange() {
   let flexLabel  = document.getElementById('name-flex')?.textContent  || '📝 국어/영상편집';
 
   ALL_TASKS.forEach(t => {
-    if (isWE && t.weekendHide) return;
+    if (isWE && t.weekendHide) return;   // 주말엔 숨김
     const checked = existingCompleted.includes(t.key);
     const card = document.createElement('div');
     card.className = 'task-card';
