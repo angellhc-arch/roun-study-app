@@ -1757,14 +1757,22 @@ function renderGameHistory() {
   [...wgs.history].reverse().slice(0, 10).forEach(h => {
     const div = document.createElement('div');
     div.style.cssText = 'border-bottom:1px solid var(--border);padding:10px 0;display:flex;align-items:center;justify-content:space-between;';
-    const stars = '⭐'.repeat(Math.min(h.stars || 0, 5));
+    const xpGained = h.xpGained ?? h.xp;  // 구버전 호환
+    const correct = h.correct ?? 0;
+    const total   = h.total   ?? 0;
+    const ratio   = total > 0 ? correct / total : 0;
+    const starCount = Math.round(ratio * 5);
+    const stars = starCount > 0 ? '⭐'.repeat(starCount) : '—';
+    const xpTxt = (xpGained !== undefined && xpGained !== null)
+      ? `+${xpGained} XP`
+      : '기록 없음';
     div.innerHTML = `
       <div>
-        <div style="font-size:13px;font-weight:800;color:var(--text)">${h.date}</div>
-        <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:2px">${h.correct}/${h.total}개 정답 · ${stars||'—'}</div>
+        <div style="font-size:13px;font-weight:800;color:var(--text)">${h.date || '—'}</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:2px">${correct}/${total}개 정답 · ${stars}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:14px;font-weight:900;color:var(--purple)">+${h.xp} XP</div>
+        <div style="font-size:14px;font-weight:900;color:var(--purple)">${xpTxt}</div>
       </div>`;
     container.appendChild(div);
   });
@@ -2573,6 +2581,40 @@ function updateLevelCard() {
 }
 
 
+// 과거 단어게임 기록에 xpGained 없으면 정답률로 계산해서 반영
+function migrateWordGameXP() {
+  const wgs = loadWordGameState();
+  if (!wgs.history || wgs.history.length === 0) return;
+
+  let totalAdded = 0;
+  let changed = false;
+
+  wgs.history = wgs.history.map(h => {
+    // xpGained가 이미 있으면 건너뜀
+    if (h.xpGained !== undefined && h.xpGained !== null) return h;
+
+    // 정답률로 XP 계산 (최대 40)
+    const correct = h.correct ?? 0;
+    const total   = h.total   ?? 0;
+    const ratio   = total > 0 ? correct / total : 0;
+    const xpGained = Math.round(ratio * 40);
+
+    totalAdded += xpGained;
+    changed = true;
+    return { ...h, xpGained };
+  });
+
+  if (!changed) return;
+
+  // totalXP 갱신
+  wgs.totalXP = (wgs.totalXP || 0) + totalAdded;
+  saveWordGameState(wgs);
+
+  // 전체 xp에도 반영
+  xp += totalAdded;
+  saveState();
+}
+
 (function init() {
   const state = loadState();
   if (state) {
@@ -2591,6 +2633,7 @@ function updateLevelCard() {
   else if (h < 18) g.textContent = '오후도 열심히! 🔥';
   else g.textContent = '오늘 하루도 고생했어! 🌙';
   wordList = loadWords();
+  migrateWordGameXP(); // 과거 기록 XP 반영
   calcReward(); updateProgress(); buildStreakCalendar();
   initAlba();
 
