@@ -1156,14 +1156,15 @@ const WORD_GAME_STORE_KEY = 'rowoon_word_game_v1';
 const ALBA_STORE_KEY = 'rowoon_alba_v1';
 
 const ALBA_MENU = [
-  { id:'clothes', emoji:'👕', label:'옷 정리',   reward:500,  type:'fixed' },
-  { id:'desk',    emoji:'🗂️', label:'책상 정리', reward:500,  type:'fixed' },
-  { id:'camping', emoji:'⛺', label:'캠핑',       reward:0,    type:'custom' },
-  { id:'recycle', emoji:'♻️', label:'재활용',     reward:2000, type:'fixed' },
-  { id:'laundry', emoji:'👔', label:'빨래 접기',  reward:100,  type:'per', unit:'개' },
-  { id:'phone',   emoji:'📞', label:'효도 전화',  reward:1500, type:'fixed' },
-  { id:'bed',     emoji:'🛏️', label:'침대 정리',  reward:500,  type:'fixed' },
-  { id:'errand',  emoji:'🏃', label:'심부름',     reward:1000, type:'fixed' },
+  { id:'clothes', emoji:'👕', label:'옷 정리',      reward:500,  type:'fixed' },
+  { id:'desk',    emoji:'🗂️', label:'책상 정리',    reward:500,  type:'fixed' },
+  { id:'camping', emoji:'⛺', label:'캠핑',          reward:0,    type:'custom' },
+  { id:'recycle', emoji:'♻️', label:'재활용',        reward:2000, type:'fixed' },
+  { id:'laundry', emoji:'👔', label:'빨래 접기',     reward:100,  type:'per', unit:'개' },
+  { id:'phone',   emoji:'📞', label:'효도 전화',     reward:1500, type:'fixed' },
+  { id:'bed',     emoji:'🛏️', label:'침대 정리',    reward:500,  type:'fixed' },
+  { id:'errand',  emoji:'🏃', label:'심부름',        reward:1000, type:'fixed' },
+  { id:'table',   emoji:'🍽️', label:'상차림/치우기', reward:1000, type:'fixed' },
 ];
 
 function loadAlbaState() { try { const r=localStorage.getItem(ALBA_STORE_KEY); return r?JSON.parse(r):{items:[],totalAccum:0}; } catch(e){return{items:[],totalAccum:0};} }
@@ -1198,8 +1199,8 @@ function saveState() {
   const history=state?.history||{};
   const completedToday=Object.entries(tasks).filter(([,v])=>v.done).map(([k])=>k);
   const extraDone=extraItems.filter(e=>e.done);
-  if(completedToday.length===0&&extraDone.length===0){delete history[todayKey];}
-  else{history[todayKey]={date:todayKey,completed:completedToday,sessions:calcSessions(),reward:calcTotalReward(),xp,extraItems:extraDone.map(e=>({...e}))}}
+  // 체크리스트·추가공부 없어도 오늘 기록은 항상 유지 (xp 보존)
+  history[todayKey]={date:todayKey,completed:completedToday,sessions:calcSessions(),reward:calcTotalReward(),xp,extraItems:extraDone.map(e=>({...e}))};
 
   const streak=calcStreak(history,d);
 
@@ -1310,9 +1311,10 @@ function calcSessions() {
 }
 function restoreToday(state) {
   const d=getTestDate(); const todayKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+  // xp는 루트에서 읽기 (단어게임 XP가 체크리스트 없어도 보존됨)
+  xp = state?.xp || 0;
   const rec=state?.history&&state.history[todayKey]; if(!rec)return;
   rec.completed.forEach(k=>{if(!tasks[k])return;tasks[k].done=true;const check=document.getElementById('check-'+k);const name=document.getElementById('name-'+k);const badge=document.getElementById('badge-'+k);if(check)check.classList.add('done');if(name)name.classList.add('done');if(badge)badge.classList.add('done');});
-  xp=rec.xp||0;
   if(rec.extraItems&&rec.extraItems.length){extraItems=rec.extraItems.map(e=>({...e}));extraIdCounter=Math.max(...extraItems.map(e=>e.id),0);renderExtraList();}
 }
 
@@ -1952,8 +1954,20 @@ function submitAnswer() {
   const raw = document.getElementById('game-answer').value.trim().toLowerCase();
   if (!raw) return;
 
-  const correct = q.word.toLowerCase();
-  const isCorrect = raw === correct;
+  // 구분자(, / ; 공백)로 분리 후 정렬해서 집합 비교
+  const splitTokens = (str) => str.toLowerCase()
+    .split(/[\s,\/;]+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .sort();
+
+  const correctTokens = splitTokens(q.word);
+  const inputTokens   = splitTokens(raw);
+
+  // 토큰 수가 같고 모두 일치해야 정답
+  const isCorrect = correctTokens.length === inputTokens.length &&
+    correctTokens.every((t, i) => t === inputTokens[i]);
+
   const inp = document.getElementById('game-answer');
 
   if (isCorrect) {
@@ -1962,7 +1976,6 @@ function submitAnswer() {
   } else {
     inp.className = 'game-answer-input wrong';
     const praise = PRAISE_WRONG[Math.floor(Math.random() * PRAISE_WRONG.length)];
-    // 유형별로 정답 표시 내용 다르게
     let answerHtml = '';
     if (q.qtype === 'C') {
       const filled = q.example ? q.example.replace(/_+/g, `<b style="color:#DC2626">${q.word}</b>`) : '';
@@ -2101,6 +2114,9 @@ function showGameResult() {
   document.getElementById('wg-total-games').textContent = wgs.totalGames;
   document.getElementById('wg-total-words').textContent = wgs.totalCorrect;
   document.getElementById('wg-total-xp').textContent = wgs.totalXP;
+
+  // XP·레벨 UI 즉시 반영
+  updateLevelCard();
 }
 
 // ════════════════════════════════════════
