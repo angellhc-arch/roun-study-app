@@ -1021,6 +1021,12 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="hist-sum-card"><div class="hist-sum-icon">📅</div><div class="hist-sum-val" id="hist-total-days">0일</div><div class="hist-sum-label">총 달성일</div></div>
   </div>
   <div class="month-tab-wrap"><div class="month-tabs" id="month-tabs"></div></div>
+  <!-- 학습/알바 필터 -->
+  <div style="display:flex;gap:6px;padding:0 16px 10px">
+    <button id="hf-all"   onclick="setHistFilter('all')"   style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--purple);background:var(--purple);color:white;font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">전체</button>
+    <button id="hf-study" onclick="setHistFilter('study')" style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--border);background:white;color:var(--muted);font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">📚 학습</button>
+    <button id="hf-alba"  onclick="setHistFilter('alba')"  style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--border);background:white;color:var(--muted);font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">💼 알바</button>
+  </div>
   <div class="month-summary" id="month-summary"></div>
   <!-- 이전 달 요약 -->
   <div id="prev-month-summary" style="display:none;margin:8px 16px 0;background:var(--card);border-radius:var(--radius);border:1.5px solid #FDE68A;padding:12px 14px">
@@ -1514,45 +1520,136 @@ function buildStreakCalendar(){
 const TASK_NAMES={miracle:'🌅 미라클 모닝',shower:'🚿 아침 샤워',read1:'📖 독서 1회',read2:'📖 독서 2회',eng1:'🎧 영어 1회',eng2:'🎧 영어 2회',math1:'📐 수학 1회',math2:'📐 수학 2회',flex:'📝 국어/영상편집',exercise:'🏃 운동',write:'✏️ 글쓰기'};
 const SUBJ_MAP={math1:'수학',math2:'수학',eng1:'영어',eng2:'영어',flex:'국어',read1:'독서',read2:'독서',write:'글쓰기'};
 
-function getHistoryData(){const state=loadState();const history=state?.history||{};return Object.entries(history).map(([key,rec])=>{const[y,m,d]=key.split('-').map(Number);const date=new Date(y,m-1,d);const isWE=date.getDay()===0||date.getDay()===6;const completed=rec.completed||[];const sessions=rec.sessions||0;const subjects=[...new Set(completed.filter(k=>SUBJ_MAP[k]).map(k=>SUBJ_MAP[k]))];const status=completed.length===0?'empty':sessions>=6?'complete':'partial';return{key,date,isWE,completed,sessions,reward:rec.reward||0,subjects,status};}).sort((a,b)=>a.date-b.date);}
+function getHistoryData(){const state=loadState();const history=state?.history||{};return Object.entries(history).filter(([key])=>/^\d{4}-\d{2}-\d{2}$/.test(key)).map(([key,rec])=>{const[y,m,d]=key.split('-').map(Number);const date=new Date(y,m-1,d);const isWE=date.getDay()===0||date.getDay()===6;const completed=rec.completed||[];const sessions=rec.sessions||0;const subjects=[...new Set(completed.filter(k=>SUBJ_MAP[k]).map(k=>SUBJ_MAP[k]))];const status=completed.length===0?'empty':sessions>=6?'complete':'partial';return{key,date,isWE,completed,sessions,reward:rec.reward||0,subjects,status};}).sort((a,b)=>a.date-b.date);}
 
 let selectedMonth=null;
-function getMonths(){const data=getHistoryData();const seen=new Set(),res=[];const now=getTestDate();const curKey=now.getFullYear()+'-'+(now.getMonth()+1);seen.add(curKey);res.push(curKey);data.forEach(d=>{const k=d.date.getFullYear()+'-'+(d.date.getMonth()+1);if(!seen.has(k)){seen.add(k);res.push(k);}});return res.sort().reverse();}
-function buildMonthTabs(){const tabs=document.getElementById('month-tabs');const months=getMonths();selectedMonth=months[0];tabs.innerHTML='';months.forEach(m=>{const[y,mo]=m.split('-');const btn=document.createElement('button');btn.className='month-tab'+(m===selectedMonth?' on':'');btn.textContent=y+'년 '+mo+'월';btn.onclick=()=>{selectedMonth=m;document.querySelectorAll('.month-tab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderHistory();};tabs.appendChild(btn);});}
+let histFilter='all';
 
-function renderHistory(){const[y,mo]=selectedMonth.split('-').map(Number);const allData=getHistoryData();const now=getTestDate();const isCurrentMonth=y===now.getFullYear()&&mo===now.getMonth()+1;const daysInMonth=new Date(y,mo,0).getDate();const lastDay=isCurrentMonth?now.getDate():daysInMonth;const filtered=[];for(let dn=1;dn<=lastDay;dn++){const date=new Date(y,mo-1,dn);const key=y+'-'+String(mo).padStart(2,'0')+'-'+String(dn).padStart(2,'0');const rec=allData.find(d=>d.key===key);if(rec)filtered.push(rec);else filtered.push({key,date,isWE:date.getDay()===0||date.getDay()===6,completed:[],sessions:0,reward:0,subjects:[],status:'empty'});}
-const studyReward=filtered.reduce((a,b)=>a+b.reward,0);const completeDays=filtered.filter(d=>d.status==='complete').length;const totalSessions=filtered.reduce((a,b)=>a+b.sessions,0);
-const albaMonthReward=calcAlbaMonthAccum(y,mo);
-const albaMonthCnt=calcAlbaMonthCount(y,mo);
-const totalReward=studyReward+albaMonthReward;
-document.getElementById('month-summary').innerHTML=`<div class="msm-item"><div class="msm-val" style="font-size:13px">${studyReward.toLocaleString()}원</div><div class="msm-label">📚 학습 보상</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--green)">${albaMonthReward.toLocaleString()}원</div><div class="msm-label">💼 알바 보상</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--gold)">${totalReward.toLocaleString()}원</div><div class="msm-label">💰 합계</div></div><div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div><div class="msm-item"><div class="msm-val">${totalSessions}회</div><div class="msm-label">학습 횟수</div></div><div class="msm-item"><div class="msm-val" style="color:var(--green)">${albaMonthCnt}회</div><div class="msm-label">알바 횟수</div></div>`;
-
-// 지난달 요약
-const prevMo = mo === 1 ? 12 : mo - 1;
-const prevY  = mo === 1 ? y - 1 : y;
-const prevKeys = allData.filter(d => d.date.getFullYear()===prevY && d.date.getMonth()+1===prevMo);
-const prevSummaryEl = document.getElementById('prev-month-summary');
-const prevLabelEl   = document.getElementById('prev-month-label');
-const prevStatsEl   = document.getElementById('prev-month-stats');
-if (prevKeys.length > 0) {
-  const pStudyReward = prevKeys.reduce((a,b)=>a+b.reward,0);
-  const pAlbaReward  = calcAlbaMonthAccum(prevY, prevMo);
-  const pReward      = pStudyReward + pAlbaReward;
-  const pComplete = prevKeys.filter(d=>d.status==='complete').length;
-  const pSessions = prevKeys.reduce((a,b)=>a+b.sessions,0);
-  prevLabelEl.textContent = '⬅️ ' + prevY + '년 ' + prevMo + '월';
-  prevStatsEl.innerHTML = `
-    <div class="msm-item"><div class="msm-val" style="color:var(--gold);font-size:13px">${pReward.toLocaleString()}원</div><div class="msm-label">💰 합계</div></div>
-    <div class="msm-item"><div class="msm-val" style="color:var(--purple);font-size:13px">${pStudyReward.toLocaleString()}원</div><div class="msm-label">📚 학습</div></div>
-    <div class="msm-item"><div class="msm-val" style="color:var(--green);font-size:13px">${pAlbaReward.toLocaleString()}원</div><div class="msm-label">💼 알바</div></div>
-    <div class="msm-item"><div class="msm-val">${pComplete}일</div><div class="msm-label">완료일</div></div>
-    <div class="msm-item"><div class="msm-val">${pSessions}회</div><div class="msm-label">학습 횟수</div></div>`;
-  prevSummaryEl.style.display = 'block';
-} else {
-  prevSummaryEl.style.display = 'none';
+function setHistFilter(f){
+  histFilter=f;
+  ['all','study','alba'].forEach(id=>{
+    const btn=document.getElementById('hf-'+id);
+    if(!btn)return;
+    const active=id===f;
+    btn.style.background=active?'var(--purple)':'white';
+    btn.style.color=active?'white':'var(--muted)';
+    btn.style.borderColor=active?'var(--purple)':'var(--border)';
+  });
+  renderHistory();
 }
 
-const list=document.getElementById('hist-list');list.innerHTML='';[...filtered].reverse().forEach(d=>{const dow=['일','월','화','수','목','금','토'][d.date.getDay()];const dn=d.date.getDate();const isToday=d.date.toDateString()===getTestDate().toDateString();const card=document.createElement('div');card.className='hist-day-card '+d.status;const statusLabel=d.status==='complete'?'모두 완료 🎉':d.status==='partial'?'일부 완료':'기록 없음';const subjChips=d.subjects.map(s=>`<span class="hist-schip">${s}</span>`).join('');card.innerHTML=`<div class="hist-day-row" onclick="openDayDetail('${d.key}')"><div class="hist-day-dot ${d.status}"><div class="hist-dot-day ${d.status}">${isToday?'오늘':dow}</div><div class="hist-dot-num ${d.status}">${dn}</div></div><div class="hist-day-info"><div class="hist-day-title">${mo}월 ${dn}일 (${dow})</div><div class="hist-day-sub">${statusLabel} · 학습 ${d.sessions}회</div></div><div class="hist-day-right"><div class="hist-reward${d.reward===0?' zero':''}">${d.reward>0?d.reward.toLocaleString()+'원':'—'}</div><div class="hist-sessions">${d.completed.length}/${Object.keys(TASK_NAMES).length}항목</div></div></div>${d.subjects.length>0?`<div class="hist-subj-chips">${subjChips}</div>`:''}`;list.appendChild(card);});}
+function getMonths(){const data=getHistoryData();const seen=new Set(),res=[];const now=getTestDate();const curKey=now.getFullYear()+'-'+(now.getMonth()+1);seen.add(curKey);res.push(curKey);data.forEach(d=>{const k=d.date.getFullYear()+'-'+(d.date.getMonth()+1);if(!seen.has(k)){seen.add(k);res.push(k);}});
+// 알바 날짜도 포함
+const as=loadAlbaState();(as.todayItems||[]).forEach(i=>{if(!i.date)return;const[iy,im]=i.date.split('-').map(Number);const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}});
+return res.sort().reverse();}
+function buildMonthTabs(){const tabs=document.getElementById('month-tabs');const months=getMonths();selectedMonth=months[0];tabs.innerHTML='';months.forEach(m=>{const[y,mo]=m.split('-');const btn=document.createElement('button');btn.className='month-tab'+(m===selectedMonth?' on':'');btn.textContent=y+'년 '+mo+'월';btn.onclick=()=>{selectedMonth=m;document.querySelectorAll('.month-tab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderHistory();};tabs.appendChild(btn);});}
+
+function renderHistory(){
+  const[y,mo]=selectedMonth.split('-').map(Number);
+  const allData=getHistoryData();
+  const now=getTestDate();
+  const isCurrentMonth=y===now.getFullYear()&&mo===now.getMonth()+1;
+  const daysInMonth=new Date(y,mo,0).getDate();
+  const lastDay=isCurrentMonth?now.getDate():daysInMonth;
+  const filtered=[];
+  for(let dn=1;dn<=lastDay;dn++){const date=new Date(y,mo-1,dn);const key=y+'-'+String(mo).padStart(2,'0')+'-'+String(dn).padStart(2,'0');const rec=allData.find(d=>d.key===key);if(rec)filtered.push(rec);else filtered.push({key,date,isWE:date.getDay()===0||date.getDay()===6,completed:[],sessions:0,reward:0,subjects:[],status:'empty'});}
+
+  // 알바 데이터
+  const albaState=loadAlbaState();
+  const albaAll=(albaState.todayItems||[]).filter(i=>{if(!i.date)return false;const[iy,im]=i.date.split('-').map(Number);return iy===y&&im===mo;});
+  const albaByDate={};
+  albaAll.forEach(i=>{if(!albaByDate[i.date])albaByDate[i.date]=[];albaByDate[i.date].push(i);});
+
+  // 월 요약
+  const studyReward=filtered.reduce((a,b)=>a+b.reward,0);
+  const completeDays=filtered.filter(d=>d.status==='complete').length;
+  const totalSessions=filtered.reduce((a,b)=>a+b.sessions,0);
+  const albaMonthReward=calcAlbaMonthAccum(y,mo);
+  const albaMonthCnt=calcAlbaMonthCount(y,mo);
+  const totalReward=studyReward+albaMonthReward;
+  document.getElementById('month-summary').innerHTML=`<div class="msm-item"><div class="msm-val" style="font-size:13px">${studyReward.toLocaleString()}원</div><div class="msm-label">📚 학습</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--green)">${albaMonthReward.toLocaleString()}원</div><div class="msm-label">💼 알바</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--gold)">${totalReward.toLocaleString()}원</div><div class="msm-label">💰 합계</div></div><div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div><div class="msm-item"><div class="msm-val">${totalSessions}회</div><div class="msm-label">학습 횟수</div></div><div class="msm-item"><div class="msm-val" style="color:var(--green)">${albaMonthCnt}회</div><div class="msm-label">알바 횟수</div></div>`;
+
+  document.getElementById('prev-month-summary').style.display='none';
+
+  const list=document.getElementById('hist-list');
+  list.innerHTML='';
+
+  // ── 알바 필터 ──
+  if(histFilter==='alba'){
+    const albaDates=[...new Set(albaAll.map(i=>i.date))].sort().reverse();
+    if(albaDates.length===0){list.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;font-weight:700">이달 알바 기록이 없어요 💼</div>';return;}
+    albaDates.forEach(dateKey=>{
+      const items=albaByDate[dateKey]||[];
+      const[iy,im,id]=dateKey.split('-').map(Number);
+      const date=new Date(iy,im-1,id);
+      const dow=['일','월','화','수','목','금','토'][date.getDay()];
+      const doneItems=items.filter(i=>i.done);
+      const dayTotal=doneItems.reduce((s,i)=>s+(i.totalReward||0),0);
+      const card=document.createElement('div');
+      card.className='hist-day-card '+(doneItems.length>0?'complete':'partial');
+      card.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:13px 14px">
+        <div style="width:46px;height:46px;border-radius:50%;background:#DCFCE7;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="font-size:9px;font-weight:800;color:#15803D">${dow}</div>
+          <div style="font-size:19px;font-weight:900;color:#15803D;line-height:1">${id}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:900;color:var(--text)">${im}월 ${id}일 (${dow}) 알바</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:3px;line-height:1.5">${items.map(i=>`${i.emoji} ${i.label}${i.done?' ✅':''}`).join('<br>')}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:16px;font-weight:900;color:var(--green)">${dayTotal.toLocaleString()}원</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-top:2px">${doneItems.length}/${items.length} 완료</div>
+        </div>
+      </div>`;
+      list.appendChild(card);
+    });
+    return;
+  }
+
+  // ── 학습 / 전체 필터 ──
+  [...filtered].reverse().forEach(d=>{
+    const albaDayItems=albaByDate[d.key]||[];
+    const albaDayReward=albaDayItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
+    const hasAlba=albaDayItems.length>0;
+    const totalDayReward=d.reward+albaDayReward;
+
+    // 완전히 빈 날은 스킵
+    if(d.status==='empty'&&!hasAlba)return;
+    // 학습 필터: 알바만 있고 학습 없으면 스킵
+    if(histFilter==='study'&&d.status==='empty')return;
+
+    const dow=['일','월','화','수','목','금','토'][d.date.getDay()];
+    const dn=d.date.getDate();
+    const isToday=d.date.toDateString()===getTestDate().toDateString();
+    const dotBg=d.status==='complete'?'#EDE9FE':d.status==='partial'?'#FEF3C7':'#F3F4F6';
+    const dotClr=d.status==='complete'?'var(--purple)':d.status==='partial'?'#D97706':'var(--muted)';
+    const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':'기록 없음';
+    const rewardBits=[];
+    if(d.reward>0)rewardBits.push(`<span style="background:#EDE9FE;color:var(--purple);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">📚 ${d.reward.toLocaleString()}원</span>`);
+    if(albaDayReward>0)rewardBits.push(`<span style="background:#DCFCE7;color:#15803D;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">💼 ${albaDayReward.toLocaleString()}원</span>`);
+    const subjChips=d.subjects.map(s=>`<span class="hist-schip">${s}</span>`).join('');
+    const card=document.createElement('div');
+    card.className='hist-day-card '+d.status;
+    card.innerHTML=`<div onclick="openDayDetail('${d.key}')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer">
+      <div style="width:46px;height:46px;border-radius:50%;background:${dotBg};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+        <div style="font-size:9px;font-weight:800;color:${dotClr}">${isToday?'오늘':dow}</div>
+        <div style="font-size:19px;font-weight:900;color:${dotClr};line-height:1">${dn}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:900;color:var(--text)">${mo}월 ${dn}일 (${dow})</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:2px">${statusLabel} · 학습 ${d.sessions}회</div>
+        ${rewardBits.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">${rewardBits.join('')}</div>`:''}
+        ${subjChips?`<div style="margin-top:4px">${subjChips}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:${totalDayReward>0?'16':'13'}px;font-weight:900;color:${totalDayReward>0?'var(--gold)':'var(--muted)'}">${totalDayReward>0?totalDayReward.toLocaleString()+'원':'—'}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-top:2px">${d.completed.length}/${Object.keys(TASK_NAMES).length}항목</div>
+      </div>
+    </div>`;
+    list.appendChild(card);
+  });
+  if(list.children.length===0)list.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;font-weight:700">이달 기록이 없어요</div>';
+}
 
 function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';document.getElementById('detail-reward').textContent=d?(d.reward>0?d.reward.toLocaleString()+'원':'0원'):'0원';const items=document.getElementById('detail-items');items.innerHTML='';Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
 function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailDirect();}
@@ -1568,7 +1665,7 @@ function updateHistorySummary(){
   })();
   const totalReward=studyReward+albaAllTime;
   const bestStreak=calcBestStreak(history);
-  const totalDays=Object.values(history).filter(r=>r.sessions>=6).length;
+  const totalDays=Object.entries(history).filter(([k,r])=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&r.sessions>=6).length;
   const el1=document.getElementById('hist-total-reward');
   const el2=document.getElementById('hist-best-streak');
   const el3=document.getElementById('hist-total-days');
@@ -1579,7 +1676,7 @@ function updateHistorySummary(){
 function calcBestStreak(history) {
   // 모든 날짜를 순서대로 순회하며 새 규칙 적용
   const allDates = [];
-  const oldest = Object.keys(history).sort()[0];
+  const oldest = Object.keys(history).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort()[0];
   if (!oldest) return 0;
   const start = new Date(oldest + 'T00:00:00');
   const end   = new Date(); end.setHours(0,0,0,0);
@@ -1606,7 +1703,7 @@ function calcBestStreak(history) {
   return best;
 }
 
-function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';
+function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return false;const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';
 const albaMonR=calcAlbaMonthAccum(yr,mo);const albaCntR=calcAlbaMonthCount(yr,mo);
 const saE=document.getElementById('stat-alba-accum');if(saE)saE.textContent=albaMonR.toLocaleString()+'원';
 const scE=document.getElementById('stat-alba-count');if(scE)scE.textContent=albaCntR+'회';
@@ -2848,7 +2945,7 @@ function updateAlbaMonthAccum() {
 }
 
 function renderAlbaSection() {
-  // 버튼 그리드
+  // ── 버튼 그리드 (추가 버튼) ──
   const btnGrid = document.getElementById('alba-btn-grid');
   if (btnGrid) {
     btnGrid.innerHTML = '';
@@ -2870,35 +2967,37 @@ function renderAlbaSection() {
     });
   }
 
-  // 알바 목록
+  // ── 알바 목록 (task-card 스타일) ──
   const list = document.getElementById('alba-list');
   if (!list) return;
   list.innerHTML = '';
 
   if (albaItems.length === 0) {
-    list.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:12px;font-weight:700">위 버튼을 눌러 알바를 추가해요!</div>`;
+    list.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:12px;font-weight:700">위 버튼을 눌러 알바를 추가해요!</div>`;
     return;
   }
 
   const doneTotal = albaItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
-  const header = document.createElement('div');
-  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:2px 16px 6px';
-  header.innerHTML = `
-    <span style="font-size:11px;font-weight:800;color:var(--muted)">✅ 완료한 알바</span>
-    <span style="font-size:14px;font-weight:900;color:var(--green)" id="alba-today-total">${doneTotal.toLocaleString()}원</span>`;
-  list.appendChild(header);
+  const summary = document.createElement('div');
+  summary.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px';
+  summary.innerHTML = `<span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em">📋 오늘의 알바 목록</span><span style="font-size:14px;font-weight:900;color:var(--green)" id="alba-today-total">${doneTotal.toLocaleString()}원</span>`;
+  list.appendChild(summary);
 
   albaItems.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'alba-item' + (item.done?' done':'');
-    div.innerHTML = `
-      <div class="alba-row">
-        <div class="alba-check ${item.done?'done':''}" onclick="toggleAlba(${item.id})">✓</div>
-        <div class="alba-name ${item.done?'done':''}">${item.emoji} ${item.label}</div>
-        <div class="alba-reward">+${item.displayReward}</div>
-        <button class="alba-del" onclick="deleteAlba(${item.id})">✕</button>
+    const card = document.createElement('div');
+    card.className = 'task-card' + (item.done ? ' done' : '');
+    card.style.cssText = 'margin:0 16px 8px;' + (item.done ? 'border-color:#86EFAC;background:linear-gradient(160deg,#F0FDF4,#DCFCE7)' : '');
+    card.innerHTML = `
+      <div class="task-row" onclick="toggleAlba(${item.id})" style="padding:12px 14px">
+        <div class="task-check${item.done?' done':''}" style="width:26px;height:26px;flex-shrink:0">✓</div>
+        <div class="task-info">
+          <div class="task-name${item.done?' done':''}" style="${item.done?'text-decoration:line-through;color:var(--muted)':''}">${item.emoji} ${item.label}</div>
+          <div class="task-sub">${albaCurrentDate} 알바</div>
+        </div>
+        <div class="task-badge" style="background:${item.done?'#DCFCE7':'var(--gold-light)'};color:${item.done?'#15803D':'var(--gold)'};font-size:12px">+${item.displayReward}</div>
+        <button onclick="event.stopPropagation();deleteAlba(${item.id})" style="width:26px;height:26px;border-radius:50%;background:#FEE2E2;border:none;color:#EF4444;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px">✕</button>
       </div>`;
-    list.appendChild(div);
+    list.appendChild(card);
   });
 }
 
