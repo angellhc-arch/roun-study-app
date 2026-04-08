@@ -969,13 +969,20 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   <div style="height:8px"></div>
 </div>
 <div class="screen" id="screen-alba">
-  <div class="header" style="padding-bottom:18px">
+  <div class="header" style="padding-bottom:14px">
     <div class="header-top">
-      <div><div class="greeting">로운이의 알바</div><div class="username">오늘의 알바 💼</div></div>
+      <div><div class="greeting">로운이의 알바</div><div class="username" id="alba-screen-title">알바 💼</div></div>
       <div style="text-align:right">
-        <div style="font-size:10px;opacity:.8;font-weight:600;margin-bottom:2px">오늘 알바 보상</div>
+        <div style="font-size:10px;opacity:.8;font-weight:600;margin-bottom:2px">선택 날짜 보상</div>
         <div style="font-size:18px;font-weight:900" id="alba-header-total">0원</div>
       </div>
+    </div>
+    <!-- 날짜 선택 -->
+    <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+      <input type="date" id="alba-date-input"
+        style="flex:1;padding:8px 12px;border:1.5px solid rgba(255,255,255,.4);border-radius:10px;font-size:13px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;color:var(--text);background:white"
+        onchange="onAlbaDateChange()">
+      <button onclick="setAlbaDateToday()" style="padding:8px 12px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);border-radius:10px;color:white;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap">오늘</button>
     </div>
   </div>
 
@@ -985,13 +992,13 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div id="alba-btn-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
   </div>
 
-  <!-- 오늘 알바 목록 -->
+  <!-- 알바 목록 -->
   <div style="padding:14px 16px 0">
-    <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.04em">📋 오늘 알바 목록</div>
+    <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.04em">📋 알바 목록</div>
   </div>
   <div id="alba-list"></div>
 
-  <!-- 누적 보상 -->
+  <!-- 이달 누적 -->
   <div style="margin:8px 16px 0;background:var(--gold-light);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
     <div style="font-size:12px;font-weight:800;color:#9A6200">📦 이달 알바 누적 보상</div>
     <div style="font-size:18px;font-weight:900;color:var(--gold)" id="alba-month-accum">0원</div>
@@ -2644,27 +2651,62 @@ function migrateWordGameXP() {
 // ════════════════════════════════════════
 //  알바 시스템
 // ════════════════════════════════════════
-function initAlba() {
-  // 오늘 날짜 키로 오늘 알바만 복원
-  const today = getTestDate();
-  const todayKey = today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
-  const state = loadAlbaState();
-  albaItems = (state.todayItems || []).filter(i => i.date === todayKey).map(i=>({...i}));
-  albaIdCounter = albaItems.length ? Math.max(...albaItems.map(i=>i.id)) : 0;
-  renderAlbaSection();
+let albaCurrentDate = ''; // 현재 선택된 날짜
+
+function getDateKey(date) {
+  return date.getFullYear()+'-'+(date.getMonth()+1).toString().padStart(2,'0')+'-'+date.getDate().toString().padStart(2,'0');
 }
 
-function saveAlbaToday() {
+function initAlba() {
   const today = getTestDate();
-  const todayKey = today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
+  albaCurrentDate = getDateKey(today);
+  document.getElementById('alba-date-input').value = albaCurrentDate;
+  loadAlbaForDate(albaCurrentDate);
+}
+
+function setAlbaDateToday() {
+  const today = getTestDate();
+  albaCurrentDate = getDateKey(today);
+  document.getElementById('alba-date-input').value = albaCurrentDate;
+  loadAlbaForDate(albaCurrentDate);
+}
+
+function onAlbaDateChange() {
+  const val = document.getElementById('alba-date-input').value;
+  if (!val) return;
+  albaCurrentDate = val;
+  loadAlbaForDate(val);
+}
+
+function loadAlbaForDate(dateKey) {
   const state = loadAlbaState();
-  // 오늘 이외 과거 항목 유지 + 오늘 항목 덮어쓰기
-  const pastItems = (state.todayItems||[]).filter(i=>i.date !== todayKey);
-  const todayItemsWithDate = albaItems.map(i=>({...i, date:todayKey}));
-  // 총 누적 (완료한 것만)
-  const totalAccum = (state.history||[]).reduce((s,h)=>s+h.reward,0)
-    + albaItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
-  state.todayItems = [...pastItems, ...todayItemsWithDate];
+  const items = (state.todayItems || []).filter(i => i.date === dateKey).map(i=>({...i}));
+  albaItems = items;
+  albaIdCounter = items.length ? Math.max(...items.map(i=>i.id)) : 0;
+  renderAlbaSection();
+  updateAlbaScreenHeader(dateKey);
+}
+
+function updateAlbaScreenHeader(dateKey) {
+  const today = getTestDate();
+  const todayKey = getDateKey(today);
+  const isToday = dateKey === todayKey;
+  const d = new Date(dateKey + 'T00:00:00');
+  const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+  const label = isToday ? '오늘의 알바 💼' : `${d.getMonth()+1}월 ${d.getDate()}일 (${dow}) 알바`;
+  const titleEl = document.getElementById('alba-screen-title');
+  if (titleEl) titleEl.textContent = label;
+  // 헤더 합계 업데이트
+  const total = albaItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
+  const hEl = document.getElementById('alba-header-total');
+  if (hEl) hEl.textContent = total.toLocaleString()+'원';
+}
+
+function saveAlbaForDate(dateKey) {
+  const state = loadAlbaState();
+  const otherItems = (state.todayItems||[]).filter(i=>i.date !== dateKey);
+  const dateItems = albaItems.map(i=>({...i, date:dateKey}));
+  state.todayItems = [...otherItems, ...dateItems];
   saveAlbaState(state);
 }
 
@@ -2673,38 +2715,37 @@ function addAlba(menuId) {
   if (!menu) return;
 
   if (menu.type === 'custom') {
-    // 캠핑: 금액 직접 입력
     const amt = prompt(`⛺ 캠핑 알바 보상 금액을 입력해요 (숫자만)`);
     if (!amt || isNaN(parseInt(amt))) return;
     const reward = Math.max(0, parseInt(amt));
     albaIdCounter++;
     albaItems.push({ id:albaIdCounter, menuId, label:menu.label, emoji:menu.emoji, done:false, totalReward:reward, displayReward:reward.toLocaleString()+'원' });
   } else if (menu.type === 'per') {
-    // 빨래 접기: 개수 입력
-    const cnt = prompt(`${menu.emoji} ${menu.label} - ${menu.unit}가 몇 ${menu.unit}인지 입력해요`);
+    const cnt = prompt(`${menu.emoji} ${menu.label} - 몇 ${menu.unit} 했어요?`);
     if (!cnt || isNaN(parseInt(cnt)) || parseInt(cnt) <= 0) return;
     const count = parseInt(cnt);
     const reward = menu.reward * count;
     albaIdCounter++;
     albaItems.push({ id:albaIdCounter, menuId, label:`${menu.label} (${count}${menu.unit})`, emoji:menu.emoji, done:false, totalReward:reward, displayReward:reward.toLocaleString()+'원' });
   } else {
-    // 고정 금액
     albaIdCounter++;
     albaItems.push({ id:albaIdCounter, menuId, label:menu.label, emoji:menu.emoji, done:false, totalReward:menu.reward, displayReward:menu.reward.toLocaleString()+'원' });
   }
 
-  saveAlbaToday();
+  saveAlbaForDate(albaCurrentDate);
   renderAlbaSection();
-  calcAlbaReward();
+  updateAlbaScreenHeader(albaCurrentDate);
+  updateAlbaMonthAccum();
 }
 
 function toggleAlba(id) {
   const item = albaItems.find(i=>i.id===id);
   if (!item) return;
   item.done = !item.done;
-  saveAlbaToday();
+  saveAlbaForDate(albaCurrentDate);
   renderAlbaSection();
-  calcAlbaReward();
+  updateAlbaScreenHeader(albaCurrentDate);
+  updateAlbaMonthAccum();
   if (item.done) {
     POPUPS['_alba'] = ['💼', '알바 완료! 🎉', `${item.emoji} ${item.label} · +${item.displayReward}`];
     showPopup('_alba');
@@ -2713,9 +2754,10 @@ function toggleAlba(id) {
 
 function deleteAlba(id) {
   albaItems = albaItems.filter(i=>i.id!==id);
-  saveAlbaToday();
+  saveAlbaForDate(albaCurrentDate);
   renderAlbaSection();
-  calcAlbaReward();
+  updateAlbaScreenHeader(albaCurrentDate);
+  updateAlbaMonthAccum();
 }
 
 function calcAlbaReward() {
@@ -2725,8 +2767,23 @@ function calcAlbaReward() {
   return total;
 }
 
+function updateAlbaMonthAccum() {
+  const state = loadAlbaState();
+  const today = getTestDate();
+  const yr = today.getFullYear(), mo = today.getMonth() + 1;
+  const monthAccum = (state.todayItems || [])
+    .filter(i => {
+      if (!i.date) return false;
+      const [y, m] = i.date.split('-').map(Number);
+      return y === yr && m === mo && i.done;
+    })
+    .reduce((s, i) => s + (i.totalReward || 0), 0);
+  const el = document.getElementById('alba-month-accum');
+  if (el) el.textContent = monthAccum.toLocaleString() + '원';
+}
+
 function renderAlbaSection() {
-  // 알바 버튼 그리드 (2열 카드형)
+  // 버튼 그리드
   const btnGrid = document.getElementById('alba-btn-grid');
   if (btnGrid) {
     btnGrid.innerHTML = '';
@@ -2748,54 +2805,46 @@ function renderAlbaSection() {
     });
   }
 
-  // 추가된 알바 목록
+  // 알바 목록
   const list = document.getElementById('alba-list');
   if (!list) return;
   list.innerHTML = '';
 
-  if (albaItems.length > 0) {
-    const doneTotal = albaItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
-    const header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:2px 16px 6px';
-    header.innerHTML = `
-      <span style="font-size:11px;font-weight:800;color:var(--muted)">✅ 완료한 알바</span>
-      <span style="font-size:14px;font-weight:900;color:var(--green)" id="alba-today-total">${doneTotal.toLocaleString()}원</span>`;
-    list.appendChild(header);
-
-    albaItems.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'alba-item' + (item.done?' done':'');
-      div.innerHTML = `
-        <div class="alba-row">
-          <div class="alba-check ${item.done?'done':''}" onclick="toggleAlba(${item.id})">✓</div>
-          <div class="alba-name ${item.done?'done':''}">${item.emoji} ${item.label}</div>
-          <div class="alba-reward">+${item.displayReward}</div>
-          <button class="alba-del" onclick="deleteAlba(${item.id})">✕</button>
-        </div>`;
-      list.appendChild(div);
-    });
+  if (albaItems.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:12px;font-weight:700">위 버튼을 눌러 알바를 추가해요!</div>`;
+    return;
   }
+
+  const doneTotal = albaItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:2px 16px 6px';
+  header.innerHTML = `
+    <span style="font-size:11px;font-weight:800;color:var(--muted)">✅ 완료한 알바</span>
+    <span style="font-size:14px;font-weight:900;color:var(--green)" id="alba-today-total">${doneTotal.toLocaleString()}원</span>`;
+  list.appendChild(header);
+
+  albaItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'alba-item' + (item.done?' done':'');
+    div.innerHTML = `
+      <div class="alba-row">
+        <div class="alba-check ${item.done?'done':''}" onclick="toggleAlba(${item.id})">✓</div>
+        <div class="alba-name ${item.done?'done':''}">${item.emoji} ${item.label}</div>
+        <div class="alba-reward">+${item.displayReward}</div>
+        <button class="alba-del" onclick="deleteAlba(${item.id})">✕</button>
+      </div>`;
+    list.appendChild(div);
+  });
 }
 
 function renderAlbaScreen() {
-  renderAlbaSection();
-  // 이달 누적 계산
-  const state = loadAlbaState();
-  const today = getTestDate();
-  const yr = today.getFullYear(), mo = today.getMonth() + 1;
-  const monthAccum = (state.todayItems || [])
-    .filter(i => {
-      if (!i.date) return false;
-      const [y, m] = i.date.split('-').map(Number);
-      return y === yr && m === mo && i.done;
-    })
-    .reduce((s, i) => s + (i.totalReward || 0), 0);
-  const el = document.getElementById('alba-month-accum');
-  if (el) el.textContent = monthAccum.toLocaleString() + '원';
-  // 헤더 오늘 합계
-  const todayTotal = albaItems.filter(i => i.done).reduce((s, i) => s + (i.totalReward || 0), 0);
-  const hEl = document.getElementById('alba-header-total');
-  if (hEl) hEl.textContent = todayTotal.toLocaleString() + '원';
+  // 날짜가 없으면 오늘로 초기화
+  if (!albaCurrentDate) {
+    albaCurrentDate = getDateKey(getTestDate());
+    document.getElementById('alba-date-input').value = albaCurrentDate;
+  }
+  loadAlbaForDate(albaCurrentDate);
+  updateAlbaMonthAccum();
 }
 
 function renderStreakDashboard(mStreak, sStreak) {
