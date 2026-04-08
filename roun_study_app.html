@@ -1211,8 +1211,11 @@ async function syncFromSheet() {
     if (words && words.length > 0)  localStorage.setItem(WORD_STORE_KEY,      JSON.stringify(words));
     if (wordGame && (wordGame.totalGames > 0 || wordGame.totalXP > 0))
                                     localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(wordGame));
-    if (alba && (alba.todayItems||[]).length > 0)
-                                    localStorage.setItem(ALBA_STORE_KEY,      JSON.stringify(alba));
+    if (alba && (alba.todayItems||[]).length > 0) {
+      // Google Sheets에서 날짜가 Date 객체로 변환될 수 있으므로 정규화
+      alba.todayItems = alba.todayItems.map(item => ({...item, date: normalizeDate(item.date)})).filter(item => item.date);
+      localStorage.setItem(ALBA_STORE_KEY, JSON.stringify(alba));
+    }
     return true;
   } catch(e) { return false; }
 }
@@ -1583,9 +1586,27 @@ function setHistFilter(f){
   renderHistory();
 }
 
+// 날짜 문자열을 YYYY-MM-DD 형식으로 정규화 (Google Sheets Date 객체 대응)
+function normalizeDate(dateStr) {
+  if (!dateStr) return '';
+  const s = String(dateStr);
+  // 이미 YYYY-MM-DD 형식이면 그대로
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // 날짜 객체 문자열에서 YYYY-MM-DD 추출 시도
+  const m = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return '';
+}
+
 function getMonths(){const data=getHistoryData();const seen=new Set(),res=[];const now=getTestDate();const curKey=now.getFullYear()+'-'+(now.getMonth()+1);seen.add(curKey);res.push(curKey);data.forEach(d=>{const k=d.date.getFullYear()+'-'+(d.date.getMonth()+1);if(!seen.has(k)){seen.add(k);res.push(k);}});
-// 알바 날짜도 포함
-const as=loadAlbaState();(as.todayItems||[]).forEach(i=>{if(!i.date)return;const[iy,im]=i.date.split('-').map(Number);const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}});
+// 알바 날짜도 포함 (정규화 후 처리)
+const as=loadAlbaState();(as.todayItems||[]).forEach(i=>{
+  const nd=normalizeDate(i.date);if(!nd)return;
+  const[iy,im]=nd.split('-').map(Number);if(!iy||!im)return;
+  const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}
+});
 return res.sort().reverse();}
 function buildMonthTabs(){const tabs=document.getElementById('month-tabs');const months=getMonths();selectedMonth=months[0];tabs.innerHTML='';months.forEach(m=>{const[y,mo]=m.split('-');const btn=document.createElement('button');btn.className='month-tab'+(m===selectedMonth?' on':'');btn.textContent=y+'년 '+mo+'월';btn.onclick=()=>{selectedMonth=m;document.querySelectorAll('.month-tab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderHistory();};tabs.appendChild(btn);});}
 
@@ -2882,7 +2903,7 @@ function onAlbaDateChange() {
 
 function loadAlbaForDate(dateKey) {
   const state = loadAlbaState();
-  const items = (state.todayItems || []).filter(i => i.date === dateKey).map(i=>({...i}));
+  const items = (state.todayItems || []).filter(i => normalizeDate(i.date) === dateKey).map(i=>({...i, date: normalizeDate(i.date)}));
   albaItems = items;
   // id를 반드시 숫자로 재할당 (NaN/string 방지)
   albaItems.forEach((item, idx) => { item.id = Number(item.id) || (idx + 1); });
