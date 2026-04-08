@@ -1204,7 +1204,20 @@ async function syncFromSheet() {
     const json = await res.json();
     if (!json.success || !json.data) return false;
     const { study, words, wordGame, alba } = json.data;
-    // 히스토리가 있는 유효한 데이터만 덮어씀 (빈 데이터로 기존 데이터 파괴 방지)
+
+    // study: history 키를 YYYY-MM-DD로 정규화 (Sheets Date 객체 대응)
+    if (study && study.history) {
+      const fixedHistory = {};
+      Object.entries(study.history).forEach(([k, v]) => {
+        const nd = /^\d{4}-\d{2}-\d{2}$/.test(k) ? k : normalizeDate(k);
+        if (nd) fixedHistory[nd] = { ...v, date: nd };
+      });
+      study.history = fixedHistory;
+      // xp, streak 등 숫자 타입 보정
+      study.xp         = Number(study.xp)         || 0;
+      study.streak      = Number(study.streak)      || 0;
+      study.totalAccum  = Number(study.totalAccum)  || 0;
+    }
     if (study && study.history && Object.keys(study.history).length > 0) {
       localStorage.setItem(STORE_KEY, JSON.stringify(study));
     }
