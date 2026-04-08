@@ -966,6 +966,13 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
   <div id="badge-locked-grid" style="padding:0 16px"></div>
 
+  <!-- 시트 동기화 버튼 -->
+  <div style="padding:16px 16px 4px">
+    <button onclick="manualSyncFromSheet(this)" style="width:100%;background:linear-gradient(135deg,#7B5CF5,#A855F7);border:none;color:white;font-size:14px;font-weight:900;border-radius:14px;padding:14px;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.03em;transition:background .3s">
+      ☁️ 시트에서 데이터 불러오기
+    </button>
+  </div>
+
   <div style="height:8px"></div>
 </div>
 <div class="screen" id="screen-alba">
@@ -1195,13 +1202,51 @@ async function syncFromSheet() {
   try {
     const res = await fetch(SHEET_URL + '?action=load');
     const json = await res.json();
-    if (!json.success || !json.data) return;
+    if (!json.success || !json.data) return false;
     const { study, words, wordGame, alba } = json.data;
-    if (study)    localStorage.setItem(STORE_KEY,           JSON.stringify(study));
-    if (words)    localStorage.setItem(WORD_STORE_KEY,      JSON.stringify(words));
-    if (wordGame) localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(wordGame));
-    if (alba)     localStorage.setItem(ALBA_STORE_KEY,      JSON.stringify(alba));
-  } catch(e) {}
+    // 히스토리가 있는 유효한 데이터만 덮어씀 (빈 데이터로 기존 데이터 파괴 방지)
+    if (study && study.history && Object.keys(study.history).length > 0) {
+      localStorage.setItem(STORE_KEY, JSON.stringify(study));
+    }
+    if (words && words.length > 0)  localStorage.setItem(WORD_STORE_KEY,      JSON.stringify(words));
+    if (wordGame && (wordGame.totalGames > 0 || wordGame.totalXP > 0))
+                                    localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(wordGame));
+    if (alba && (alba.todayItems||[]).length > 0)
+                                    localStorage.setItem(ALBA_STORE_KEY,      JSON.stringify(alba));
+    return true;
+  } catch(e) { return false; }
+}
+
+async function manualSyncFromSheet(btnEl) {
+  if (btnEl) { btnEl.textContent = '⏳ 불러오는 중...'; btnEl.disabled = true; }
+  const ok = await syncFromSheet();
+  // 화면 전체 갱신
+  const state = loadState();
+  if (state) {
+    xp = state.xp || xp;
+    if (state.flexName) { const fn=document.getElementById('name-flex'); if(fn)fn.textContent=state.flexName; }
+    restoreToday(state);
+    wordList = loadWords();
+    calcReward(); updateProgress(); buildStreakCalendar();
+    initAlba();
+  }
+  // 현재 열린 화면 갱신
+  const activeScreen = document.querySelector('.screen.active');
+  if (activeScreen) {
+    const name = activeScreen.id.replace('screen-','');
+    if (name==='stats')    { updateStatsScreen(); updateLevelCard(); renderBadges(); }
+    if (name==='history')  { updateHistorySummary(); buildMonthTabs(); renderHistory(); }
+    if (name==='alba')     renderAlbaScreen();
+  }
+  if (btnEl) {
+    btnEl.textContent = ok ? '✅ 완료!' : '❌ 실패 (재시도)';
+    btnEl.style.background = ok ? '#22C55E' : '#EF4444';
+    setTimeout(() => {
+      btnEl.textContent = '☁️ 시트에서 데이터 불러오기';
+      btnEl.style.background = 'linear-gradient(135deg,#7B5CF5,#A855F7)';
+      btnEl.disabled = false;
+    }, 2500);
+  }
 }
 
 
