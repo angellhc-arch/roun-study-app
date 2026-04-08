@@ -971,10 +971,6 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
   <div id="badge-locked-grid" style="padding:0 16px"></div>
 
-  <div style="padding:12px 16px 0">
-    <button onclick="checkLatestVersion()" style="width:100%;padding:12px;background:linear-gradient(135deg,#10B981,#059669);border:none;border-radius:10px;color:white;font-size:14px;font-weight:800;cursor:pointer">최신 버전 확인</button>
-  </div>
-
   <div style="height:8px"></div>
 </div>
 <div class="screen" id="screen-alba">
@@ -3000,32 +2996,6 @@ function checkStreakMilestoneCelebration() {
   localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, claimedBonuses }));
 
   setTimeout(() => showHabitCelebration(type, info.streakDays || 0, reward, uncelebrated.length - 1), 600);
-}
-
-function checkLatestVersion() {
-  fetch('https://api.github.com/repos/angellhc-arch/roun-study-app/commits/main')
-    .then(response => response.json())
-    .then(data => {
-      const latestSHA = data.sha;
-      const currentSHA = localStorage.getItem('currentVersionSHA') || '';
-      if (latestSHA === currentSHA) {
-        document.getElementById('popup-emoji').textContent = '✅';
-        document.getElementById('popup-title').textContent = '최신 버전입니다!';
-        document.getElementById('popup-msg').textContent = '앱이 최신 상태예요.';
-      } else {
-        document.getElementById('popup-emoji').textContent = '🔄';
-        document.getElementById('popup-title').textContent = '업데이트 발견!';
-        document.getElementById('popup-msg').textContent = '새로운 버전이 있어요. 새로고침 해주세요.';
-        localStorage.setItem('currentVersionSHA', latestSHA);
-      }
-      document.getElementById('popup').classList.add('show');
-    })
-    .catch(error => {
-      document.getElementById('popup-emoji').textContent = '❌';
-      document.getElementById('popup-title').textContent = '확인 실패';
-      document.getElementById('popup-msg').textContent = '버전 확인에 실패했어요. 인터넷 연결을 확인해주세요.';
-      document.getElementById('popup').classList.add('show');
-    });
 }
 
 function showHabitCelebration(type, days, reward, remaining) {
