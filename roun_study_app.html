@@ -966,14 +966,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
   <div id="badge-locked-grid" style="padding:0 16px"></div>
 
-  <!-- 시트 동기화 버튼 -->
-  <div style="padding:16px 16px 4px">
-    <button onclick="manualSyncFromSheet(this)" style="width:100%;background:linear-gradient(135deg,#7B5CF5,#A855F7);border:none;color:white;font-size:14px;font-weight:900;border-radius:14px;padding:14px;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.03em;transition:background .3s">
-      ☁️ 시트에서 데이터 불러오기
-    </button>
-  </div>
-
-  <div style="height:8px"></div>
+<div style="height:8px"></div>
 </div>
 <div class="screen" id="screen-alba">
   <div class="header" style="padding-bottom:14px">
@@ -2871,18 +2864,8 @@ function migrateWordGameXP() {
     if (state.todayItems.length !== before) saveAlbaState(state);
   })();
 
-  // Google Sheets에서 최신 데이터 동기화 (앱 로드 시)
-  syncFromSheet().then(() => {
-    const synced = loadState();
-    if (synced) {
-      xp = synced.xp || xp;
-      if (synced.flexName) { const fn = document.getElementById('name-flex'); if (fn) fn.textContent = synced.flexName; }
-      restoreToday(synced);
-      wordList = loadWords();
-      calcReward(); updateProgress(); buildStreakCalendar();
-      initAlba();
-    }
-  }).catch(() => {});
+  // 앱 로드 시 Google Sheets에서 자동 동기화 (모든 화면 갱신)
+  manualSyncFromSheet(null);
 })();
 
 // ════════════════════════════════════════
