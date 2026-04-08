@@ -28,13 +28,8 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .streak-badge { background:rgba(255,255,255,.2); border:1.5px solid rgba(255,255,255,.4); border-radius:20px; padding:5px 11px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:5px; }
 .xp-bar-wrap { margin-top:4px; }
 .xp-label { font-size:12px; opacity:.8; margin-bottom:4px; font-weight:600; display:flex; justify-content:space-between; }
+.xp-bar { background:rgba(255,255,255,.25); border-radius:10px; height:7px; overflow:hidden; }
 .xp-fill { background:#FFD700; border-radius:10px; height:100%; transition:width .6s ease; }
-.xp-fill.level-up { animation: levelUpGlow 1.2s ease-in-out; }
-@keyframes levelUpGlow {
-  0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
-  50% { box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.9); transform: scaleY(1.2); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); transform: scaleY(1); }
-}
 .level-badge { width:46px; height:46px; background:linear-gradient(135deg,#FFD700,#F5A623); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:#7C5400; border:3px solid rgba(255,255,255,.6); flex-shrink:0; text-align:center; line-height:1.3; }
 
 .reward-banner { margin:12px 16px 0; background:var(--card); border-radius:var(--radius); border:1.5px solid var(--gold); padding:13px 15px; }
@@ -1384,15 +1379,6 @@ function updateProgress() {
   const pct=Math.min(((xp-xpCurThresh)/(xpNextThresh-xpCurThresh))*100,100);
   document.getElementById('xp-fill').style.width=pct+'%'; document.getElementById('xp-label-text').textContent=xp+' / '+xpNextThresh.toLocaleString()+' XP';
   const curLv=Math.min(xpLvNow,100); document.querySelectorAll('.level-badge-sync').forEach(el=>el.innerHTML='Lv<br>'+curLv);
-
-  // 레벨업 애니메이션
-  if (xpLvNow > lastXPLevel) {
-    const xpFill = document.getElementById('xp-fill');
-    xpFill.classList.add('level-up');
-    setTimeout(() => xpFill.classList.remove('level-up'), 1200);
-    lastXPLevel = xpLvNow;
-  }
-}
 }
 
 const POPUPS={
@@ -1441,7 +1427,6 @@ function closePopup(e){if(e.target.id==='popup')closePopupDirect();}
 function closePopupDirect(){document.getElementById('popup').classList.remove('show');}
 
 let extraItems=[],extraIdCounter=0;
-let lastXPLevel = getXPLevel(xp); // 레벨업 애니메이션용
 const SUBJ_OPTIONS=['수학','영어','국어','글쓰기','예습복습','기타'];
 function addExtra(){const id=++extraIdCounter;extraItems.push({id,done:false,subj:'수학'});renderExtraList();calcReward();updateProgress();}
 function toggleExtra(id){const item=extraItems.find(e=>e.id===id);if(!item)return;item.done=!item.done;renderExtraList();calcReward();updateProgress();if(item.done)showPopup('_extra');saveState();}
@@ -2641,7 +2626,6 @@ function migrateWordGameXP() {
   const state = loadState();
   if (state) {
     xp = state.xp || 0;
-    lastXPLevel = getXPLevel(xp); // 레벨업 애니메이션용 초기화
     if (state.flexName) { const fn = document.getElementById('name-flex'); if (fn) fn.textContent = state.flexName; }
   }
   const _vn = new Date();
