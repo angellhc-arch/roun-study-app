@@ -1327,6 +1327,7 @@ function restoreToday(state) {
 
 let albaItems = [];
 let albaIdCounter = 0;
+let albaCurrentDate = '';
 
 function calcReward() {
   const s=calcSessions(); let base=s>=7?5000:s===6?4000:s*500; let bonus=0; const chips=[];
@@ -2651,7 +2652,6 @@ function migrateWordGameXP() {
 // ════════════════════════════════════════
 //  알바 시스템
 // ════════════════════════════════════════
-let albaCurrentDate = ''; // 현재 선택된 날짜
 
 function getDateKey(date) {
   return date.getFullYear()+'-'+(date.getMonth()+1).toString().padStart(2,'0')+'-'+date.getDate().toString().padStart(2,'0');
