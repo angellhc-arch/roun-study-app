@@ -966,13 +966,6 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
   <div id="badge-locked-grid" style="padding:0 16px"></div>
 
-  <!-- 데이터 마이그레이션 버튼 -->
-  <div style="padding:0 16px 4px">
-    <button id="btn-migrate" onclick="migrateToSheet()" style="width:100%;background:linear-gradient(135deg,#7B5CF5,#A855F7);border:none;color:white;font-size:14px;font-weight:900;border-radius:14px;padding:14px;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.03em">
-      ☁️ 구글 시트에 데이터 백업
-    </button>
-  </div>
-
   <div style="height:8px"></div>
 </div>
 <div class="screen" id="screen-alba">
@@ -1205,38 +1198,6 @@ async function syncFromSheet() {
   } catch(e) {}
 }
 
-async function migrateToSheet() {
-  const btn = document.getElementById('btn-migrate');
-  btn.textContent = '⏳ 업로드 중...';
-  btn.disabled = true;
-  try {
-    const data = {
-      study:    JSON.parse(localStorage.getItem(STORE_KEY)             || 'null'),
-      words:    JSON.parse(localStorage.getItem(WORD_STORE_KEY)        || '[]'),
-      wordGame: JSON.parse(localStorage.getItem(WORD_GAME_STORE_KEY)   || 'null'),
-      alba:     JSON.parse(localStorage.getItem(ALBA_STORE_KEY)        || 'null'),
-    };
-    await fetch(SHEET_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify({ action: 'save', data })
-    });
-    btn.textContent = '✅ 동기화 완료!';
-    btn.style.borderColor = '#6EE7B7';
-    btn.style.color = '#059669';
-    setTimeout(() => {
-      btn.textContent = '☁️ 구글 시트에 데이터 백업';
-      btn.style.borderColor = '#C4B5FD';
-      btn.style.color = '#9CA3AF';
-      btn.disabled = false;
-    }, 3000);
-  } catch(e) {
-    btn.textContent = '❌ 실패 — 다시 시도';
-    btn.style.borderColor = '#FCA5A5';
-    btn.style.color = '#EF4444';
-    btn.disabled = false;
-  }
-}
 
 const ALBA_MENU = [
   { id:'clothes', emoji:'👕', label:'옷 정리',      reward:500,  type:'fixed' },
@@ -2725,11 +2686,21 @@ function migrateWordGameXP() {
   // 스트릭 마일스톤 달성 축하 알림 (아직 알림 안 보낸 경우)
   checkStreakMilestoneCelebration();
 
-  // Google Sheets에서 최신 데이터 동기화 (백그라운드)
+  // 4월3일 캠핑 이상 데이터 정리 (한번만 실행)
+  (function cleanupBadAlba() {
+    const state = loadAlbaState();
+    if (!state.todayItems) return;
+    const before = state.todayItems.length;
+    state.todayItems = state.todayItems.filter(i => !(i.menuId === 'camping' && (i.totalReward || 0) > 50000));
+    if (state.todayItems.length !== before) saveAlbaState(state);
+  })();
+
+  // Google Sheets에서 최신 데이터 동기화 (앱 로드 시)
   syncFromSheet().then(() => {
     const synced = loadState();
     if (synced) {
       xp = synced.xp || xp;
+      if (synced.flexName) { const fn = document.getElementById('name-flex'); if (fn) fn.textContent = synced.flexName; }
       restoreToday(synced);
       wordList = loadWords();
       calcReward(); updateProgress(); buildStreakCalendar();
@@ -2771,7 +2742,9 @@ function loadAlbaForDate(dateKey) {
   const state = loadAlbaState();
   const items = (state.todayItems || []).filter(i => i.date === dateKey).map(i=>({...i}));
   albaItems = items;
-  albaIdCounter = items.length ? Math.max(...items.map(i=>i.id)) : 0;
+  // id를 반드시 숫자로 재할당 (NaN/string 방지)
+  albaItems.forEach((item, idx) => { item.id = Number(item.id) || (idx + 1); });
+  albaIdCounter = albaItems.length ? Math.max(...albaItems.map(i=>i.id)) : 0;
   renderAlbaSection();
   updateAlbaScreenHeader(dateKey);
 }
@@ -2804,9 +2777,12 @@ function addAlba(menuId) {
   if (!menu) return;
 
   if (menu.type === 'custom') {
-    const amt = prompt(`⛺ 캠핑 알바 보상 금액을 입력해요 (숫자만)`);
-    if (!amt || isNaN(parseInt(amt))) return;
-    const reward = Math.max(0, parseInt(amt));
+    const amt = prompt(`⛺ 캠핑 알바 보상 금액을 입력해요\n(숫자만, 최대 50,000원)`);
+    if (!amt) return;
+    const parsed = parseInt(amt.replace(/[^0-9]/g, ''), 10);
+    if (isNaN(parsed) || parsed <= 0) { alert('숫자만 입력해주세요!'); return; }
+    if (parsed > 50000) { alert('최대 50,000원까지 입력할 수 있어요!'); return; }
+    const reward = parsed;
     albaIdCounter++;
     albaItems.push({ id:albaIdCounter, menuId, label:menu.label, emoji:menu.emoji, done:false, totalReward:reward, displayReward:reward.toLocaleString()+'원' });
   } else if (menu.type === 'per') {
@@ -2842,7 +2818,7 @@ function toggleAlba(id) {
 }
 
 function deleteAlba(id) {
-  albaItems = albaItems.filter(i=>i.id!==id);
+  albaItems = albaItems.filter(i=>Number(i.id)!==Number(id));
   saveAlbaForDate(albaCurrentDate);
   renderAlbaSection();
   updateAlbaScreenHeader(albaCurrentDate);
