@@ -1589,6 +1589,7 @@ function setHistFilter(f){
     btn.style.color=active?'white':'var(--muted)';
     btn.style.borderColor=active?'var(--purple)':'var(--border)';
   });
+  buildMonthTabs();
   renderHistory();
 }
 
@@ -2289,8 +2290,8 @@ function showGameResult() {
   document.getElementById('result-title').textContent = title;
   document.getElementById('result-sub').textContent = sub;
 
-  // ── XP 계산 (최대 40XP, 하루 100XP 한도) ──
-  const rawXP = Math.round(ratio * 40); // 정답률 × 40
+  // ── XP 계산 (최대 15XP, 하루 100XP 한도) ──
+  const rawXP = Math.round(ratio * 15); // 정답률 × 15
   const today = getTestDate();
   const todayKey = today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
   const wgs = loadWordGameState();
