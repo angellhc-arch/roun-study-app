@@ -1213,11 +1213,24 @@ async function syncFromSheet() {
       study.totalAccum  = Number(study.totalAccum)  || 0;
     }
     if (study && study.history && Object.keys(study.history).length > 0) {
+      // 로컬 XP가 더 높으면 유지 (단어게임 XP 덮어쓰기 방지)
+      const localStudy = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (localStudy && (localStudy.xp || 0) > (study.xp || 0)) {
+        study.xp = localStudy.xp;
+      }
       localStorage.setItem(STORE_KEY, JSON.stringify(study));
     }
     if (words && words.length > 0)  localStorage.setItem(WORD_STORE_KEY,      JSON.stringify(words));
-    if (wordGame && (wordGame.totalGames > 0 || wordGame.totalXP > 0))
-                                    localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(wordGame));
+    if (wordGame && (wordGame.totalGames > 0 || wordGame.totalXP > 0)) {
+      // 로컬 단어게임 XP가 더 높으면 유지
+      const localWG = JSON.parse(localStorage.getItem(WORD_GAME_STORE_KEY) || 'null');
+      if (localWG && (localWG.totalXP || 0) > (wordGame.totalXP || 0)) {
+        wordGame.totalXP = localWG.totalXP;
+        wordGame.totalGames = Math.max(localWG.totalGames || 0, wordGame.totalGames || 0);
+        wordGame.totalCorrect = Math.max(localWG.totalCorrect || 0, wordGame.totalCorrect || 0);
+      }
+      localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(wordGame));
+    }
     if (alba && (alba.todayItems||[]).length > 0) {
       // Google Sheets에서 날짜가 Date 객체로 변환될 수 있으므로 정규화
       alba.todayItems = alba.todayItems.map(item => ({...item, date: normalizeDate(item.date)})).filter(item => item.date);
@@ -1233,7 +1246,7 @@ async function manualSyncFromSheet(btnEl) {
   // 화면 전체 갱신
   const state = loadState();
   if (state) {
-    xp = state.xp || xp;
+    xp = Math.max(state.xp || 0, xp); // 더 높은 XP 유지
     if (state.flexName) { const fn=document.getElementById('name-flex'); if(fn)fn.textContent=state.flexName; }
     restoreToday(state);
     wordList = loadWords();
@@ -2291,8 +2304,8 @@ function showGameResult() {
   document.getElementById('result-title').textContent = title;
   document.getElementById('result-sub').textContent = sub;
 
-  // ── XP 계산 (최대 15XP, 하루 100XP 한도) ──
-  const rawXP = Math.round(ratio * 15); // 정답률 × 15
+  // ── XP 계산 (최대 30XP, 하루 200XP 한도) ──
+  const rawXP = Math.round(ratio * 30); // 정답률 × 30
   const today = getTestDate();
   const todayKey = today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
   const wgs = loadWordGameState();
@@ -2300,7 +2313,7 @@ function showGameResult() {
   const todayWordXP = (wgs.history || [])
     .filter(h => h.dateKey === todayKey)
     .reduce((s, h) => s + (h.xpGained || 0), 0);
-  const remaining = Math.max(0, 100 - todayWordXP);
+  const remaining = Math.max(0, 200 - todayWordXP);
   const gainedXP = Math.min(rawXP, remaining);
 
   // 전체 XP에 반영
@@ -2315,10 +2328,10 @@ function showGameResult() {
       <span>⭐ 획득 XP</span>
       <span style="color:var(--purple);font-weight:900">
         +${gainedXP} XP
-        ${gainedXP < rawXP ? `<span style="font-size:10px;color:var(--muted)">(오늘 한도 ${100-remaining+gainedXP}/100)</span>` : ''}
+        ${gainedXP < rawXP ? `<span style="font-size:10px;color:var(--muted)">(오늘 한도 ${200-remaining+gainedXP}/200)</span>` : ''}
       </span>
     </div>
-    ${todayWordXP + gainedXP >= 100 ? '<div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;text-align:center">오늘 단어게임 XP 최대 달성! 🎊</div>' : `<div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;text-align:center">오늘 남은 단어게임 XP: ${100 - todayWordXP - gainedXP}/100</div>`}`;
+    ${todayWordXP + gainedXP >= 200 ? '<div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;text-align:center">오늘 단어게임 XP 최대 달성! 🎊</div>' : `<div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;text-align:center">오늘 남은 단어게임 XP: ${200 - todayWordXP - gainedXP}/200</div>`}`;
 
   const qtypeLabels = { A:'뜻→단어', B:'단어→뜻', C:'빈칸채우기' };
   gameState.results.forEach(r => {
