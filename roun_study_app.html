@@ -709,6 +709,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <button class="spill" onclick="setFlexName('📝 국어',this)">국어</button>
           <button class="spill" onclick="setFlexName('🎬 영상편집',this)">영상편집</button>
           <button class="spill" onclick="setFlexName('📖 예습복습',this)">예습복습</button>
+          <button class="spill" onclick="setFlexName('🍳 요리',this)">요리</button>
         </div>
         <input class="custom-input show" id="flex-custom" placeholder="직접 입력 후 엔터..." onkeydown="if(event.key==='Enter'&&this.value.trim()){setFlexName(this.value.trim(),null);this.value='';}" onclick="event.stopPropagation()">
       </div>
@@ -2462,6 +2463,7 @@ function onPastDateChange() {
             <button class="spill ${flexLabel.includes('영상편집')&&!flexLabel.includes('국어')?'on':''}" onclick="setPastFlexName('🎬 영상편집',this)">영상편집</button>
             <button class="spill ${flexLabel.includes('예습복습')?'on':''}" onclick="setPastFlexName('📖 예습복습',this)">예습복습</button>
             <button class="spill ${flexLabel.includes('수학 추가')?'on':''}" onclick="setPastFlexName('📐 수학 추가',this)">수학 추가</button>
+            <button class="spill ${flexLabel.includes('요리')?'on':''}" onclick="setPastFlexName('🍳 요리',this)">요리</button>
           </div>
           <input class="custom-input show" placeholder="직접 입력 후 엔터..."
             onkeydown="if(event.key==='Enter'&&this.value.trim()){setPastFlexName(this.value.trim(),null);this.value='';}">
