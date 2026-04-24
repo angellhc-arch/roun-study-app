@@ -1673,11 +1673,12 @@ function renderHistory(){
   // 월 요약
   const studyReward=filtered.reduce((a,b)=>a+b.reward,0);
   const completeDays=filtered.filter(d=>d.status==='complete').length;
-  const totalSessions=filtered.reduce((a,b)=>a+b.sessions,0);
   const albaMonthReward=calcAlbaMonthAccum(y,mo);
   const albaMonthCnt=calcAlbaMonthCount(y,mo);
   const totalReward=studyReward+albaMonthReward;
-  document.getElementById('month-summary').innerHTML=`<div class="msm-item"><div class="msm-val" style="font-size:13px">${studyReward.toLocaleString()}원</div><div class="msm-label">📚 학습</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--green)">${albaMonthReward.toLocaleString()}원</div><div class="msm-label">💼 알바</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--gold)">${totalReward.toLocaleString()}원</div><div class="msm-label">💰 합계</div></div><div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div><div class="msm-item"><div class="msm-val">${totalSessions}회</div><div class="msm-label">학습 횟수</div></div><div class="msm-item"><div class="msm-val" style="color:var(--green)">${albaMonthCnt}회</div><div class="msm-label">알바 횟수</div></div>`;
+  const subjTotals={};filtered.forEach(d=>d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];subjTotals[s]=(subjTotals[s]||0)+1;}));
+  const subjItems=Object.entries(subjTotals).map(([s,n])=>`<div class="msm-item"><div class="msm-val">${n}회</div><div class="msm-label">${s}</div></div>`).join('');
+  document.getElementById('month-summary').innerHTML=`<div class="msm-item"><div class="msm-val" style="font-size:13px">${studyReward.toLocaleString()}원</div><div class="msm-label">📚 학습</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--green)">${albaMonthReward.toLocaleString()}원</div><div class="msm-label">💼 알바</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--gold)">${totalReward.toLocaleString()}원</div><div class="msm-label">💰 합계</div></div><div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div>${subjItems}<div class="msm-item"><div class="msm-val" style="color:var(--green)">${albaMonthCnt}회</div><div class="msm-label">알바 횟수</div></div>`;
 
   document.getElementById('prev-month-summary').style.display='none';
 
