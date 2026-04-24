@@ -1033,6 +1033,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <button id="hf-alba"  onclick="setHistFilter('alba')"  style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--border);background:white;color:var(--muted);font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">💼 알바</button>
   </div>
   <div class="month-summary" id="month-summary"></div>
+  <div class="month-summary" id="subj-summary" style="margin-top:6px"></div>
   <!-- 이전 달 요약 -->
   <div id="prev-month-summary" style="display:none;margin:8px 16px 0;background:var(--card);border-radius:var(--radius);border:1.5px solid #FDE68A;padding:12px 14px">
     <div style="font-size:11px;font-weight:800;color:#92400E;margin-bottom:8px" id="prev-month-label">⬅️ 지난달 요약</div>
@@ -1678,7 +1679,9 @@ function renderHistory(){
   const totalReward=studyReward+albaMonthReward;
   const subjTotals={};filtered.forEach(d=>d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];subjTotals[s]=(subjTotals[s]||0)+1;}));
   const subjItems=Object.entries(subjTotals).map(([s,n])=>`<div class="msm-item"><div class="msm-val">${n}회</div><div class="msm-label">${s}</div></div>`).join('');
-  document.getElementById('month-summary').innerHTML=`<div class="msm-item"><div class="msm-val" style="font-size:13px">${studyReward.toLocaleString()}원</div><div class="msm-label">📚 학습</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--green)">${albaMonthReward.toLocaleString()}원</div><div class="msm-label">💼 알바</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--gold)">${totalReward.toLocaleString()}원</div><div class="msm-label">💰 합계</div></div><div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div>${subjItems}<div class="msm-item"><div class="msm-val" style="color:var(--green)">${albaMonthCnt}회</div><div class="msm-label">알바 횟수</div></div>`;
+  document.getElementById('month-summary').innerHTML=`<div class="msm-item"><div class="msm-val" style="font-size:13px">${studyReward.toLocaleString()}원</div><div class="msm-label">📚 학습</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--green)">${albaMonthReward.toLocaleString()}원</div><div class="msm-label">💼 알바</div></div><div class="msm-item"><div class="msm-val" style="font-size:13px;color:var(--gold)">${totalReward.toLocaleString()}원</div><div class="msm-label">💰 합계</div></div><div class="msm-item"><div class="msm-val">${completeDays}일</div><div class="msm-label">완료일</div></div><div class="msm-item"><div class="msm-val" style="color:var(--green)">${albaMonthCnt}회</div><div class="msm-label">알바 횟수</div></div>`;
+  const subjEl=document.getElementById('subj-summary');
+  if(subjItems){subjEl.innerHTML=subjItems;subjEl.style.display='flex';}else{subjEl.style.display='none';}
 
   document.getElementById('prev-month-summary').style.display='none';
 
