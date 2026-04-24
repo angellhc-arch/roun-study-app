@@ -161,10 +161,10 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .hist-sum-val { font-size:15px; font-weight:900; color:var(--text); }
 .hist-sum-label { font-size:9px; color:var(--muted); font-weight:700; margin-top:2px; }
 
-.month-tab-wrap { padding:10px 16px 0; overflow-x:auto; }
-.month-tabs { display:flex; gap:6px; width:max-content; }
-.month-tab { padding:5px 14px; border-radius:20px; font-size:12px; font-weight:800; border:1.5px solid var(--border); color:var(--muted); cursor:pointer; background:white; font-family:'Nunito',sans-serif; white-space:nowrap; }
-.month-tab.on { background:var(--purple); border-color:var(--purple); color:white; }
+.month-nav-bar { display:flex; align-items:center; justify-content:center; gap:16px; padding:10px 16px 4px; }
+.month-nav-btn { width:34px; height:34px; border-radius:50%; border:1.5px solid var(--border); background:white; font-size:22px; line-height:1; cursor:pointer; color:var(--purple); font-weight:900; display:flex; align-items:center; justify-content:center; padding:0; font-family:'Nunito',sans-serif; }
+.month-nav-btn:disabled { color:var(--border); cursor:default; }
+.month-nav-label { font-size:15px; font-weight:900; color:var(--text); min-width:110px; text-align:center; font-family:'Nunito',sans-serif; }
 
 .month-summary { margin:10px 16px 0; background:var(--card); border-radius:var(--radius); border:1.5px solid var(--border); padding:12px 14px; display:flex; flex-wrap:wrap; gap:0; }
 .msm-item { flex:1; text-align:center; }
@@ -1021,7 +1021,11 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="hist-sum-card"><div class="hist-sum-icon">🔥</div><div class="hist-sum-val" id="hist-best-streak">0일</div><div class="hist-sum-label">최장 연속 기록</div></div>
     <div class="hist-sum-card"><div class="hist-sum-icon">📅</div><div class="hist-sum-val" id="hist-total-days">0일</div><div class="hist-sum-label">총 달성일</div></div>
   </div>
-  <div class="month-tab-wrap"><div class="month-tabs" id="month-tabs"></div></div>
+  <div class="month-nav-bar">
+    <button class="month-nav-btn" id="month-prev-btn" onclick="navigateMonth(-1)">&#8249;</button>
+    <span class="month-nav-label" id="month-nav-label"></span>
+    <button class="month-nav-btn" id="month-next-btn" onclick="navigateMonth(1)">&#8250;</button>
+  </div>
   <!-- 학습/알바 필터 -->
   <div style="display:flex;gap:6px;padding:0 16px 10px">
     <button id="hf-all"   onclick="setHistFilter('all')"   style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--purple);background:var(--purple);color:white;font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">전체</button>
@@ -1603,7 +1607,6 @@ function setHistFilter(f){
     btn.style.color=active?'white':'var(--muted)';
     btn.style.borderColor=active?'var(--purple)':'var(--border)';
   });
-  buildMonthTabs();
   renderHistory();
 }
 
@@ -1629,7 +1632,27 @@ const as=loadAlbaState();(as.todayItems||[]).forEach(i=>{
   const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}
 });
 return res.sort().reverse();}
-function buildMonthTabs(){const tabs=document.getElementById('month-tabs');const months=getMonths();selectedMonth=months[0];tabs.innerHTML='';months.forEach(m=>{const[y,mo]=m.split('-');const btn=document.createElement('button');btn.className='month-tab'+(m===selectedMonth?' on':'');btn.textContent=y+'년 '+mo+'월';btn.onclick=()=>{selectedMonth=m;document.querySelectorAll('.month-tab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderHistory();};tabs.appendChild(btn);});}
+let _monthList=[];
+function buildMonthTabs(){
+  _monthList=getMonths();
+  if(!selectedMonth||!_monthList.includes(selectedMonth)) selectedMonth=_monthList[0];
+  updateMonthNav();
+}
+function updateMonthNav(){
+  const[y,mo]=selectedMonth.split('-');
+  document.getElementById('month-nav-label').textContent=y+'년 '+Number(mo)+'월';
+  const idx=_monthList.indexOf(selectedMonth);
+  document.getElementById('month-prev-btn').disabled=idx>=_monthList.length-1;
+  document.getElementById('month-next-btn').disabled=idx<=0;
+}
+function navigateMonth(dir){
+  const idx=_monthList.indexOf(selectedMonth);
+  const ni=idx+(-dir);
+  if(ni<0||ni>=_monthList.length)return;
+  selectedMonth=_monthList[ni];
+  updateMonthNav();
+  renderHistory();
+}
 
 function renderHistory(){
   const[y,mo]=selectedMonth.split('-').map(Number);
