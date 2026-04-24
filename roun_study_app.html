@@ -1737,7 +1737,8 @@ function renderHistory(){
     const rewardBits=[];
     if(d.reward>0)rewardBits.push(`<span style="background:#EDE9FE;color:var(--purple);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">📚 ${d.reward.toLocaleString()}원</span>`);
     if(albaDayReward>0)rewardBits.push(`<span style="background:#DCFCE7;color:#15803D;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">💼 ${albaDayReward.toLocaleString()}원</span>`);
-    const subjChips=d.subjects.map(s=>`<span class="hist-schip">${s}</span>`).join('');
+    const subjCounts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];subjCounts[s]=(subjCounts[s]||0)+1;});
+    const subjChips=Object.entries(subjCounts).map(([s,n])=>`<span class="hist-schip">${s} ${n}회</span>`).join('');
     const card=document.createElement('div');
     card.className='hist-day-card '+d.status;
     card.innerHTML=`<div onclick="openDayDetail('${d.key}')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer">
@@ -1747,9 +1748,9 @@ function renderHistory(){
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:900;color:var(--text)">${mo}월 ${dn}일 (${dow})</div>
-        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:2px">${statusLabel} · 학습 ${d.sessions}회</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:2px">${statusLabel}</div>
+        ${subjChips?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${subjChips}</div>`:''}
         ${rewardBits.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">${rewardBits.join('')}</div>`:''}
-        ${subjChips?`<div style="margin-top:4px">${subjChips}</div>`:''}
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:${totalDayReward>0?'16':'13'}px;font-weight:900;color:${totalDayReward>0?'var(--gold)':'var(--muted)'}">${totalDayReward>0?totalDayReward.toLocaleString()+'원':'—'}</div>
