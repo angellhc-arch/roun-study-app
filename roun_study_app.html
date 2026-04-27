@@ -1226,12 +1226,16 @@ async function syncFromSheet() {
       localStorage.setItem(STORE_KEY, JSON.stringify(study));
     }
     if (words && words.length > 0)  localStorage.setItem(WORD_STORE_KEY,      JSON.stringify(words));
-    if (wordGame && (wordGame.totalGames > 0 || wordGame.totalXP > 0)) {
-      // 로컬 단어게임 XP가 더 높으면 유지
+    if (wordGame) {
       const localWG = JSON.parse(localStorage.getItem(WORD_GAME_STORE_KEY) || 'null');
-      if (localWG && (localWG.totalXP || 0) > (wordGame.totalXP || 0)) {
-        wordGame.totalXP = localWG.totalXP;
-        wordGame.totalGames = Math.max(localWG.totalGames || 0, wordGame.totalGames || 0);
+      if (localWG) {
+        // history: 로컬이 항상 최신 → 로컬 우선, 시트가 더 길 때만 시트 사용
+        const localHist  = localWG.history  || [];
+        const sheetsHist = wordGame.history || [];
+        wordGame.history = localHist.length >= sheetsHist.length ? localHist : sheetsHist;
+        // 수치: 최댓값 유지 (어느 쪽도 잃지 않음)
+        wordGame.totalXP      = Math.max(localWG.totalXP      || 0, wordGame.totalXP      || 0);
+        wordGame.totalGames   = Math.max(localWG.totalGames   || 0, wordGame.totalGames   || 0);
         wordGame.totalCorrect = Math.max(localWG.totalCorrect || 0, wordGame.totalCorrect || 0);
       }
       localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(wordGame));
