@@ -1365,37 +1365,29 @@ function calcTotalReward() {
   return base+bonus;
 }
 function calcStreak(history, today) {
-  // 규칙:
-  // - 평일(월~금): 6회 이상 → 연속 +1 / 미만 → 즉시 0
-  // - 주말(토·일): 6회 이상 → 연속 +1 / 미만 → 연속 유지(패스)
-  let streak = 0;
   const d = new Date(today);
   d.setHours(0, 0, 0, 0);
 
+  // 오늘 미완성이면 어제부터 역산 (오늘 진행 중에도 이전 연속 유지)
+  const todayKey = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+  if ((history[todayKey]?.sessions || 0) < 6) d.setDate(d.getDate() - 1);
+
+  let streak = 0;
   while (true) {
-    const key = d.getFullYear() + '-' +
-      (d.getMonth()+1).toString().padStart(2,'0') + '-' +
-      d.getDate().toString().padStart(2,'0');
-    const dow = d.getDay(); // 0=일, 6=토
-    const isWE = dow === 0 || dow === 6;
-    const rec = history[key];
-    const sessions = rec?.sessions || 0;
+    const key = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+    const isWE = d.getDay() === 0 || d.getDay() === 6;
+    const sessions = history[key]?.sessions || 0;
 
     if (sessions >= 6) {
-      // 6회 이상 달성: 평일/주말 모두 +1
       streak++;
     } else if (isWE) {
-      // 주말 미달성: 연속 유지(패스), 단 streak이 0이면 패스 안 함
-      // (아직 streak을 쌓지 않은 상태에서 주말 패스가 연속을 만들면 안 됨)
-      if (streak === 0) break;
-      // 주말은 그냥 넘어감 (streak 유지)
+      // 주말 미달성: 역산 시 항상 패스 (이전 평일 연속과 연결)
     } else {
-      // 평일 미달성: 즉시 종료
       break;
     }
 
     d.setDate(d.getDate() - 1);
-    if (streak > 400) break; // 안전장치
+    if (streak > 400) break;
   }
   return streak;
 }
