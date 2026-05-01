@@ -1292,6 +1292,7 @@ const ALBA_MENU = [
   { id:'bed',     emoji:'🛏️', label:'침대 정리',    reward:500,  type:'fixed' },
   { id:'errand',  emoji:'🏃', label:'심부름',        reward:1000, type:'fixed' },
   { id:'table',   emoji:'🍽️', label:'상차림/치우기', reward:1000, type:'fixed' },
+  { id:'explain', emoji:'📖', label:'공부한거 설명하기', reward:1000, type:'fixed' },
 ];
 
 function loadAlbaState() { try { const r=localStorage.getItem(ALBA_STORE_KEY); return r?JSON.parse(r):{items:[],totalAccum:0}; } catch(e){return{items:[],totalAccum:0};} }
