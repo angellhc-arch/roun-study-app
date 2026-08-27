@@ -3329,28 +3329,20 @@ async function lookupWordV2() {
   const fallbackExampleKo = '나는 오늘 "' + word + '"라는 단어를 배웠다.';
   if (lookupBtn) {
     lookupBtn.disabled = true;
-    lookupBtn.textContent = '찾는 중...';
+    lookupBtn.textContent = '네이버 찾는 중...';
   }
   try {
-    const res = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en%7Cko');
-    if (!res.ok) throw new Error('translation failed');
+    const res = await fetch('/api/naver-word?word=' + encodeURIComponent(word));
+    if (!res.ok) throw new Error('naver lookup failed');
     const data = await res.json();
-    const candidates = [data?.responseData, ...(data?.matches || [])]
-      .map(item => ({
-        text:String(item?.translatedText || item?.translation || '').trim(),
-        quality:Number(item?.quality || 0),
-        match:Number(item?.match || 0),
-      }))
-      .filter(item => /[가-힣]/.test(item.text) && !/[a-z]{3,}/i.test(item.text))
-      .sort((a, b) => (b.quality - a.quality) || (b.match - a.match));
-    if (meaningEl) meaningEl.value = candidates[0]?.text || '';
-    if (exampleEl) exampleEl.value = fallbackExample;
-    if (exampleKoEl) exampleKoEl.value = fallbackExampleKo;
+    if (meaningEl) meaningEl.value = data.meaningKo || '';
+    if (exampleEl) exampleEl.value = data.example || fallbackExample;
+    if (exampleKoEl) exampleKoEl.value = data.exampleKo || fallbackExampleKo;
   } catch (_) {
     if (meaningEl) meaningEl.value = '';
     if (exampleEl) exampleEl.value = fallbackExample;
     if (exampleKoEl) exampleKoEl.value = fallbackExampleKo;
-    alert('자동 뜻 찾기는 잠시 실패했어요. 예문은 채워두었으니 뜻만 직접 입력해주세요.');
+    alert('네이버 사전 찾기가 잠시 실패했어요. 예문은 임시로 채워두었으니 뜻만 직접 입력해주세요.');
   } finally {
     if (lookupBtn) {
       lookupBtn.disabled = false;
