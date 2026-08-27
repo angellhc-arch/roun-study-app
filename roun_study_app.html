@@ -392,6 +392,8 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .v2-plan-card.collapsed { display:none; }
 .v2-plan-cta { display:none; margin:10px 16px 0; border:none; background:linear-gradient(135deg,#F59E0B,#7B5CF5); color:white; border-radius:16px; padding:15px 14px; width:calc(100% - 32px); font-family:'Nunito',sans-serif; font-size:15px; font-weight:900; cursor:pointer; box-shadow:0 10px 24px rgba(123,92,245,.25); }
 .v2-plan-cta.show { display:block; }
+.v2-edit-toggle { border:none; background:var(--purple-light); color:var(--purple); border-radius:10px; padding:8px 10px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:900; cursor:pointer; }
+.v2-edit-toggle.on { background:#FEF3C7; color:#92400E; }
 .v2-plan-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
 .v2-card-title { font-size:13px; font-weight:900; color:var(--text); }
 .v2-small { font-size:10px; font-weight:700; color:var(--muted); line-height:1.45; }
@@ -418,8 +420,10 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .v2-check-grid { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
 .v2-check-label { display:flex; align-items:center; gap:4px; padding:6px 8px; border:1.5px solid var(--border); border-radius:10px; background:#F9FAFB; font-size:11px; font-weight:900; color:var(--muted); cursor:pointer; }
 .v2-check-label.done { background:var(--green-light); border-color:#86EFAC; color:#166534; }
-.v2-check-label.locked { opacity:.55; cursor:not-allowed; }
 .v2-check-label input { width:15px; height:15px; accent-color:var(--green); }
+.v2-item-actions { display:flex; gap:6px; margin-top:10px; }
+.v2-edit { border:none; background:#E0F2FE; color:#0369A1; border-radius:10px; padding:7px 9px; font-size:12px; font-weight:900; cursor:pointer; }
+.v2-del { border:none; background:#FEE2E2; color:#DC2626; border-radius:10px; padding:7px 9px; font-size:12px; font-weight:900; cursor:pointer; }
 .v2-rule-list { margin:0; padding-left:16px; }
 .v2-rule-list li { margin:4px 0; }
 .v2-habit-list { margin:10px 16px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -532,11 +536,10 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="v2-plan-card collapsed" id="v2-plan-form-card">
       <div class="v2-plan-head">
         <div>
-          <div class="v2-card-title">🌙 하루 계획 세우기</div>
-          <div class="v2-small">계획은 가급적 전날에 세우고, 필요한 경우 당일에도 세울 수 있어요.</div>
+          <div class="v2-card-title" id="v2-plan-form-title">🌙 하루 계획 세우기</div>
+          <div class="v2-small" id="v2-plan-form-sub">선택한 날짜에 계획을 추가해요.</div>
         </div>
       </div>
-      <input class="v2-date-input" id="v2-plan-date" type="date" onchange="renderV2Home()">
       <div class="v2-form-grid">
         <select class="v2-select" id="v2-category" onchange="onV2CategoryChange()">
           <option value="study">📚 학습</option>
@@ -562,8 +565,13 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
 
     <div class="v2-plan-card">
-      <div class="v2-card-title">📅 계획 조회 · 실행 · 수정</div>
-      <div class="v2-small" style="margin-top:4px">선택한 날짜의 계획을 조회해요. 수정은 오전 중에 체크 안 된 항목을 체크하는 것만 가능해요.</div>
+      <div class="v2-plan-head">
+        <div>
+          <div class="v2-card-title">📅 계획 조회 · 실행</div>
+          <div class="v2-small" style="margin-top:4px">선택한 날짜의 계획을 조회하고, 수행한 항목을 체크해요.</div>
+        </div>
+        <button class="v2-edit-toggle" id="v2-edit-toggle" onclick="toggleV2PlanEditMode()">계획 수정</button>
+      </div>
       <input class="v2-date-input" id="v2-view-date" type="date" onchange="renderV2Home()">
     </div>
     <div class="v2-edit-meta" id="v2-edit-meta"></div>
@@ -1842,6 +1850,7 @@ const REWARD_MODE_KEY = 'rowoon_reward_mode_v1';
 const PLAN_V2_STORE_KEY = 'rowoon_plan_v2_beta';
 const SUPABASE_V2_SOURCE = 'rowoon-plan-v2-beta';
 let _supabaseV2SyncTimer = null;
+let _v2PlanEditMode = false;
 const V2_CATEGORIES = {
   study: { label:'학습', icon:'📚', unitMinutes:40 },
   reading: { label:'독서', icon:'📖', unitMinutes:30 },
@@ -1888,7 +1897,7 @@ function loadV2PlanState() {
 function sanitizeV2PlanState(state) {
   Object.keys(state || {}).forEach(dateKey => {
     const day = state[dateKey];
-    const isBlank = day && !day.isRestDay && (!Array.isArray(day.items) || day.items.length === 0) && !day.updatedAt;
+    const isBlank = day && !day.isRestDay && (!Array.isArray(day.items) || day.items.length === 0) && !day.updatedAt && !day.planUpdatedAt;
     if (isBlank) delete state[dateKey];
   });
   return state || {};
@@ -1900,13 +1909,20 @@ function saveV2PlanState(state, shouldSync=true) {
 }
 
 function getV2Day(state, dateKey) {
-  if (!state[dateKey]) state[dateKey] = { isRestDay:false, items:[], updatedAt:null };
+  if (!state[dateKey]) state[dateKey] = { isRestDay:false, items:[], updatedAt:null, planUpdatedAt:null };
   if (!Array.isArray(state[dateKey].items)) state[dateKey].items = [];
   return state[dateKey];
 }
 
-function touchV2Day(day) {
+function touchV2Record(day) {
   if (day) day.updatedAt = new Date().toISOString();
+}
+
+function touchV2Plan(day) {
+  if (!day) return;
+  const now = new Date().toISOString();
+  day.updatedAt = now;
+  day.planUpdatedAt = now;
 }
 
 function getV2TodayKey() {
@@ -1923,11 +1939,6 @@ function hasV2Plan(day) {
   return Boolean(day?.isRestDay || (Array.isArray(day?.items) && day.items.length > 0));
 }
 
-function isV2MorningEditable(dateKey) {
-  const now = getTestDate();
-  return dateKey === v2DateKey(now) && now.getHours() < 12;
-}
-
 function formatV2DateTime(value) {
   if (!value) return '수정 기록 없음';
   const d = new Date(value);
@@ -1940,14 +1951,7 @@ function formatV2DateTime(value) {
 }
 
 function ensureV2PlanDate() {
-  const input = document.getElementById('v2-plan-date');
-  if (!input) return getV2TodayKey();
-  if (!input.value) {
-    const tomorrow = new Date(getTestDate());
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    input.value = v2DateKey(tomorrow);
-  }
-  return input.value;
+  return ensureV2ViewDate();
 }
 
 function ensureV2ViewDate() {
@@ -1968,10 +1972,17 @@ function getV2MissingPlanTarget(state) {
 function openV2PlanFormForMissingDay() {
   const state = loadV2PlanState();
   const target = getV2MissingPlanTarget(state) || { dateKey:getV2TomorrowKey(), label:'내일 계획 세우기' };
-  const planInput = document.getElementById('v2-plan-date');
-  if (planInput) planInput.value = target.dateKey;
+  const viewInput = document.getElementById('v2-view-date');
+  if (viewInput) viewInput.value = target.dateKey;
+  _v2PlanEditMode = true;
   document.getElementById('v2-plan-form-card')?.classList.remove('collapsed');
   setTimeout(() => document.getElementById('v2-title')?.focus(), 50);
+  renderV2Home();
+}
+
+function toggleV2PlanEditMode() {
+  _v2PlanEditMode = !_v2PlanEditMode;
+  document.getElementById('v2-plan-form-card')?.classList.toggle('collapsed', !_v2PlanEditMode);
   renderV2Home();
 }
 
@@ -2008,10 +2019,9 @@ function addV2PlanItem() {
     createdAt: new Date().toISOString(),
     createdForDate: dateKey,
   });
-  touchV2Day(day);
+  touchV2Plan(day);
   saveV2PlanState(state);
   if (titleEl) titleEl.value = '';
-  if (getV2MissingPlanTarget(state) === null) document.getElementById('v2-plan-form-card')?.classList.add('collapsed');
   renderV2Home();
 }
 
@@ -2020,55 +2030,69 @@ function toggleV2RestDay() {
   const state = loadV2PlanState();
   const day = getV2Day(state, dateKey);
   day.isRestDay = !day.isRestDay;
-  touchV2Day(day);
+  touchV2Plan(day);
   saveV2PlanState(state);
   renderV2Home();
 }
 
 function updateV2Completed(dateKey, itemId, delta) {
-  if (delta <= 0 || !isV2MorningEditable(dateKey)) {
-    renderV2Home();
-    return;
-  }
   const state = loadV2PlanState();
   const day = getV2Day(state, dateKey);
   const item = day.items.find(i => i.id === itemId);
   if (!item) return;
   const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(item.completedCount || 0) + delta));
   item.completedCount = next;
-  touchV2Day(day);
+  touchV2Record(day);
   saveV2PlanState(state);
   renderV2Home();
 }
 
 function setV2CompletedCount(dateKey, itemId, count) {
-  if (!isV2MorningEditable(dateKey)) {
-    alert('수정은 해당 날짜의 오전 중에만 가능해요.');
-    renderV2Home();
-    return;
-  }
   const state = loadV2PlanState();
   const day = getV2Day(state, dateKey);
   const item = day.items.find(i => i.id === itemId);
   if (!item) return;
-  const current = Number(item.completedCount || 0);
   const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(count || 0)));
-  if (next <= current) {
-    renderV2Home();
-    return;
-  }
   item.completedCount = next;
-  touchV2Day(day);
+  touchV2Record(day);
   saveV2PlanState(state);
   renderV2Home();
 }
 
 function setV2CompletedFromBox(dateKey, itemId, count, checked) {
-  if (!checked) {
-    renderV2Home();
-    return;
-  }
-  setV2CompletedCount(dateKey, itemId, count);
+  setV2CompletedCount(dateKey, itemId, checked ? count : count - 1);
+}
+
+function deleteV2PlanItem(dateKey, itemId) {
+  if (!_v2PlanEditMode) return;
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  day.items = day.items.filter(item => item.id !== itemId);
+  touchV2Plan(day);
+  saveV2PlanState(state);
+  renderV2Home();
+}
+
+function editV2PlanItem(dateKey, itemId) {
+  if (!_v2PlanEditMode) return;
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  const item = day.items.find(i => i.id === itemId);
+  if (!item) return;
+  const title = prompt('계획 이름을 수정해주세요.', item.title || '');
+  if (title === null) return;
+  const nextTitle = title.trim();
+  if (!nextTitle) { alert('계획 이름은 비워둘 수 없어요.'); return; }
+  const countText = prompt('계획 횟수를 수정해주세요.', String(item.plannedCount || 1));
+  if (countText === null) return;
+  const plannedCount = Math.max(1, Number(countText || 1));
+  if (!Number.isFinite(plannedCount)) { alert('횟수는 숫자로 입력해주세요.'); return; }
+  item.title = nextTitle;
+  item.plannedCount = Math.floor(plannedCount);
+  item.completedCount = Math.min(Number(item.completedCount || 0), item.plannedCount);
+  touchV2Plan(day);
+  saveV2PlanState(state);
+  renderV2Home();
 }
 
 function getV2PlanReward(day, dateKey) {
@@ -2188,18 +2212,15 @@ function toggleV2Habit(key) {
 }
 
 function renderV2Home() {
-  const inputDate = ensureV2PlanDate();
   const viewDate = ensureV2ViewDate();
-  const todayKey = getV2TodayKey();
   const state = loadV2PlanState();
-  const planDay = getV2Day(state, inputDate);
   const viewDay = getV2Day(state, viewDate);
   saveV2PlanState(state, false);
 
   const restBtn = document.getElementById('v2-rest-btn');
   if (restBtn) {
-    restBtn.classList.toggle('on', Boolean(planDay.isRestDay));
-    restBtn.textContent = planDay.isRestDay ? '휴식일 ON' : '휴식일';
+    restBtn.classList.toggle('on', Boolean(viewDay.isRestDay));
+    restBtn.textContent = viewDay.isRestDay ? '휴식일 ON' : '휴식일';
   }
 
   const planned = getV2PlannedCount(viewDay);
@@ -2214,7 +2235,7 @@ function renderV2Home() {
   setText('v2-sum-rate', rate + '%');
   setText('v2-sum-reward', reward.total.toLocaleString() + '원');
   setText('v2-sum-streak', '🔥 ' + streak + '일');
-  setText('v2-edit-meta', '마지막 수정: ' + formatV2DateTime(viewDay.updatedAt));
+  setText('v2-edit-meta', '계획 마지막 수정: ' + formatV2DateTime(viewDay.planUpdatedAt || viewDay.updatedAt));
   document.getElementById('v2-complete-banner')?.classList.toggle('show', isV2FullyComplete(viewDay));
   renderV2RewardLines(reward);
   renderV2Habits();
@@ -2225,7 +2246,15 @@ function renderV2Home() {
     cta.classList.toggle('show', Boolean(missingTarget));
     if (missingTarget) cta.textContent = missingTarget.label;
   }
-  if (missingTarget === null) document.getElementById('v2-plan-form-card')?.classList.add('collapsed');
+  const formCard = document.getElementById('v2-plan-form-card');
+  if (formCard) formCard.classList.toggle('collapsed', !_v2PlanEditMode);
+  const editToggle = document.getElementById('v2-edit-toggle');
+  if (editToggle) {
+    editToggle.classList.toggle('on', _v2PlanEditMode);
+    editToggle.textContent = _v2PlanEditMode ? '수정 종료' : '계획 수정';
+  }
+  setText('v2-plan-form-title', _v2PlanEditMode ? '✏️ ' + getV2DayLabel(viewDate) + ' 계획 수정' : '🌙 하루 계획 세우기');
+  setText('v2-plan-form-sub', '선택한 날짜에 계획을 추가해요. 기존 항목은 아래 목록에서 수정하거나 삭제할 수 있어요.');
 
   const title = document.getElementById('v2-list-title');
   if (title) title.textContent = '✅ ' + getV2DayLabel(viewDate) + ' 계획 실행';
@@ -2247,7 +2276,6 @@ function renderV2RewardLines(reward) {
 function renderV2TodayList(day, dateKey) {
   const list = document.getElementById('v2-today-list');
   if (!list) return;
-  const canEdit = isV2MorningEditable(dateKey);
   if (day?.isRestDay) {
     list.innerHTML = '<div class="v2-empty">🏖️ 계획 휴식일이에요.<br>보상은 없지만 연속 달성 기록은 유지돼요.</div>';
     return;
@@ -2274,20 +2302,12 @@ function renderV2TodayList(day, dateKey) {
       <div class="v2-check-grid">
         ${Array.from({ length: planned }, (_, index) => {
           const checked = index < done;
-          const locked = checked || !canEdit;
-          return `<label class="v2-check-label${checked ? ' done' : ''}${locked ? ' locked' : ''}"><input type="checkbox" ${checked ? 'checked' : ''} ${locked ? 'disabled' : ''} onchange="setV2CompletedFromBox('${dateKey}','${item.id}',${index + 1},this.checked);"> ${index + 1}회</label>`;
+          return `<label class="v2-check-label${checked ? ' done' : ''}"><input type="checkbox" ${checked ? 'checked' : ''} onchange="setV2CompletedFromBox('${dateKey}','${item.id}',${index + 1},this.checked);"> ${index + 1}회</label>`;
         }).join('')}
-      </div>`;
+      </div>
+      ${_v2PlanEditMode ? `<div class="v2-item-actions"><button class="v2-edit" onclick="editV2PlanItem('${dateKey}','${item.id}')">이름/횟수 수정</button><button class="v2-del" onclick="deleteV2PlanItem('${dateKey}','${item.id}')">항목 삭제</button></div>` : ''}`;
     list.appendChild(div);
   });
-  if (!canEdit) {
-    const note = document.createElement('div');
-    note.className = 'v2-small';
-    note.style.marginTop = '4px';
-    note.style.textAlign = 'center';
-    note.textContent = '이 날짜의 수정 가능 시간이 지났거나 아직 오지 않았어요.';
-    list.appendChild(note);
-  }
 }
 
 function v2PayloadForDate(dateKey, day) {
@@ -2298,6 +2318,7 @@ function v2PayloadForDate(dateKey, day) {
     items: (day?.items || []),
     reward: calcV2Reward(day, loadV2PlanState(), dateKey),
     updatedAt: day?.updatedAt || null,
+    planUpdatedAt: day?.planUpdatedAt || day?.updatedAt || null,
   };
 }
 
@@ -2369,6 +2390,7 @@ async function syncV2FromSupabase() {
           isRestDay: Boolean(payload.isRestDay),
           items: Array.isArray(payload.items) ? payload.items : [],
           updatedAt: payload.updatedAt || null,
+          planUpdatedAt: payload.planUpdatedAt || payload.updatedAt || null,
         };
       } catch (_) {}
     });
