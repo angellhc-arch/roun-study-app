@@ -2161,7 +2161,8 @@ function calcV2Streak(state, untilDateKey) {
 }
 
 function calcV2Reward(day, state, dateKey) {
-  if (!day || day.isRestDay) return { total:0, planReward:0, completedReward:0, fullBonus:0, challengeBonus:0, streakBonus:0 };
+  const habitReward = getV2HabitReward(dateKey);
+  if (!day || day.isRestDay) return { total:habitReward.total, planReward:0, completedReward:0, fullBonus:0, challengeBonus:0, streakBonus:0, habitReward };
   const planned = getV2PlannedCount(day);
   const planReward = getV2PlanReward(day, dateKey);
   const completedReward = getV2CompletedReward(day);
@@ -2169,7 +2170,19 @@ function calcV2Reward(day, state, dateKey) {
   const fullBonus = full ? Math.round(completedReward * 0.5) : 0;
   const challengeBonus = full ? getV2ChallengeBonus(planned) : 0;
   const streakBonus = full ? getV2StreakMilestoneReward(calcV2Streak(state, dateKey)) : 0;
-  return { total:planReward + completedReward + fullBonus + challengeBonus + streakBonus, planReward, completedReward, fullBonus, challengeBonus, streakBonus };
+  return { total:planReward + completedReward + fullBonus + challengeBonus + streakBonus + habitReward.total, planReward, completedReward, fullBonus, challengeBonus, streakBonus, habitReward };
+}
+
+function getV2HabitReward(dateKey) {
+  if (dateKey !== getV2TodayKey()) return { total:0, miracle:0, shower:0, milestone:0 };
+  const miracle = tasks.miracle.done ? getMiracleBonus() : 0;
+  const shower = tasks.shower.done ? getShowerBonus() : 0;
+  const state = loadState();
+  const todayBonuses = state?.history?.[dateKey]?.streakBonuses || [];
+  const milestone = todayBonuses
+    .filter(bonus => bonus.type === 'miracle' || bonus.type === 'shower')
+    .reduce((sum, bonus) => sum + Number(bonus.reward || 0), 0);
+  return { total:miracle + shower + milestone, miracle, shower, milestone };
 }
 
 function escapeV2Text(value) {
@@ -2208,7 +2221,7 @@ function renderV2Habits() {
 
 function toggleV2Habit(key) {
   toggleTask(key);
-  renderV2Habits();
+  renderV2Home();
 }
 
 function renderV2Home() {
@@ -2270,7 +2283,10 @@ function renderV2RewardLines(reward) {
     <div class="v2-reward-line"><span>✅ 실행 완료</span><span>${reward.completedReward.toLocaleString()}원</span></div>
     <div class="v2-reward-line"><span>🎉 모두 성공</span><span>${reward.fullBonus.toLocaleString()}원</span></div>
     <div class="v2-reward-line"><span>🚀 많이 도전</span><span>${reward.challengeBonus.toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🔥 연속 달성</span><span>${reward.streakBonus.toLocaleString()}원</span></div>`;
+    <div class="v2-reward-line"><span>🔥 연속 달성</span><span>${reward.streakBonus.toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>🌅 미라클 모닝</span><span>${(reward.habitReward?.miracle || 0).toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>🚿 아침 샤워</span><span>${(reward.habitReward?.shower || 0).toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>🎊 습관 연속 축하금</span><span>${(reward.habitReward?.milestone || 0).toLocaleString()}원</span></div>`;
 }
 
 function renderV2TodayList(day, dateKey) {
