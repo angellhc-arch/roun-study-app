@@ -1553,16 +1553,17 @@ async function syncWordV2ToSupabase(state) {
     }),
     source: WORD_V2_SOURCE,
   }));
+  const completedTests = Object.fromEntries(Object.entries(state?.tests || {}).filter(([, test]) => test?.status === 'COMPLETED'));
   words.push({
     local_id: '__state__',
     word: '__word_v2_state__',
     meaning: '',
     example: '',
-    translation: JSON.stringify({ tests:state?.tests || {}, updatedAt:new Date().toISOString() }),
+    translation: JSON.stringify({ tests:completedTests, updatedAt:new Date().toISOString() }),
     source: WORD_V2_SOURCE,
   });
   if (words.length) await supabaseRequest('words', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(words) });
-  const sessions = Object.values(state?.tests || {}).map(test => ({
+  const sessions = Object.values(completedTests).map(test => ({
     local_id: test.id,
     played_on: test.testDate,
     correct_count: Number(test.correctCount || 0),
@@ -3221,6 +3222,7 @@ function loadWordV2State() {
     const state = JSON.parse(localStorage.getItem(WORD_V2_STORE_KEY) || '{}') || {};
     state.words = Array.isArray(state.words) ? state.words : [];
     state.tests = state.tests || {};
+    state.tests = Object.fromEntries(Object.entries(state.tests).filter(([, test]) => test?.status === 'COMPLETED'));
     return state;
   } catch (_) {
     return { words:[], tests:{} };
@@ -3228,7 +3230,9 @@ function loadWordV2State() {
 }
 
 function saveWordV2State(state) {
-  localStorage.setItem(WORD_V2_STORE_KEY, JSON.stringify(state || { words:[], tests:{} }));
+  const nextState = state || { words:[], tests:{} };
+  nextState.tests = Object.fromEntries(Object.entries(nextState.tests || {}).filter(([, test]) => test?.status === 'COMPLETED'));
+  localStorage.setItem(WORD_V2_STORE_KEY, JSON.stringify(nextState));
   syncAuxiliaryDataToSupabase();
 }
 
@@ -3253,7 +3257,10 @@ function getWordV2ReviewWords(state) {
 
 function getWordV2NewWords(state, limit=20) {
   const today = kstDateKey();
-  const testedIds = new Set(Object.values(state.tests || {}).flatMap(t => t.questions || []).map(q => q.wordId));
+  const testedIds = new Set(Object.values(state.tests || {})
+    .filter(test => test.status === 'COMPLETED')
+    .flatMap(t => t.questions || [])
+    .map(q => q.wordId));
   return state.words
     .filter(w => (w.reviewStatus || 'NORMAL') === 'NORMAL' && !testedIds.has(w.id))
     .slice(0, limit)
@@ -3274,7 +3281,7 @@ function getWordV2WeeklyWords(state) {
   const range = getWordV2WeekRange();
   const ids = new Set();
   Object.values(state.tests || {}).forEach(test => {
-    if (test.testType !== 'DAILY' || !test.testDate || test.testDate < range.start || test.testDate > range.end) return;
+    if (test.status !== 'COMPLETED' || test.testType !== 'DAILY' || !test.testDate || test.testDate < range.start || test.testDate > range.end) return;
     (test.questions || []).forEach(q => ids.add(q.wordId));
   });
   return state.words.filter(w => ids.has(w.id));
@@ -3385,11 +3392,11 @@ function renderWordV2Screen() {
   const setText = (id, text) => { const el=document.getElementById(id); if(el)el.textContent=text; };
   setText('wv2-new-count', newWords.length);
   setText('wv2-review-count', reviewWords.length);
-  setText('wv2-test-status', daily?.status === 'COMPLETED' ? '완료' : daily?.status === 'IN_PROGRESS' ? '진행중' : '미응시');
+  setText('wv2-test-status', daily?.status === 'COMPLETED' ? '완료' : '미응시');
   const dailyBtn = document.getElementById('wv2-daily-btn');
   if (dailyBtn) {
     dailyBtn.disabled = daily?.status === 'COMPLETED' || (newWords.length + reviewWords.length) === 0;
-    dailyBtn.textContent = daily?.status === 'IN_PROGRESS' ? '시험 계속하기' : daily?.status === 'COMPLETED' ? '오늘 시험 완료 ✓' : '오늘의 시험';
+    dailyBtn.textContent = daily?.status === 'COMPLETED' ? '오늘 시험 완료 ✓' : '오늘의 시험';
   }
   const weekCard = document.getElementById('wv2-week-card');
   const weekBtn = document.getElementById('wv2-weekly-btn');
@@ -3398,7 +3405,7 @@ function renderWordV2Screen() {
   setText('wv2-week-sub', '이번 주 시험 단어 ' + weeklyWords.length + '개');
   if (weekBtn) {
     weekBtn.disabled = !isSunday || weekly?.status === 'COMPLETED' || weeklyWords.length === 0;
-    weekBtn.textContent = !isSunday ? '일요일 주간시험' : weekly?.status === 'IN_PROGRESS' ? '주간시험 계속' : weekly?.status === 'COMPLETED' ? '주간시험 완료 ✓' : '주간시험';
+    weekBtn.textContent = !isSunday ? '일요일 주간시험' : weekly?.status === 'COMPLETED' ? '주간시험 완료 ✓' : '주간시험';
   }
   ['words','review','tests'].forEach(tab => document.getElementById('wv2-tab-'+tab)?.classList.toggle('on', wordV2ListTab === tab));
   renderWordV2List(state);
@@ -3452,17 +3459,14 @@ function startWordV2Test(type) {
   const state = loadWordV2State();
   const today = kstDateKey();
   const id = getWordV2TestId(type, today);
-  let test = state.tests[id];
-  if (!test) {
-    const words = type === 'WEEKLY' ? getWordV2WeeklyWords(state) : [...getWordV2NewWords(state), ...getWordV2ReviewWords(state)];
-    if (!words.length) { alert('시험 볼 단어가 없어요.'); return; }
-    const now = new Date().toISOString();
-    test = { id, testDate:today, testType:type, status:'READY', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:null, completedAt:null };
-    state.tests[id] = test;
-    saveWordV2State(state);
-  }
-  if (test.status === 'COMPLETED') { alert('이미 완료한 시험이에요.'); return; }
-  wordV2Session = { mode:type, testId:id, test, questions:test.questions, index:test.currentIndex || 0, answered:false, practice:false };
+  const existing = state.tests[id];
+  if (existing?.status === 'COMPLETED') { alert('이미 완료한 시험이에요.'); return; }
+  if (existing?.status !== 'COMPLETED') delete state.tests[id];
+  const words = type === 'WEEKLY' ? getWordV2WeeklyWords(state) : [...getWordV2NewWords(state), ...getWordV2ReviewWords(state)];
+  if (!words.length) { alert('시험 볼 단어가 없어요.'); return; }
+  const now = new Date().toISOString();
+  const test = { id, testDate:today, testType:type, status:'IN_PROGRESS', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:now, completedAt:null };
+  wordV2Session = { mode:type, testId:id, test, questions:test.questions, index:0, answered:false, practice:false };
   showWordV2Quiz();
 }
 
@@ -3525,7 +3529,6 @@ function submitWordV2Resolved(answer) {
   q.selectedAnswer = answer;
   q.isCorrect = isCorrect;
   q.answeredAt = new Date().toISOString();
-  if (!wordV2Session.practice) persistWordV2Answer(q);
   showWordV2Feedback(q, isCorrect);
 }
 
@@ -3541,26 +3544,6 @@ function showWordV2Feedback(q, isCorrect) {
   fb.className = 'game-feedback ' + (isCorrect ? 'correct' : 'wrong') + ' show';
   fb.innerHTML = `<div class="game-feedback-emoji">${isCorrect ? '🎉' : '🤔'}</div><div class="game-feedback-msg">${isCorrect ? '정답!' : '정답: ' + q.correctAnswer}</div>`;
   document.getElementById('wv2-next-btn').className = 'game-next-btn show';
-}
-
-function persistWordV2Answer(q) {
-  const state = loadWordV2State();
-  const test = state.tests[wordV2Session.testId];
-  if (!test) return;
-  if (test.status === 'READY') {
-    test.status = 'IN_PROGRESS';
-    test.startedAt = new Date().toISOString();
-  }
-  const saved = test.questions.find(item => item.id === q.id);
-  if (saved) Object.assign(saved, q);
-  test.currentIndex = Math.min(wordV2Session.index + 1, test.questions.length);
-  test.correctCount = test.questions.filter(item => item.isCorrect === true).length;
-  if (test.questions.every(item => item.answeredAt)) {
-    test.status = 'COMPLETED';
-    test.completedAt = test.completedAt || new Date().toISOString();
-  }
-  applyWordV2ReviewResult(state, q, test.testType);
-  saveWordV2State(state);
 }
 
 function applyWordV2ReviewResult(state, q, testType) {
@@ -3585,11 +3568,6 @@ function applyWordV2ReviewResult(state, q, testType) {
 function nextWordV2Question() {
   wordV2Session.index++;
   if (wordV2Session.index >= wordV2Session.questions.length) return finishWordV2Session();
-  if (!wordV2Session.practice) {
-    const state = loadWordV2State();
-    const test = state.tests[wordV2Session.testId];
-    if (test) { test.currentIndex = wordV2Session.index; saveWordV2State(state); }
-  }
   renderWordV2Question();
 }
 
@@ -3598,15 +3576,19 @@ function finishWordV2Session() {
   const total = wordV2Session.questions.length;
   if (!wordV2Session.practice) {
     const state = loadWordV2State();
-    const test = state.tests[wordV2Session.testId];
-    if (test) {
-      test.status = 'COMPLETED';
-      test.correctCount = correct;
-      test.totalQuestions = total;
-      test.currentIndex = total;
-      test.completedAt = new Date().toISOString();
-      saveWordV2State(state);
-    }
+    const completedAt = new Date().toISOString();
+    const test = {
+      ...wordV2Session.test,
+      status:'COMPLETED',
+      correctCount:correct,
+      totalQuestions:total,
+      currentIndex:total,
+      questions:wordV2Session.questions,
+      completedAt,
+    };
+    wordV2Session.questions.forEach(q => applyWordV2ReviewResult(state, q, test.testType));
+    state.tests[wordV2Session.testId] = test;
+    saveWordV2State(state);
   }
   const fb = document.getElementById('wv2-feedback');
   document.getElementById('wv2-quiz-fill').style.width = '100%';
