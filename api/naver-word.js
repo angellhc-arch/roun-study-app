@@ -1,4 +1,5 @@
 const NAVER_SEARCH_URL = 'https://en.dict.naver.com/api3/enko/search';
+const GOOGLE_TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/single';
 
 function stripHtml(value) {
   return String(value || '')
@@ -49,6 +50,81 @@ function pickEntry(items, query) {
   })[0];
 }
 
+async function googleTranslate(text, target = 'ko') {
+  const url = new URL(GOOGLE_TRANSLATE_URL);
+  url.searchParams.set('client', 'gtx');
+  url.searchParams.set('sl', 'auto');
+  url.searchParams.set('tl', target);
+  url.searchParams.set('dt', 't');
+  url.searchParams.set('dt', 'ex');
+  url.searchParams.set('q', text);
+  const response = await fetch(url, {
+    headers: {
+      'Accept': 'application/json, text/plain, */*',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+    },
+  });
+  if (!response.ok) throw new Error('Google lookup failed');
+  const data = await response.json();
+  const translated = (data?.[0] || []).map(row => row?.[0] || '').join('').trim();
+  const examples = (data?.[13]?.[0] || [])
+    .map(row => stripHtml(row?.[0]))
+    .filter(example => example && example.length <= 140);
+  return { translated, examples };
+}
+
+async function lookupGoogle(word) {
+  const meaningResult = await googleTranslate(word, 'ko');
+  const example = meaningResult.examples.find(item => item.toLowerCase().includes(word)) || meaningResult.examples[0] || '';
+  let exampleKo = '';
+  if (example) {
+    try {
+      exampleKo = (await googleTranslate(example, 'ko')).translated;
+    } catch (_) {}
+  }
+  if (!meaningResult.translated && !example) return null;
+  return {
+    word,
+    meaningKo: meaningResult.translated || '',
+    example,
+    exampleKo,
+    source: 'google',
+  };
+}
+
+async function lookupNaver(word) {
+  const url = new URL(NAVER_SEARCH_URL);
+  url.searchParams.set('query', word);
+  url.searchParams.set('m', 'pc');
+  url.searchParams.set('range', 'all');
+  url.searchParams.set('lang', 'en');
+  url.searchParams.set('shouldSearchVlive', 'false');
+
+  const naverRes = await fetch(url, {
+    headers: {
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Referer': 'https://en.dict.naver.com/',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+    },
+  });
+  if (!naverRes.ok) throw new Error('Naver lookup failed');
+
+  const data = await naverRes.json();
+  const items = data?.searchResultMap?.searchResultListMap?.WORD?.items || [];
+  const entry = pickEntry(items, word);
+  const means = collectMeans(entry).sort((a, b) => scoreMean(b) - scoreMean(a));
+  const best = means[0];
+  if (!best) return null;
+  return {
+    word,
+    meaningKo: best.meaning,
+    example: best.example || '',
+    exampleKo: best.exampleKo || '',
+    source: 'naver',
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -61,38 +137,26 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid word' });
   }
 
-  const url = new URL(NAVER_SEARCH_URL);
-  url.searchParams.set('query', word);
-  url.searchParams.set('m', 'pc');
-  url.searchParams.set('range', 'all');
-  url.searchParams.set('lang', 'en');
-  url.searchParams.set('shouldSearchVlive', 'false');
-
   try {
-    const naverRes = await fetch(url, {
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Referer': 'https://en.dict.naver.com/',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-      },
-    });
-    if (!naverRes.ok) throw new Error('Naver lookup failed');
-
-    const data = await naverRes.json();
-    const items = data?.searchResultMap?.searchResultListMap?.WORD?.items || [];
-    const entry = pickEntry(items, word);
-    const means = collectMeans(entry).sort((a, b) => scoreMean(b) - scoreMean(a));
-    const best = means[0];
-    if (!best) return res.status(404).json({ error: 'Word not found' });
-
-    return res.status(200).json({
-      word,
-      meaningKo: best.meaning,
-      example: best.example || '',
-      exampleKo: best.exampleKo || '',
-      source: 'naver',
-    });
+    let result = null;
+    try {
+      result = await lookupNaver(word);
+    } catch (_) {}
+    if (!result || !result.meaningKo || !result.example || !result.exampleKo) {
+      let googleResult = null;
+      try {
+        googleResult = await lookupGoogle(word);
+      } catch (_) {}
+      result = {
+        word,
+        meaningKo: result?.meaningKo || googleResult?.meaningKo || '',
+        example: result?.example || googleResult?.example || '',
+        exampleKo: result?.exampleKo || googleResult?.exampleKo || '',
+        source: result?.source && googleResult?.source ? 'naver+google' : result?.source || googleResult?.source || '',
+      };
+    }
+    if (!result.meaningKo && !result.example) return res.status(404).json({ error: 'Word not found' });
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(502).json({ error: 'Lookup failed' });
   }
