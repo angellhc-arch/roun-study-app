@@ -1066,7 +1066,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div class="wv2-form">
         <div style="display:grid;grid-template-columns:1fr auto;gap:7px">
           <input class="wv2-input" id="wv2-word" placeholder="promise">
-          <button class="wv2-btn primary" onclick="lookupWordV2()">찾기</button>
+          <button class="wv2-btn primary" id="wv2-lookup-btn" onclick="lookupWordV2()">찾기</button>
         </div>
         <input class="wv2-input" id="wv2-meaning" placeholder="한글 뜻">
         <input class="wv2-input" id="wv2-pos" placeholder="품사">
@@ -3326,11 +3326,16 @@ async function lookupWordV2() {
   const word = normalizeWordV2(document.getElementById('wv2-word')?.value);
   if (!word) { alert('영어 단어를 입력해주세요.'); return; }
   document.getElementById('wv2-word').value = word;
+  const lookupBtn = document.getElementById('wv2-lookup-btn');
   const meaningEl = document.getElementById('wv2-meaning');
   const posEl = document.getElementById('wv2-pos');
   const exampleEl = document.getElementById('wv2-example');
   const exampleKoEl = document.getElementById('wv2-example-ko');
   const fallbackExample = 'I learned the word "' + word + '" today.';
+  if (lookupBtn) {
+    lookupBtn.disabled = true;
+    lookupBtn.textContent = '찾는 중...';
+  }
   try {
     const res = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en%7Cko');
     if (!res.ok) throw new Error('translation failed');
@@ -3352,6 +3357,11 @@ async function lookupWordV2() {
     if (exampleEl && !exampleEl.value) exampleEl.value = fallbackExample;
     if (exampleKoEl && !exampleKoEl.value) exampleKoEl.value = '나는 오늘 "' + word + '"라는 단어를 배웠다.';
     alert('자동 뜻 찾기는 잠시 실패했어요. 예문은 채워두었으니 뜻만 직접 입력해주세요.');
+  } finally {
+    if (lookupBtn) {
+      lookupBtn.disabled = false;
+      lookupBtn.textContent = '찾기';
+    }
   }
 }
 
