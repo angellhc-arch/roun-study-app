@@ -920,6 +920,11 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="stat-card"><div class="stat-icon">📖</div><div class="stat-value" id="stat-month-sessions">0회</div><div class="stat-label">이달 공부 횟수</div></div>
     <div class="stat-card"><div class="stat-icon">🗓️</div><div class="stat-value" id="stat-alba-count">0회</div><div class="stat-label">이달 알바 횟수</div></div>
   </div>
+  <div style="margin:0 16px 12px;background:#F8F7FF;border:1.5px solid #DDD6FE;border-radius:var(--radius);padding:12px 14px">
+    <div style="font-size:12px;font-weight:900;color:var(--purple)">☁️ Supabase 백업</div>
+    <div style="font-size:10px;line-height:1.5;color:var(--muted);font-weight:700;margin:4px 0 9px">학습·보상·추가공부·단어·단어게임·알바·경험치를 Supabase DB에 백업합니다.</div>
+    <button id="supabase-migrate-btn" onclick="migrateLocalStudyToSupabase(this)" style="width:100%;padding:9px 12px;border:none;border-radius:10px;background:linear-gradient(135deg,#0EA5E9,#6366F1);color:white;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;cursor:pointer">모든 로컬 기록을 Supabase에 백업하기</button>
+  </div>
   <div class="full-card">
     <div class="full-card-title">🔥 이번 달 스트릭</div>
     <div class="streak-row" id="streak-calendar"></div>
@@ -1180,6 +1185,425 @@ const ALBA_STORE_KEY = 'rowoon_alba_v1';
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbx6iTYLyZpWz7E_GsqqYHmzaWm1xMNGJ-iSE9Tom2yhR4MSn7VZFuxcZipOdRfgbtW_1A/exec';
 let _sheetSyncTimer = null;
 
+// Supabase의 publishable key는 브라우저에서 사용하도록 발급된 공개 키입니다.
+const SUPABASE_URL = 'https://wqxcwjwzpenkixncqvzi.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-C1h3gZYz9-iv80NPlGudw_nste2Jkj';
+const SUPABASE_SOURCE = 'rowoon-study-app:v1';
+const SUPABASE_STATE_ID = 'rowoon-study-app';
+let _supabaseAuxSyncTimer = null;
+let _supabaseTodaySyncQueue = Promise.resolve();
+const SUPABASE_TASKS = {
+  write:    { title:'글쓰기', subject:'writing', duration:30 },
+  miracle:  { title:'미라클 모닝', subject:'habit', duration:0 },
+  shower:   { title:'아침 샤워', subject:'habit', duration:0 },
+  read1:    { title:'독서 1회', subject:'reading', duration:30 },
+  read2:    { title:'독서 2회', subject:'reading', duration:30 },
+  eng1:     { title:'영어 1회', subject:'english', duration:40 },
+  eng2:     { title:'영어 2회', subject:'english', duration:40 },
+  math1:    { title:'수학 1회', subject:'math', duration:40 },
+  math2:    { title:'수학 2회', subject:'math', duration:40 },
+  flex:     { title:'국어/영상편집', subject:'flex', duration:40 },
+  exercise: { title:'운동', subject:'exercise', duration:0 },
+};
+
+async function supabaseRequest(path, options={}) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_PUBLISHABLE_KEY,
+      ...(options.body ? {'Content-Type':'application/json'} : {}),
+      ...(options.headers || {}),
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text);
+  return text ? JSON.parse(text) : null;
+}
+
+async function deleteAppRows(table, date) {
+  const rows = await supabaseRequest(table + '?select=id,memo&date=eq.' + encodeURIComponent(date));
+  const appRows = (rows || []).filter(row => String(row.memo || '').startsWith(SUPABASE_SOURCE));
+  await Promise.all(appRows.map(row => supabaseRequest(table + '?id=eq.' + encodeURIComponent(row.id), { method:'DELETE' })));
+}
+
+async function deleteSourceRows(table) {
+  const rows = await supabaseRequest(table + '?select=id&source=eq.' + encodeURIComponent(SUPABASE_SOURCE));
+  await Promise.all((rows || []).map(row => supabaseRequest(table + '?id=eq.' + encodeURIComponent(row.id), { method:'DELETE' })));
+}
+
+async function syncWordsToSupabase(words) {
+  await deleteSourceRows('words');
+  const rows = (words || []).filter(word => word?.word).map(word => ({
+    local_id: String(word.id), word: word.word, meaning: word.meaning || '', example: word.example || '', translation: word.translation || '', source: SUPABASE_SOURCE,
+  }));
+  if (rows.length) await supabaseRequest('words', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(rows) });
+}
+
+async function syncWordGamesToSupabase(wordGame) {
+  await deleteSourceRows('word_game_sessions');
+  const rows = (wordGame?.history || []).map((game, index) => {
+    const playedOn = /^\d{4}-\d{2}-\d{2}$/.test(game.dateKey || '') ? game.dateKey : null;
+    if (!playedOn) return null;
+    return {
+      local_id: playedOn + '-' + index,
+      played_on: playedOn,
+      correct_count: Number(game.correct || 0),
+      total_count: Number(game.total || 0),
+      xp_gained: Number(game.xpGained ?? game.xp ?? 0),
+      source: SUPABASE_SOURCE,
+    };
+  }).filter(Boolean);
+  if (rows.length) await supabaseRequest('word_game_sessions', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(rows) });
+}
+
+async function syncAlbaToSupabase(alba) {
+  await deleteSourceRows('alba_entries');
+  const rows = (alba?.todayItems || []).map((item, index) => {
+    const date = normalizeDate(item.date);
+    if (!date) return null;
+    return {
+      local_id: date + '-' + String(item.id ?? index + 1),
+      date,
+      menu_id: item.menuId || '',
+      label: item.label || '알바',
+      emoji: item.emoji || '',
+      reward_amount: Number(item.totalReward || 0),
+      completed: Boolean(item.done),
+      details: item,
+      source: SUPABASE_SOURCE,
+    };
+  }).filter(Boolean);
+  if (rows.length) await supabaseRequest('alba_entries', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(rows) });
+}
+
+function albaItemKey(item) {
+  const date = normalizeDate(item?.date) || '';
+  return date + '-' + String(item?.id ?? item?.local_id ?? '');
+}
+
+async function syncAlbaFromSupabase() {
+  const rows = await supabaseRequest('alba_entries?select=local_id,date,menu_id,label,emoji,reward_amount,completed,details&source=eq.' + encodeURIComponent(SUPABASE_SOURCE));
+  const remoteItems = (rows || []).map((row, index) => {
+    const details = row.details && typeof row.details === 'object' ? row.details : {};
+    const date = normalizeDate(row.date || details.date);
+    if (!date) return null;
+    return {
+      ...details,
+      id: details.id ?? row.local_id?.slice(date.length + 1) ?? (index + 1),
+      date,
+      menuId: details.menuId ?? row.menu_id ?? '',
+      label: details.label ?? row.label ?? '알바',
+      emoji: details.emoji ?? row.emoji ?? '',
+      totalReward: Number(details.totalReward ?? row.reward_amount ?? 0),
+      done: Boolean(details.done ?? row.completed),
+    };
+  }).filter(Boolean);
+  if (!remoteItems.length) return false;
+
+  const local = loadAlbaState();
+  const merged = new Map();
+  remoteItems.forEach(item => merged.set(albaItemKey(item), item));
+  (local.todayItems || []).forEach(item => {
+    const key = albaItemKey(item);
+    const remoteItem = merged.get(key);
+    // 같은 항목이라면 완료 처리는 어느 기기에서도 사라지지 않게 합칩니다.
+    merged.set(key, remoteItem ? { ...remoteItem, ...item, done: Boolean(remoteItem.done || item.done) } : item);
+  });
+  local.todayItems = [...merged.values()];
+  localStorage.setItem(ALBA_STORE_KEY, JSON.stringify(local));
+  return true;
+}
+
+function syncAuxiliaryDataToSupabase() {
+  clearTimeout(_supabaseAuxSyncTimer);
+  _supabaseAuxSyncTimer = setTimeout(() => {
+    Promise.all([
+      syncWordsToSupabase(loadWords()),
+      syncWordGamesToSupabase(loadWordGameState()),
+      syncAlbaToSupabase(loadAlbaState()),
+    ]).catch(error => console.warn('Supabase 보조 데이터 저장 실패', error));
+  }, 800);
+}
+
+async function syncStudyDayToSupabase(date, record) {
+  if (!date || !record || record.isStreakBonus || record.isHabitBonus) return;
+  await deleteAppRows('study_sessions', date);
+  await deleteAppRows('rewards', date);
+
+  const sessions = (record.completed || []).map(key => {
+    const task = SUPABASE_TASKS[key] || { title:key, subject:'other', duration:0 };
+    return {
+      date,
+      title: task.title,
+      subject: task.subject,
+      duration_minutes: task.duration,
+      completed: true,
+      memo: SUPABASE_SOURCE + '; task=' + key + (record.recoveryLocked ? '; recovery=estimated-july' : ''),
+    };
+  });
+  (record.extraItems || []).filter(item => item.done !== false).forEach((item, index) => {
+    sessions.push({
+      date,
+      title: '추가 공부 ' + (index + 1) + '회',
+      subject: 'extra',
+      duration_minutes: 0,
+      completed: true,
+      memo: SUPABASE_SOURCE + '; task=extra; local_id=' + (item.id ?? index + 1) + (record.recoveryLocked ? '; recovery=estimated-july' : ''),
+    });
+  });
+  if (sessions.length) {
+    await supabaseRequest('study_sessions', {
+      method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(sessions),
+    });
+  }
+  await supabaseRequest('rewards', {
+    method:'POST',
+    headers:{ Prefer:'return=minimal' },
+    body:JSON.stringify({
+      date,
+      completed_count: Number(record.sessions || 0),
+      reward_amount: Number(record.reward || 0),
+      memo: SUPABASE_SOURCE + '; completed=' + (record.completed || []).join(',') + '; extras=' + ((record.extraItems || []).length) + (record.streakBonuses?.length ? '; bonuses=' + encodeURIComponent(JSON.stringify(record.streakBonuses)) : '') + (record.recoveryLocked ? '; recovery=estimated-july' : ''),
+    }),
+  });
+}
+
+function saveXpToLocal(value) {
+  xp = Number(value || 0);
+  const state = loadState() || {};
+  localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, xp }));
+}
+
+async function syncXpToSupabase() {
+  const rows = await supabaseRequest('app_state?select=xp&id=eq.' + encodeURIComponent(SUPABASE_STATE_ID));
+  const remoteXp = Number(rows?.[0]?.xp || 0);
+  const mergedXp = Math.max(Number(xp || 0), remoteXp);
+  await supabaseRequest('app_state', {
+    method:'POST',
+    headers:{ Prefer:'resolution=merge-duplicates,return=minimal' },
+    body:JSON.stringify({ id:SUPABASE_STATE_ID, xp:mergedXp, updated_at:new Date().toISOString() }),
+  });
+  if (mergedXp !== xp) saveXpToLocal(mergedXp);
+  return mergedXp;
+}
+
+function calculateRecordSessions(date, completed) {
+  const weekend = isWeekendDate(new Date(date + 'T00:00:00'));
+  let sessions = 0;
+  (completed || []).forEach(key => {
+    if (key === 'write') sessions += weekend ? 2 : 0;
+    else if (['read1','read2','eng1','eng2','math1','math2','flex','exercise'].includes(key)) sessions += 1;
+  });
+  return sessions;
+}
+
+function calculateRecordReward(date, completed, extraCount) {
+  const weekend = isWeekendDate(new Date(date + 'T00:00:00'));
+  const sessions = calculateRecordSessions(date, completed);
+  let reward = sessions >= 7 ? 5000 : sessions === 6 ? 4000 : sessions * 500;
+  if ((completed || []).includes('miracle')) reward += 500;
+  if ((completed || []).includes('shower')) reward += 1000;
+  if ((completed || []).includes('write')) reward += weekend ? 2000 : 1000;
+  return reward + Number(extraCount || 0) * 2000;
+}
+
+function bonusKey(type, date, streakDays) {
+  return type + ':' + date + ':' + streakDays;
+}
+
+function sumStreakBonuses(record) {
+  return (record?.streakBonuses || []).reduce((sum, bonus) => sum + Number(bonus.reward || 0), 0);
+}
+
+function addStreakBonus(history, claimedBonuses, date, type, streakDays, reward) {
+  const record = history[date];
+  if (!record || Number(reward) <= 0) return false;
+  const key = bonusKey(type, date, streakDays);
+  record.streakBonuses = record.streakBonuses || [];
+  if (claimedBonuses[key] || record.streakBonuses.some(bonus => bonus.key === key)) return false;
+  record.streakBonuses.push({ key, type, streakDays, reward });
+  const extraCount = (record.extraItems || []).filter(item => item.done !== false).length;
+  record.reward = calculateRecordReward(date, record.completed || [], extraCount) + sumStreakBonuses(record);
+  claimedBonuses[key] = { reward, date, type, streakDays };
+  return true;
+}
+
+function backfillMissionStreakBonuses(history, claimedBonuses, fromDate='2026-07-30') {
+  const dates = Object.keys(history).filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
+  if (!dates.length) return [];
+  const changedDates = [];
+  let streak = 0;
+  let day = new Date(dates[0] + 'T00:00:00');
+  const lastDay = new Date(getTestDate());
+  lastDay.setHours(0, 0, 0, 0);
+  while (day <= lastDay) {
+    const date = day.getFullYear() + '-' + String(day.getMonth() + 1).padStart(2, '0') + '-' + String(day.getDate()).padStart(2, '0');
+    const record = history[date];
+    const weekend = day.getDay() === 0 || day.getDay() === 6;
+    if ((record?.sessions || 0) >= 6) {
+      streak++;
+      const reward = getStreakMilestoneReward(streak);
+      if (date >= fromDate && reward > 0 && addStreakBonus(history, claimedBonuses, date, 'mission', streak, reward)) changedDates.push(date);
+    } else if (!weekend) {
+      streak = 0;
+    }
+    day.setDate(day.getDate() + 1);
+  }
+  return changedDates;
+}
+
+async function syncFromSupabase() {
+  try {
+    const sourceFilter = encodeURIComponent(SUPABASE_SOURCE + '*');
+    const [sessionRows, rewardRows, albaLoaded] = await Promise.all([
+      supabaseRequest('study_sessions?select=date,memo&memo=like.' + sourceFilter),
+      supabaseRequest('rewards?select=date,reward_amount,memo&memo=like.' + sourceFilter),
+      syncAlbaFromSupabase(),
+    ]);
+    const remote = {};
+    (sessionRows || []).forEach(row => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date || '')) return;
+      const task = String(row.memo || '').match(/task=([^;]+)/)?.[1];
+      if (!task) return;
+      const entry = remote[row.date] || (remote[row.date] = { completed:[], extraCount:0 });
+      if (task === 'extra') entry.extraCount++;
+      else entry.completed.push(task);
+    });
+    (rewardRows || []).forEach(row => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date || '')) return;
+      const entry = remote[row.date] || (remote[row.date] = { completed:[], extraCount:0 });
+      const extras = String(row.memo || '').match(/extras=(\d+)/)?.[1];
+      entry.extraCount = Math.max(entry.extraCount, Number(extras || 0));
+      const completed = String(row.memo || '').match(/completed=([^;]*)/)?.[1];
+      if (completed) entry.completed.push(...completed.split(',').filter(Boolean));
+      if (String(row.memo || '').includes('recovery=estimated-july')) entry.recoveryLocked = true;
+      const encodedBonuses = String(row.memo || '').match(/bonuses=([^;]+)/)?.[1];
+      if (encodedBonuses) {
+        try { entry.streakBonuses = JSON.parse(decodeURIComponent(encodedBonuses)); }
+        catch (_) { entry.streakBonuses = []; }
+      }
+    });
+
+    if (!Object.keys(remote).length) return albaLoaded;
+    const state = loadState() || {};
+    const history = state.history || {};
+    Object.entries(remote).forEach(([date, remoteRecord]) => {
+      const localRecord = history[date] || {};
+      const completed = remoteRecord.recoveryLocked
+        ? [...new Set(remoteRecord.completed)]
+        : [...new Set([...(localRecord.completed || []), ...remoteRecord.completed])];
+      const localExtraCount = (localRecord.extraItems || []).filter(item => item.done !== false).length;
+      const extraCount = remoteRecord.recoveryLocked ? (remoteRecord.extraCount || 0) : Math.max(localExtraCount, remoteRecord.extraCount || 0);
+      const extraItems = Array.from({ length:extraCount }, (_, index) => ({ id:index + 1, done:true }));
+      history[date] = {
+        ...localRecord,
+        date,
+        completed,
+        sessions: calculateRecordSessions(date, completed),
+        streakBonuses: remoteRecord.streakBonuses || localRecord.streakBonuses || [],
+        reward: calculateRecordReward(date, completed, extraCount) + sumStreakBonuses({ streakBonuses: remoteRecord.streakBonuses || localRecord.streakBonuses || [] }),
+        extraItems,
+        recoveryLocked: Boolean(remoteRecord.recoveryLocked),
+      };
+    });
+    localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, history, totalAccum:calcTotalAccum(history) }));
+    return true;
+  } catch (error) {
+    console.warn('Supabase 불러오기 실패', error);
+    return false;
+  }
+}
+
+async function syncAllLocalDataToSupabase() {
+  const state = loadState();
+  const records = Object.entries(state?.history || {})
+    .filter(([date, record]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && record && !record.isStreakBonus && !record.isHabitBonus);
+  for (const [date, record] of records) await syncStudyDayToSupabase(date, record);
+  await Promise.allSettled([
+    syncXpToSupabase(),
+    syncWordsToSupabase(loadWords()),
+    syncWordGamesToSupabase(loadWordGameState()),
+    syncAlbaToSupabase(loadAlbaState()),
+  ]);
+}
+
+async function bootstrapSupabaseSync() {
+  try { await syncXpToSupabase(); }
+  catch (error) { console.warn('Supabase XP 동기화 실패', error); }
+  await syncFromSupabase();
+  const state = loadState();
+  if (state) {
+    const changedBonusDates = backfillMissionStreakBonuses(state.history || {}, state.claimedBonuses || (state.claimedBonuses = {}));
+    if (changedBonusDates.length) {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, history:state.history, claimedBonuses:state.claimedBonuses, totalAccum:calcTotalAccum(state.history) }));
+      await Promise.all(changedBonusDates.map(date => syncStudyDayToSupabase(date, state.history[date])));
+    }
+    xp = state.xp || xp;
+    restoreToday(state);
+    calcReward();
+    updateProgress();
+    updateHistorySummary();
+    updateStatsScreen();
+    initAlba();
+  }
+  try { await syncAllLocalDataToSupabase(); }
+  catch (error) { console.warn('Supabase 자동 백업 실패', error); }
+}
+
+function queueTodayStudySync(date, record) {
+  // 빠르게 체크·해제해도 요청 순서가 뒤바뀌지 않도록 현재 상태를 순서대로 저장합니다.
+  const snapshot = JSON.parse(JSON.stringify(record));
+  _supabaseTodaySyncQueue = _supabaseTodaySyncQueue
+    .catch(() => {})
+    .then(() => syncStudyDayToSupabase(date, snapshot));
+  return _supabaseTodaySyncQueue;
+}
+
+function syncCurrentStudyToSupabase() {
+  const state = loadState();
+  const date = state?.lastDate;
+  const record = date ? state?.history?.[date] : null;
+  if (record) queueTodayStudySync(date, record).catch(error => console.warn('Supabase 저장 실패', error));
+}
+
+async function migrateLocalStudyToSupabase(button) {
+  const state = loadState();
+  const records = Object.entries(state?.history || {})
+    .filter(([date, record]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && record && !record.isStreakBonus && !record.isHabitBonus);
+  if (!records.length && !loadWords().length && !(loadWordGameState().history || []).length && !(loadAlbaState().todayItems || []).length) { alert('백업할 로컬 기록이 없어요.'); return; }
+  if (!confirm('로컬 학습·단어게임·알바 기록을 Supabase에 백업할까요?\n같은 날짜에 이 앱이 이전에 저장한 기록은 최신 내용으로 바뀝니다.')) return;
+  button.disabled = true;
+  button.textContent = '백업 중... (0/' + records.length + ')';
+  let completed = 0;
+  try {
+    for (const [date, record] of records) {
+      await syncStudyDayToSupabase(date, record);
+      completed++;
+      button.textContent = '백업 중... (' + completed + '/' + records.length + ')';
+    }
+    await Promise.all([
+      syncXpToSupabase(),
+      syncWordsToSupabase(loadWords()),
+      syncWordGamesToSupabase(loadWordGameState()),
+      syncAlbaToSupabase(loadAlbaState()),
+    ]);
+    button.textContent = completed + '일 백업 완료!';
+    button.style.background = '#16A34A';
+  } catch (error) {
+    console.error('Supabase 백업 실패', error);
+    button.textContent = '백업 실패 — 다시 시도';
+    button.style.background = '#DC2626';
+    alert('Supabase에 저장하지 못했어요. Supabase의 RLS INSERT/DELETE 정책을 확인해주세요.');
+  } finally {
+    setTimeout(() => {
+      button.disabled = false;
+      button.textContent = '모든 로컬 기록을 Supabase에 백업하기';
+      button.style.background = 'linear-gradient(135deg,#0EA5E9,#6366F1)';
+    }, 2500);
+  }
+}
+
 function syncToSheet() {
   clearTimeout(_sheetSyncTimer);
   _sheetSyncTimer = setTimeout(() => {
@@ -1296,13 +1720,13 @@ const ALBA_MENU = [
 ];
 
 function loadAlbaState() { try { const r=localStorage.getItem(ALBA_STORE_KEY); return r?JSON.parse(r):{items:[],totalAccum:0}; } catch(e){return{items:[],totalAccum:0};} }
-function saveAlbaState(s) { localStorage.setItem(ALBA_STORE_KEY, JSON.stringify(s)); syncToSheet(); }
+function saveAlbaState(s) { localStorage.setItem(ALBA_STORE_KEY, JSON.stringify(s)); syncToSheet(); syncAuxiliaryDataToSupabase(); }
 
 function loadState() { try { const r=localStorage.getItem(STORE_KEY); return r?JSON.parse(r):null; } catch(e){return null;} }
 function loadWords() { try { const r=localStorage.getItem(WORD_STORE_KEY); return r?JSON.parse(r):[]; } catch(e){return[];} }
-function saveWords(words) { localStorage.setItem(WORD_STORE_KEY, JSON.stringify(words)); syncToSheet(); }
+function saveWords(words) { localStorage.setItem(WORD_STORE_KEY, JSON.stringify(words)); syncToSheet(); syncAuxiliaryDataToSupabase(); }
 function loadWordGameState() { try { const r=localStorage.getItem(WORD_GAME_STORE_KEY); return r?JSON.parse(r):{totalGames:0,totalCorrect:0,totalXP:0,history:[]}; } catch(e){return{totalGames:0,totalCorrect:0,totalXP:0,history:[]};} }
-function saveWordGameState(s) { localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(s)); syncToSheet(); }
+function saveWordGameState(s) { localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(s)); syncToSheet(); syncAuxiliaryDataToSupabase(); }
 
 const XP_PER_LEVEL = (()=>{ const t=[0]; let cum=0; for(let lv=1;lv<=100;lv++){cum+=Math.round(50*Math.pow(1.055,lv-1));t.push(cum);} return t; })();
 const XP_GAINS = { miracle:30,shower:20,read1:25,read2:25,eng1:40,eng2:40,math1:40,math2:40,flex:30,exercise:30,write:35,_extra:50 };
@@ -1328,36 +1752,30 @@ function saveState() {
   const completedToday=Object.entries(tasks).filter(([,v])=>v.done).map(([k])=>k);
   const extraDone=extraItems.filter(e=>e.done);
   // 체크리스트·추가공부 없어도 오늘 기록은 항상 유지 (xp 보존)
-  history[todayKey]={date:todayKey,completed:completedToday,sessions:calcSessions(),reward:calcTotalReward(),xp,extraItems:extraDone.map(e=>({...e}))};
+  const existingToday = history[todayKey] || {};
+  history[todayKey]={...existingToday,date:todayKey,completed:completedToday,sessions:calcSessions(),reward:calcTotalReward()+sumStreakBonuses(existingToday),xp,extraItems:extraDone.map(e=>({...e})),streakBonuses:existingToday.streakBonuses||[]};
 
   const streak=calcStreak(history,d);
 
   // 미션 스트릭 마일스톤 보상 체크
   const claimedBonuses = state.claimedBonuses || {};
   const bonusReward = getStreakMilestoneReward(streak);
-  if (bonusReward > 0 && !claimedBonuses['mission-'+streak]) {
-    claimedBonuses['mission-'+streak] = { reward: bonusReward, date: todayKey, type:'mission' };
-    history['bonus-streak-' + streak] = { date: todayKey, reward: bonusReward, isStreakBonus: true, streakDays: streak };
-  }
+  addStreakBonus(history, claimedBonuses, todayKey, 'mission', streak, bonusReward);
 
   // 미라클 모닝 습관 마일스톤 보상
   const mStreak = calcHabitStreak('miracle', history, d);
   const mHabitReward = getHabitMilestoneReward(mStreak);
-  if (mHabitReward > 0 && completedToday.includes('miracle') && !claimedBonuses['miracle-'+mStreak]) {
-    claimedBonuses['miracle-'+mStreak] = { reward: mHabitReward, date: todayKey, type:'miracle' };
-    history['bonus-miracle-' + mStreak] = { date: todayKey, reward: mHabitReward, isHabitBonus: true, habitKey:'miracle', streakDays: mStreak };
-  }
+  if (mHabitReward > 0 && completedToday.includes('miracle')) addStreakBonus(history, claimedBonuses, todayKey, 'miracle', mStreak, mHabitReward);
 
   // 아침 샤워 습관 마일스톤 보상
   const sStreak = calcHabitStreak('shower', history, d);
   const sHabitReward = getHabitMilestoneReward(sStreak);
-  if (sHabitReward > 0 && completedToday.includes('shower') && !claimedBonuses['shower-'+sStreak]) {
-    claimedBonuses['shower-'+sStreak] = { reward: sHabitReward, date: todayKey, type:'shower' };
-    history['bonus-shower-' + sStreak] = { date: todayKey, reward: sHabitReward, isHabitBonus: true, habitKey:'shower', streakDays: sStreak };
-  }
+  if (sHabitReward > 0 && completedToday.includes('shower')) addStreakBonus(history, claimedBonuses, todayKey, 'shower', sStreak, sHabitReward);
 
   localStorage.setItem(STORE_KEY,JSON.stringify({xp,totalAccum:calcTotalAccum(history),streak,history,lastDate:todayKey,flexName:document.getElementById('name-flex')?.textContent||'',claimedBonuses}));
   syncToSheet();
+  syncCurrentStudyToSupabase();
+  syncXpToSupabase().then(() => { updateProgress(); updateLevelCard(); }).catch(error => console.warn('Supabase XP 저장 실패', error));
 }
 
 function calcTotalReward() {
@@ -1469,7 +1887,13 @@ function calcReward() {
   if(base>0){const c=document.createElement('div');c.className='rchip p';c.textContent='기본 '+base.toLocaleString()+'원';ce.appendChild(c);}
   chips.forEach(ch=>{const c=document.createElement('div');c.className='rchip '+ch.c;c.textContent=ch.t;ce.appendChild(c);});
   const todayKey=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
-  const pastStudyAccum=Object.entries(_h).filter(([k])=>k!==todayKey).reduce((sum,[,r])=>sum+(r.reward||0),0);
+  const pastStudyAccum=Object.entries(_h)
+    .filter(([k])=>{
+      if(k===todayKey || !/^\d{4}-\d{2}-\d{2}$/.test(k)) return false;
+      const [year, month] = k.split('-').map(Number);
+      return year===today.getFullYear() && month===today.getMonth()+1;
+    })
+    .reduce((sum,[,r])=>sum+(r.reward||0),0);
   const studyAccum = pastStudyAccum + total;
   const albaAccum = calcAlbaMonthAccum(today.getFullYear(), today.getMonth()+1);
   document.getElementById('accum-reward').textContent=(studyAccum+albaAccum).toLocaleString()+'원';
@@ -1590,7 +2014,7 @@ function buildStreakCalendar(){
 const TASK_NAMES={miracle:'🌅 미라클 모닝',shower:'🚿 아침 샤워',read1:'📖 독서 1회',read2:'📖 독서 2회',eng1:'🎧 영어 1회',eng2:'🎧 영어 2회',math1:'📐 수학 1회',math2:'📐 수학 2회',flex:'📝 국어/영상편집',exercise:'🏃 운동',write:'✏️ 글쓰기'};
 const SUBJ_MAP={math1:'수학',math2:'수학',eng1:'영어',eng2:'영어',flex:'국어',read1:'독서',read2:'독서',write:'글쓰기'};
 
-function getHistoryData(){const state=loadState();const history=state?.history||{};return Object.entries(history).filter(([key])=>/^\d{4}-\d{2}-\d{2}$/.test(key)).map(([key,rec])=>{const[y,m,d]=key.split('-').map(Number);const date=new Date(y,m-1,d);const isWE=date.getDay()===0||date.getDay()===6;const completed=rec.completed||[];const sessions=rec.sessions||0;const subjects=[...new Set(completed.filter(k=>SUBJ_MAP[k]).map(k=>SUBJ_MAP[k]))];const status=completed.length===0?'empty':sessions>=6?'complete':'partial';return{key,date,isWE,completed,sessions,reward:rec.reward||0,subjects,status};}).sort((a,b)=>a.date-b.date);}
+function getHistoryData(){const state=loadState();const history=state?.history||{};return Object.entries(history).filter(([key])=>/^\d{4}-\d{2}-\d{2}$/.test(key)).map(([key,rec])=>{const[y,m,d]=key.split('-').map(Number);const date=new Date(y,m-1,d);const isWE=date.getDay()===0||date.getDay()===6;const completed=rec.completed||[];const sessions=rec.sessions||0;const subjects=[...new Set(completed.filter(k=>SUBJ_MAP[k]).map(k=>SUBJ_MAP[k]))];const status=completed.length===0?'empty':sessions>=6?'complete':'partial';return{key,date,isWE,completed,sessions,reward:rec.reward||0,streakBonuses:rec.streakBonuses||[],subjects,status};}).sort((a,b)=>a.date-b.date);}
 
 let selectedMonth=null;
 let histFilter='all';
@@ -1737,6 +2161,7 @@ function renderHistory(){
     const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':'기록 없음';
     const rewardBits=[];
     if(d.reward>0)rewardBits.push(`<span style="background:#EDE9FE;color:var(--purple);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">📚 ${d.reward.toLocaleString()}원</span>`);
+    (d.streakBonuses||[]).forEach(bonus=>rewardBits.push(`<span style="background:#FFF7ED;color:#C2410C;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:900">🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클':'샤워'} ${bonus.streakDays}일 +${Number(bonus.reward).toLocaleString()}원</span>`));
     if(albaDayReward>0)rewardBits.push(`<span style="background:#DCFCE7;color:#15803D;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">💼 ${albaDayReward.toLocaleString()}원</span>`);
     const subjCounts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];subjCounts[s]=(subjCounts[s]||0)+1;});
     const subjChips=Object.entries(subjCounts).map(([s,n])=>`<span class="hist-schip">${s} ${n}회</span>`).join('');
@@ -1763,7 +2188,7 @@ function renderHistory(){
   if(list.children.length===0)list.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;font-weight:700">이달 기록이 없어요</div>';
 }
 
-function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';document.getElementById('detail-reward').textContent=d?(d.reward>0?d.reward.toLocaleString()+'원':'0원'):'0원';const items=document.getElementById('detail-items');items.innerHTML='';Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
+function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';document.getElementById('detail-reward').textContent=d?(d.reward>0?d.reward.toLocaleString()+'원':'0원'):'0원';const items=document.getElementById('detail-items');items.innerHTML='';(d?.streakBonuses||[]).forEach(bonus=>{const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#FFF7ED;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#C2410C;font-weight:900';div.textContent=`🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클 모닝':'아침 샤워'} ${bonus.streakDays}일 연속 보상 +${Number(bonus.reward).toLocaleString()}원`;items.appendChild(div);});Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
 function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailDirect();}
 function closeDayDetailDirect(){document.getElementById('day-detail-overlay').classList.remove('show');}
 
@@ -2387,7 +2812,7 @@ function showGameResult() {
 // ════════════════════════════════════════
 const ALL_TASKS = [
   { key:'write',    label:'✏️ 글쓰기',        sub:'평일 +1,000원 / 주말 +2,000원' },
-  { key:'miracle',  label:'🌅 미라클 모닝',   sub:'6:15 이전 기상' },
+  { key:'miracle',  label:'🌅 미라클 모닝',   sub:'+500원' },
   { key:'shower',   label:'🚿 아침 샤워',     sub:'+1,000원' },
   { key:'read1',    label:'📖 독서 1회',       sub:'30분' },
   { key:'read2',    label:'📖 독서 2회',       sub:'30분' },
@@ -2618,8 +3043,8 @@ function calcPastReward() {
 
   let base = sessions >= 7 ? 5000 : sessions === 6 ? 4000 : sessions * 500;
   let bonus = 0;
-  if (checkedKeys.includes('miracle')) bonus += isWE ? 1000 : 500;
-  if (checkedKeys.includes('shower'))  bonus += isWE ? 2000 : 1000;
+  if (checkedKeys.includes('miracle')) bonus += getMiracleBonus();
+  if (checkedKeys.includes('shower'))  bonus += getShowerBonus();
   if (checkedKeys.includes('write'))   bonus += isWE ? 2000 : 1000;
   bonus += pastExtraItems.length * 2000;
 
@@ -2646,8 +3071,8 @@ function savePastEntry() {
   });
 
   let reward = sessions >= 7 ? 5000 : sessions === 6 ? 4000 : sessions * 500;
-  if (checkedKeys.includes('miracle')) reward += isWE ? 1000 : 500;
-  if (checkedKeys.includes('shower'))  reward += isWE ? 2000 : 1000;
+  if (checkedKeys.includes('miracle')) reward += getMiracleBonus();
+  if (checkedKeys.includes('shower'))  reward += getShowerBonus();
   if (checkedKeys.includes('write'))   reward += isWE ? 2000 : 1000;
   reward += pastExtraItems.length * 2000;
 
@@ -2668,6 +3093,12 @@ function savePastEntry() {
   }
 
   localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, history }));
+  if (history[dateVal]) {
+    syncStudyDayToSupabase(dateVal, history[dateVal]).catch(error => console.warn('Supabase 저장 실패', error));
+  } else {
+    Promise.all([deleteAppRows('study_sessions', dateVal), deleteAppRows('rewards', dateVal)])
+      .catch(error => console.warn('Supabase 삭제 실패', error));
+  }
   const dow = ['일','월','화','수','목','금','토'][d.getDay()];
   closePastEntry();
   // 홈 화면 갱신
@@ -2905,8 +3336,8 @@ function migrateWordGameXP() {
     if (state.todayItems.length !== before) saveAlbaState(state);
   })();
 
-  // 앱 로드 시 Google Sheets에서 자동 동기화 (모든 화면 갱신)
-  manualSyncFromSheet(null);
+  // 앱을 열면 DB 기록과 현재 기기 기록을 먼저 합친 뒤 DB에 백업합니다.
+  bootstrapSupabaseSync();
 })();
 
 // ════════════════════════════════════════
