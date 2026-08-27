@@ -1179,12 +1179,6 @@ const WORD_STORE_KEY = 'rowoon_words_v1';
 const WORD_GAME_STORE_KEY = 'rowoon_word_game_v1';
 const ALBA_STORE_KEY = 'rowoon_alba_v1';
 
-// ════════════════════════════════════════
-//  Google Sheets 동기화
-// ════════════════════════════════════════
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbx6iTYLyZpWz7E_GsqqYHmzaWm1xMNGJ-iSE9Tom2yhR4MSn7VZFuxcZipOdRfgbtW_1A/exec';
-let _sheetSyncTimer = null;
-
 // Supabase의 publishable key는 브라우저에서 사용하도록 발급된 공개 키입니다.
 const SUPABASE_URL = 'https://wqxcwjwzpenkixncqvzi.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-C1h3gZYz9-iv80NPlGudw_nste2Jkj';
@@ -1604,108 +1598,6 @@ async function migrateLocalStudyToSupabase(button) {
   }
 }
 
-function syncToSheet() {
-  clearTimeout(_sheetSyncTimer);
-  _sheetSyncTimer = setTimeout(() => {
-    const data = {
-      study:    JSON.parse(localStorage.getItem(STORE_KEY)    || 'null'),
-      words:    JSON.parse(localStorage.getItem(WORD_STORE_KEY)     || '[]'),
-      wordGame: JSON.parse(localStorage.getItem(WORD_GAME_STORE_KEY)|| 'null'),
-      alba:     JSON.parse(localStorage.getItem(ALBA_STORE_KEY)     || 'null'),
-    };
-    fetch(SHEET_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify({ action: 'save', data })
-    }).catch(() => {});
-  }, 1500); // 1.5초 디바운스 (연속 저장 방지)
-}
-
-async function syncFromSheet() {
-  try {
-    const res = await fetch(SHEET_URL + '?action=load');
-    const json = await res.json();
-    if (!json.success || !json.data) return false;
-    const { study, words, wordGame, alba } = json.data;
-
-    // study: history 키를 YYYY-MM-DD로 정규화 (Sheets Date 객체 대응)
-    if (study && study.history) {
-      const fixedHistory = {};
-      Object.entries(study.history).forEach(([k, v]) => {
-        const nd = /^\d{4}-\d{2}-\d{2}$/.test(k) ? k : normalizeDate(k);
-        if (nd) fixedHistory[nd] = { ...v, date: nd };
-      });
-      study.history = fixedHistory;
-      // xp, streak 등 숫자 타입 보정
-      study.xp         = Number(study.xp)         || 0;
-      study.streak      = Number(study.streak)      || 0;
-      study.totalAccum  = Number(study.totalAccum)  || 0;
-    }
-    if (study && study.history && Object.keys(study.history).length > 0) {
-      // 로컬 XP가 더 높으면 유지 (단어게임 XP 덮어쓰기 방지)
-      const localStudy = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-      if (localStudy && (localStudy.xp || 0) > (study.xp || 0)) {
-        study.xp = localStudy.xp;
-      }
-      localStorage.setItem(STORE_KEY, JSON.stringify(study));
-    }
-    if (words && words.length > 0)  localStorage.setItem(WORD_STORE_KEY,      JSON.stringify(words));
-    if (wordGame) {
-      const localWG = JSON.parse(localStorage.getItem(WORD_GAME_STORE_KEY) || 'null');
-      if (localWG) {
-        // history: 로컬이 항상 최신 → 로컬 우선, 시트가 더 길 때만 시트 사용
-        const localHist  = localWG.history  || [];
-        const sheetsHist = wordGame.history || [];
-        wordGame.history = localHist.length >= sheetsHist.length ? localHist : sheetsHist;
-        // 수치: 최댓값 유지 (어느 쪽도 잃지 않음)
-        wordGame.totalXP      = Math.max(localWG.totalXP      || 0, wordGame.totalXP      || 0);
-        wordGame.totalGames   = Math.max(localWG.totalGames   || 0, wordGame.totalGames   || 0);
-        wordGame.totalCorrect = Math.max(localWG.totalCorrect || 0, wordGame.totalCorrect || 0);
-      }
-      localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(wordGame));
-    }
-    if (alba && (alba.todayItems||[]).length > 0) {
-      // Google Sheets에서 날짜가 Date 객체로 변환될 수 있으므로 정규화
-      alba.todayItems = alba.todayItems.map(item => ({...item, date: normalizeDate(item.date)})).filter(item => item.date);
-      localStorage.setItem(ALBA_STORE_KEY, JSON.stringify(alba));
-    }
-    return true;
-  } catch(e) { return false; }
-}
-
-async function manualSyncFromSheet(btnEl) {
-  if (btnEl) { btnEl.textContent = '⏳ 불러오는 중...'; btnEl.disabled = true; }
-  const ok = await syncFromSheet();
-  // 화면 전체 갱신
-  const state = loadState();
-  if (state) {
-    xp = Math.max(state.xp || 0, xp); // 더 높은 XP 유지
-    if (state.flexName) { const fn=document.getElementById('name-flex'); if(fn)fn.textContent=state.flexName; }
-    restoreToday(state);
-    wordList = loadWords();
-    calcReward(); updateProgress(); buildStreakCalendar();
-    initAlba();
-  }
-  // 현재 열린 화면 갱신
-  const activeScreen = document.querySelector('.screen.active');
-  if (activeScreen) {
-    const name = activeScreen.id.replace('screen-','');
-    if (name==='stats')    { updateStatsScreen(); updateLevelCard(); renderBadges(); }
-    if (name==='history')  { updateHistorySummary(); buildMonthTabs(); renderHistory(); }
-    if (name==='alba')     renderAlbaScreen();
-  }
-  if (btnEl) {
-    btnEl.textContent = ok ? '✅ 완료!' : '❌ 실패 (재시도)';
-    btnEl.style.background = ok ? '#22C55E' : '#EF4444';
-    setTimeout(() => {
-      btnEl.textContent = '☁️ 시트에서 데이터 불러오기';
-      btnEl.style.background = 'linear-gradient(135deg,#7B5CF5,#A855F7)';
-      btnEl.disabled = false;
-    }, 2500);
-  }
-}
-
-
 const ALBA_MENU = [
   { id:'clothes', emoji:'👕', label:'옷 정리',      reward:500,  type:'fixed' },
   { id:'desk',    emoji:'🗂️', label:'책상 정리',    reward:500,  type:'fixed' },
@@ -1720,13 +1612,13 @@ const ALBA_MENU = [
 ];
 
 function loadAlbaState() { try { const r=localStorage.getItem(ALBA_STORE_KEY); return r?JSON.parse(r):{items:[],totalAccum:0}; } catch(e){return{items:[],totalAccum:0};} }
-function saveAlbaState(s) { localStorage.setItem(ALBA_STORE_KEY, JSON.stringify(s)); syncToSheet(); syncAuxiliaryDataToSupabase(); }
+function saveAlbaState(s) { localStorage.setItem(ALBA_STORE_KEY, JSON.stringify(s)); syncAuxiliaryDataToSupabase(); }
 
 function loadState() { try { const r=localStorage.getItem(STORE_KEY); return r?JSON.parse(r):null; } catch(e){return null;} }
 function loadWords() { try { const r=localStorage.getItem(WORD_STORE_KEY); return r?JSON.parse(r):[]; } catch(e){return[];} }
-function saveWords(words) { localStorage.setItem(WORD_STORE_KEY, JSON.stringify(words)); syncToSheet(); syncAuxiliaryDataToSupabase(); }
+function saveWords(words) { localStorage.setItem(WORD_STORE_KEY, JSON.stringify(words)); syncAuxiliaryDataToSupabase(); }
 function loadWordGameState() { try { const r=localStorage.getItem(WORD_GAME_STORE_KEY); return r?JSON.parse(r):{totalGames:0,totalCorrect:0,totalXP:0,history:[]}; } catch(e){return{totalGames:0,totalCorrect:0,totalXP:0,history:[]};} }
-function saveWordGameState(s) { localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(s)); syncToSheet(); syncAuxiliaryDataToSupabase(); }
+function saveWordGameState(s) { localStorage.setItem(WORD_GAME_STORE_KEY, JSON.stringify(s)); syncAuxiliaryDataToSupabase(); }
 
 const XP_PER_LEVEL = (()=>{ const t=[0]; let cum=0; for(let lv=1;lv<=100;lv++){cum+=Math.round(50*Math.pow(1.055,lv-1));t.push(cum);} return t; })();
 const XP_GAINS = { miracle:30,shower:20,read1:25,read2:25,eng1:40,eng2:40,math1:40,math2:40,flex:30,exercise:30,write:35,_extra:50 };
@@ -1773,7 +1665,6 @@ function saveState() {
   if (sHabitReward > 0 && completedToday.includes('shower')) addStreakBonus(history, claimedBonuses, todayKey, 'shower', sStreak, sHabitReward);
 
   localStorage.setItem(STORE_KEY,JSON.stringify({xp,totalAccum:calcTotalAccum(history),streak,history,lastDate:todayKey,flexName:document.getElementById('name-flex')?.textContent||'',claimedBonuses}));
-  syncToSheet();
   syncCurrentStudyToSupabase();
   syncXpToSupabase().then(() => { updateProgress(); updateLevelCard(); }).catch(error => console.warn('Supabase XP 저장 실패', error));
 }
@@ -2032,7 +1923,7 @@ function setHistFilter(f){
   renderHistory();
 }
 
-// 날짜 문자열을 YYYY-MM-DD 형식으로 정규화 (Google Sheets Date 객체 대응)
+// 날짜 문자열을 YYYY-MM-DD 형식으로 정규화
 function normalizeDate(dateStr) {
   if (!dateStr) return '';
   const s = String(dateStr);
