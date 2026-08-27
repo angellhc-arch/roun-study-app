@@ -1088,6 +1088,12 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <button id="wv2-tab-review" onclick="setWordV2ListTab('review')">복습</button>
       <button id="wv2-tab-tests" onclick="setWordV2ListTab('tests')">시험기록</button>
     </div>
+    <div class="wv2-card" id="wv2-word-date-card">
+      <div class="wv2-title">등록 날짜별 단어</div>
+      <div class="wv2-form">
+        <input class="wv2-input" type="date" id="wv2-word-date" onchange="setWordV2Date(this.value)">
+      </div>
+    </div>
     <div class="word-list-section"><div id="wv2-list"></div></div>
   </div>
 
@@ -3211,6 +3217,8 @@ function applyDateSettings(){
 
 let wordV2ListTab = 'words';
 let wordV2Session = null;
+let wordV2SelectedDate = null;
+let wordV2EditingId = null;
 
 function kstDateKey(date=new Date()) {
   const kst = new Date(date.toLocaleString('en-US', { timeZone:'Asia/Seoul' }));
@@ -3238,6 +3246,16 @@ function saveWordV2State(state) {
 
 function normalizeWordV2(value) {
   return String(value || '').trim().toLowerCase();
+}
+
+function getWordV2CreatedDate(word) {
+  const created = word?.createdAt ? new Date(word.createdAt) : null;
+  if (!created || Number.isNaN(created.getTime())) return kstDateKey();
+  return kstDateKey(created);
+}
+
+function getWordV2ById(state, wordId) {
+  return (state.words || []).find(word => String(word.id) === String(wordId));
 }
 
 function getWordV2TestId(type, dateKey=kstDateKey()) {
@@ -3285,6 +3303,11 @@ function getWordV2WeeklyWords(state) {
     (test.questions || []).forEach(q => ids.add(q.wordId));
   });
   return state.words.filter(w => ids.has(w.id));
+}
+
+function getWordV2WordsFromTest(state, test) {
+  const ids = (test?.questions || []).map(q => q.wordId);
+  return ids.map(id => getWordV2ById(state, id)).filter(Boolean);
 }
 
 function wordV2Options(correctWord, state) {
@@ -3378,6 +3401,13 @@ function saveWordV2FromForm() {
 
 function setWordV2ListTab(tab) {
   wordV2ListTab = tab;
+  wordV2EditingId = null;
+  renderWordV2Screen();
+}
+
+function setWordV2Date(dateKey) {
+  wordV2SelectedDate = dateKey || kstDateKey();
+  wordV2EditingId = null;
   renderWordV2Screen();
 }
 
@@ -3395,8 +3425,9 @@ function renderWordV2Screen() {
   setText('wv2-test-status', daily?.status === 'COMPLETED' ? '완료' : '미응시');
   const dailyBtn = document.getElementById('wv2-daily-btn');
   if (dailyBtn) {
-    dailyBtn.disabled = daily?.status === 'COMPLETED' || (newWords.length + reviewWords.length) === 0;
-    dailyBtn.textContent = daily?.status === 'COMPLETED' ? '오늘 시험 완료 ✓' : '오늘의 시험';
+    const dailyWords = daily?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, daily) : [...newWords, ...reviewWords];
+    dailyBtn.disabled = dailyWords.length === 0;
+    dailyBtn.textContent = daily?.status === 'COMPLETED' ? '오늘의 시험 다시 풀기' : '오늘의 시험';
   }
   const weekCard = document.getElementById('wv2-week-card');
   const weekBtn = document.getElementById('wv2-weekly-btn');
@@ -3404,9 +3435,15 @@ function renderWordV2Screen() {
   if (weekCard) weekCard.style.display = isSunday ? 'block' : 'none';
   setText('wv2-week-sub', '이번 주 시험 단어 ' + weeklyWords.length + '개');
   if (weekBtn) {
-    weekBtn.disabled = !isSunday || weekly?.status === 'COMPLETED' || weeklyWords.length === 0;
-    weekBtn.textContent = !isSunday ? '일요일 주간시험' : weekly?.status === 'COMPLETED' ? '주간시험 완료 ✓' : '주간시험';
+    const retryWeeklyWords = weekly?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, weekly) : weeklyWords;
+    weekBtn.disabled = !isSunday || retryWeeklyWords.length === 0;
+    weekBtn.textContent = !isSunday ? '일요일 주간시험' : weekly?.status === 'COMPLETED' ? '주간시험 다시 풀기' : '주간시험';
   }
+  const dateCard = document.getElementById('wv2-word-date-card');
+  if (dateCard) dateCard.style.display = wordV2ListTab === 'words' ? 'block' : 'none';
+  const dateInput = document.getElementById('wv2-word-date');
+  if (!wordV2SelectedDate) wordV2SelectedDate = kstDateKey();
+  if (dateInput && dateInput.value !== wordV2SelectedDate) dateInput.value = wordV2SelectedDate;
   ['words','review','tests'].forEach(tab => document.getElementById('wv2-tab-'+tab)?.classList.toggle('on', wordV2ListTab === tab));
   renderWordV2List(state);
 }
@@ -3426,15 +3463,51 @@ function renderWordV2List(state) {
     });
     return;
   }
-  const words = wordV2ListTab === 'review' ? getWordV2ReviewWords(state) : state.words;
+  const words = wordV2ListTab === 'review'
+    ? getWordV2ReviewWords(state)
+    : state.words.filter(word => getWordV2CreatedDate(word) === (wordV2SelectedDate || kstDateKey()));
   if (!words.length) { list.innerHTML = '<div class="word-empty-state"><div class="word-empty-msg">표시할 단어가 없어요.</div></div>'; return; }
   words.forEach(word => {
     const count = Number(word.reviewCorrectCount || 0);
     const div = document.createElement('div');
     div.className = 'wv2-word';
-    div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${escapeV2Text(word.word)}</div><div class="wv2-word-ko">${escapeV2Text(word.meaningKo)}</div><div class="word-item-ex">${escapeV2Text(word.example || '')}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${escapeV2Text(word.reviewStatus || 'NORMAL')} ${count}/7</span><button class="wv2-delete" title="단어 삭제" onclick="deleteWordV2('${escapeV2Text(word.id)}')">×</button></div></div><div class="wv2-progress">${Array.from({length:7},(_,i)=>`<span class="wv2-dot${i<count?' on':''}"></span>`).join('')}</div>`;
+    if (wordV2EditingId && String(word.id) === String(wordV2EditingId)) {
+      div.innerHTML = `<div class="wv2-form"><input class="wv2-input" id="wv2-edit-word-${escapeV2Text(word.id)}" value="${escapeV2Text(word.word)}" placeholder="영어 단어"><input class="wv2-input" id="wv2-edit-meaning-${escapeV2Text(word.id)}" value="${escapeV2Text(word.meaningKo)}" placeholder="한글 뜻"><textarea class="wv2-textarea" id="wv2-edit-example-${escapeV2Text(word.id)}" placeholder="영어 예문">${escapeV2Text(word.example || '')}</textarea><textarea class="wv2-textarea" id="wv2-edit-example-ko-${escapeV2Text(word.id)}" placeholder="예문 해석">${escapeV2Text(word.exampleKo || '')}</textarea><div class="wv2-actions"><button class="wv2-btn green" onclick="saveWordV2Edit('${escapeV2Text(word.id)}')">저장</button><button class="wv2-btn" onclick="cancelWordV2Edit()">취소</button></div></div>`;
+    } else {
+      div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${escapeV2Text(word.word)}</div><div class="wv2-word-ko">${escapeV2Text(word.meaningKo)}</div><div class="word-item-ex">${escapeV2Text(word.example || '')}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${escapeV2Text(word.reviewStatus || 'NORMAL')} ${count}/7</span><button class="wv2-delete" title="단어 수정" onclick="editWordV2('${escapeV2Text(word.id)}')">✎</button><button class="wv2-delete" title="단어 삭제" onclick="deleteWordV2('${escapeV2Text(word.id)}')">×</button></div></div><div class="wv2-progress">${Array.from({length:7},(_,i)=>`<span class="wv2-dot${i<count?' on':''}"></span>`).join('')}</div>`;
+    }
     list.appendChild(div);
   });
+}
+
+function editWordV2(wordId) {
+  wordV2EditingId = String(wordId);
+  renderWordV2Screen();
+}
+
+function cancelWordV2Edit() {
+  wordV2EditingId = null;
+  renderWordV2Screen();
+}
+
+function saveWordV2Edit(wordId) {
+  const state = loadWordV2State();
+  const word = state.words.find(item => String(item.id) === String(wordId));
+  if (!word) return;
+  const nextWord = normalizeWordV2(document.getElementById('wv2-edit-word-' + wordId)?.value);
+  const meaningKo = (document.getElementById('wv2-edit-meaning-' + wordId)?.value || '').trim();
+  const example = (document.getElementById('wv2-edit-example-' + wordId)?.value || '').trim();
+  const exampleKo = (document.getElementById('wv2-edit-example-ko-' + wordId)?.value || '').trim();
+  if (!nextWord || !meaningKo) { alert('단어와 한글 뜻은 꼭 필요해요.'); return; }
+  if (state.words.some(item => String(item.id) !== String(wordId) && normalizeWordV2(item.word) === nextWord)) { alert('이미 등록된 단어예요.'); return; }
+  word.word = nextWord;
+  word.meaningKo = meaningKo;
+  word.example = example;
+  word.exampleKo = exampleKo;
+  word.updatedAt = new Date().toISOString();
+  wordV2EditingId = null;
+  saveWordV2State(state);
+  renderWordV2Screen();
 }
 
 function deleteWordV2(wordId) {
@@ -3460,13 +3533,14 @@ function startWordV2Test(type) {
   const today = kstDateKey();
   const id = getWordV2TestId(type, today);
   const existing = state.tests[id];
-  if (existing?.status === 'COMPLETED') { alert('이미 완료한 시험이에요.'); return; }
-  if (existing?.status !== 'COMPLETED') delete state.tests[id];
-  const words = type === 'WEEKLY' ? getWordV2WeeklyWords(state) : [...getWordV2NewWords(state), ...getWordV2ReviewWords(state)];
+  const isOfficialAttempt = existing?.status !== 'COMPLETED';
+  const words = existing?.status === 'COMPLETED'
+    ? getWordV2WordsFromTest(state, existing)
+    : type === 'WEEKLY' ? getWordV2WeeklyWords(state) : [...getWordV2NewWords(state), ...getWordV2ReviewWords(state)];
   if (!words.length) { alert('시험 볼 단어가 없어요.'); return; }
   const now = new Date().toISOString();
   const test = { id, testDate:today, testType:type, status:'IN_PROGRESS', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:now, completedAt:null };
-  wordV2Session = { mode:type, testId:id, test, questions:test.questions, index:0, answered:false, practice:false };
+  wordV2Session = { mode:type, testId:id, test, questions:test.questions, index:0, answered:false, practice:false, official:isOfficialAttempt };
   showWordV2Quiz();
 }
 
@@ -3574,7 +3648,7 @@ function nextWordV2Question() {
 function finishWordV2Session() {
   const correct = wordV2Session.questions.filter(q => q.isCorrect).length;
   const total = wordV2Session.questions.length;
-  if (!wordV2Session.practice) {
+  if (!wordV2Session.practice && wordV2Session.official) {
     const state = loadWordV2State();
     const completedAt = new Date().toISOString();
     const test = {
