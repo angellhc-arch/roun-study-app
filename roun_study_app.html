@@ -2185,6 +2185,31 @@ function getV2HabitReward(dateKey) {
   return { total:miracle + shower + milestone, miracle, shower, milestone };
 }
 
+function getV2RewardForStats(dateKey, state=loadV2PlanState()) {
+  const day = state[dateKey];
+  if (!day || !hasV2Plan(day)) return 0;
+  const reward = calcV2Reward(day, state, dateKey);
+  return Math.max(0, Number(reward.total || 0) - Number(reward.habitReward?.total || 0));
+}
+
+function getV2TotalRewardForStats() {
+  const state = loadV2PlanState();
+  return Object.keys(state)
+    .filter(dateKey => /^\d{4}-\d{2}-\d{2}$/.test(dateKey))
+    .reduce((sum, dateKey) => sum + getV2RewardForStats(dateKey, state), 0);
+}
+
+function getV2MonthRewardForStats(year, month) {
+  const state = loadV2PlanState();
+  return Object.keys(state)
+    .filter(dateKey => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
+      const [y, m] = dateKey.split('-').map(Number);
+      return y === year && m === month;
+    })
+    .reduce((sum, dateKey) => sum + getV2RewardForStats(dateKey, state), 0);
+}
+
 function escapeV2Text(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
@@ -2456,7 +2481,7 @@ function calcStreak(history, today) {
   return streak;
 }
 function calcTotalAccum(history) {
-  return Object.values(history).reduce((sum,r) => sum + (r.reward||0), 0);
+  return Object.values(history).reduce((sum,r) => sum + (r.reward||0), 0) + getV2TotalRewardForStats();
 }
 
 // 이달 알바 누적 보상 계산
@@ -2694,6 +2719,11 @@ const as=loadAlbaState();(as.todayItems||[]).forEach(i=>{
   const[iy,im]=nd.split('-').map(Number);if(!iy||!im)return;
   const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}
 });
+const v2State=loadV2PlanState();Object.keys(v2State).forEach(dateKey=>{
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)||!hasV2Plan(v2State[dateKey]))return;
+  const[iy,im]=dateKey.split('-').map(Number);if(!iy||!im)return;
+  const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}
+});
 return res.sort().reverse();}
 let _monthList=[];
 function buildMonthTabs(){
@@ -2734,8 +2764,10 @@ function renderHistory(){
   albaAll.forEach(i=>{if(!albaByDate[i.date])albaByDate[i.date]=[];albaByDate[i.date].push(i);});
 
   // 월 요약
-  const studyReward=filtered.reduce((a,b)=>a+b.reward,0);
-  const completeDays=filtered.filter(d=>d.status==='complete').length;
+  const v2MonthReward=getV2MonthRewardForStats(y,mo);
+  const studyReward=filtered.reduce((a,b)=>a+b.reward,0)+v2MonthReward;
+  const v2StateForMonth=loadV2PlanState();
+  const completeDays=filtered.filter(d=>d.status==='complete'||isV2FullyComplete(v2StateForMonth[d.key])).length;
   const albaMonthReward=calcAlbaMonthAccum(y,mo);
   const albaMonthCnt=calcAlbaMonthCount(y,mo);
   const totalReward=studyReward+albaMonthReward;
@@ -2787,21 +2819,23 @@ function renderHistory(){
     const albaDayItems=albaByDate[d.key]||[];
     const albaDayReward=albaDayItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
     const hasAlba=albaDayItems.length>0;
-    const totalDayReward=d.reward+albaDayReward;
+    const v2DayReward=getV2RewardForStats(d.key);
+    const totalDayReward=d.reward+v2DayReward+albaDayReward;
 
     // 완전히 빈 날은 스킵
-    if(d.status==='empty'&&!hasAlba)return;
+    if(d.status==='empty'&&!hasAlba&&v2DayReward<=0)return;
     // 학습 필터: 알바만 있고 학습 없으면 스킵
-    if(histFilter==='study'&&d.status==='empty')return;
+    if(histFilter==='study'&&d.status==='empty'&&v2DayReward<=0)return;
 
     const dow=['일','월','화','수','목','금','토'][d.date.getDay()];
     const dn=d.date.getDate();
     const isToday=d.date.toDateString()===getTestDate().toDateString();
     const dotBg=d.status==='complete'?'#EDE9FE':d.status==='partial'?'#FEF3C7':'#F3F4F6';
     const dotClr=d.status==='complete'?'var(--purple)':d.status==='partial'?'#D97706':'var(--muted)';
-    const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':'기록 없음';
+    const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':v2DayReward>0?'🧪 v2 계획 기록':'기록 없음';
     const rewardBits=[];
     if(d.reward>0)rewardBits.push(`<span style="background:#EDE9FE;color:var(--purple);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">📚 ${d.reward.toLocaleString()}원</span>`);
+    if(v2DayReward>0)rewardBits.push(`<span style="background:#F0F9FF;color:#0369A1;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">🧪 v2 ${v2DayReward.toLocaleString()}원</span>`);
     (d.streakBonuses||[]).forEach(bonus=>rewardBits.push(`<span style="background:#FFF7ED;color:#C2410C;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:900">🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클':'샤워'} ${bonus.streakDays}일 +${Number(bonus.reward).toLocaleString()}원</span>`));
     if(albaDayReward>0)rewardBits.push(`<span style="background:#DCFCE7;color:#15803D;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">💼 ${albaDayReward.toLocaleString()}원</span>`);
     const subjCounts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];subjCounts[s]=(subjCounts[s]||0)+1;});
@@ -2829,7 +2863,7 @@ function renderHistory(){
   if(list.children.length===0)list.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;font-weight:700">이달 기록이 없어요</div>';
 }
 
-function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';document.getElementById('detail-reward').textContent=d?(d.reward>0?d.reward.toLocaleString()+'원':'0원'):'0원';const items=document.getElementById('detail-items');items.innerHTML='';(d?.streakBonuses||[]).forEach(bonus=>{const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#FFF7ED;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#C2410C;font-weight:900';div.textContent=`🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클 모닝':'아침 샤워'} ${bonus.streakDays}일 연속 보상 +${Number(bonus.reward).toLocaleString()}원`;items.appendChild(div);});Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
+function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const v2Reward=getV2RewardForStats(key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';const dayReward=(d?.reward||0)+v2Reward;document.getElementById('detail-reward').textContent=dayReward>0?dayReward.toLocaleString()+'원':'0원';const items=document.getElementById('detail-items');items.innerHTML='';if(v2Reward>0){const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#F0F9FF;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#0369A1;font-weight:900';div.textContent=`🧪 v2 계획 보상 +${v2Reward.toLocaleString()}원`;items.appendChild(div);}(d?.streakBonuses||[]).forEach(bonus=>{const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#FFF7ED;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#C2410C;font-weight:900';div.textContent=`🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클 모닝':'아침 샤워'} ${bonus.streakDays}일 연속 보상 +${Number(bonus.reward).toLocaleString()}원`;items.appendChild(div);});Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
 function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailDirect();}
 function closeDayDetailDirect(){document.getElementById('day-detail-overlay').classList.remove('show');}
 
@@ -2881,7 +2915,7 @@ function calcBestStreak(history) {
   return best;
 }
 
-function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return false;const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';
+function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return false;const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0)+getV2MonthRewardForStats(yr,mo);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';
 const albaMonR=calcAlbaMonthAccum(yr,mo);const albaCntR=calcAlbaMonthCount(yr,mo);
 const saE=document.getElementById('stat-alba-accum');if(saE)saE.textContent=albaMonR.toLocaleString()+'원';
 const scE=document.getElementById('stat-alba-count');if(scE)scE.textContent=albaCntR+'회';
