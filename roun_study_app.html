@@ -3326,19 +3326,32 @@ async function lookupWordV2() {
   const word = normalizeWordV2(document.getElementById('wv2-word')?.value);
   if (!word) { alert('영어 단어를 입력해주세요.'); return; }
   document.getElementById('wv2-word').value = word;
+  const meaningEl = document.getElementById('wv2-meaning');
+  const posEl = document.getElementById('wv2-pos');
+  const exampleEl = document.getElementById('wv2-example');
+  const exampleKoEl = document.getElementById('wv2-example-ko');
+  const fallbackExample = 'I learned the word "' + word + '" today.';
   try {
-    const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
-    if (!res.ok) throw new Error('lookup failed');
+    const res = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en%7Cko');
+    if (!res.ok) throw new Error('translation failed');
     const data = await res.json();
-    const meaning = data?.[0]?.meanings?.[0];
-    const def = meaning?.definitions?.find(d => d.example) || meaning?.definitions?.[0] || {};
-    document.getElementById('wv2-pos').value = meaning?.partOfSpeech || '';
-    if (!document.getElementById('wv2-meaning').value) document.getElementById('wv2-meaning').value = def.definition ? '뜻을 입력해주세요: ' + def.definition : '';
-    document.getElementById('wv2-example').value = def.example || ('I can use "' + word + '" in a sentence.');
-    if (!document.getElementById('wv2-example-ko').value) document.getElementById('wv2-example-ko').value = '';
+    const candidates = [data?.responseData, ...(data?.matches || [])]
+      .map(item => ({
+        text:String(item?.translatedText || item?.translation || '').trim(),
+        quality:Number(item?.quality || 0),
+        match:Number(item?.match || 0),
+      }))
+      .filter(item => /[가-힣]/.test(item.text) && !/[a-z]{3,}/i.test(item.text))
+      .sort((a, b) => (b.quality - a.quality) || (b.match - a.match));
+    if (meaningEl && !meaningEl.value && candidates[0]) meaningEl.value = candidates[0].text;
+    if (posEl && !posEl.value) posEl.value = '';
+    if (exampleEl && !exampleEl.value) exampleEl.value = fallbackExample;
+    if (exampleKoEl && !exampleKoEl.value) exampleKoEl.value = '나는 오늘 "' + word + '"라는 단어를 배웠다.';
   } catch (_) {
-    document.getElementById('wv2-pos').value = document.getElementById('wv2-pos').value || '';
-    document.getElementById('wv2-example').value = document.getElementById('wv2-example').value || ('I can use "' + word + '" in a sentence.');
+    if (posEl && !posEl.value) posEl.value = '';
+    if (exampleEl && !exampleEl.value) exampleEl.value = fallbackExample;
+    if (exampleKoEl && !exampleKoEl.value) exampleKoEl.value = '나는 오늘 "' + word + '"라는 단어를 배웠다.';
+    alert('자동 뜻 찾기는 잠시 실패했어요. 예문은 채워두었으니 뜻만 직접 입력해주세요.');
   }
 }
 
