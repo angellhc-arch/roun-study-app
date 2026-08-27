@@ -367,6 +367,58 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .lv-node-label { font-size:8px; font-weight:800; color:var(--muted); }
 .lv-connector { width:12px; height:2px; background:var(--border); align-self:center; flex-shrink:0; margin-top:-10px; }
 .lv-connector.done { background:var(--purple); }
+
+/* ════════════════════════════════════════
+   V2 BETA START
+   계획 기반 학습 보상 시스템
+════════════════════════════════════════ */
+.mode-switch-card { margin:10px 16px 0; background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:10px; }
+.mode-switch-label { font-size:10px; font-weight:900; color:var(--muted); margin-bottom:7px; letter-spacing:.05em; }
+.mode-switch-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.mode-btn { border:1.5px solid var(--border); background:#F9FAFB; color:var(--muted); border-radius:12px; padding:9px 6px; font-size:12px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; }
+.mode-btn.active { background:var(--purple); border-color:var(--purple); color:white; }
+.v2-beta-panel { display:none; }
+.v2-beta-panel.show { display:block; }
+.v2-beta-note { margin:10px 16px 0; background:#F0F9FF; border:1.5px solid #BAE6FD; border-radius:var(--radius); padding:12px 14px; }
+.v2-note-title { font-size:13px; font-weight:900; color:#0369A1; }
+.v2-note-sub { font-size:11px; font-weight:700; color:#0C4A6E; line-height:1.5; margin-top:3px; }
+.v2-summary-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:10px 16px 0; }
+.v2-summary-card { background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 10px; text-align:center; min-height:66px; }
+.v2-summary-val { font-size:20px; font-weight:900; color:var(--purple); }
+.v2-summary-label { font-size:10px; font-weight:800; color:var(--muted); margin-top:3px; }
+.v2-complete-banner { display:none; margin:10px 16px 0; background:linear-gradient(135deg,#FEF3C7,#DCFCE7); border:1.5px solid #FCD34D; border-radius:var(--radius); padding:13px 14px; text-align:center; font-size:15px; font-weight:900; color:#854D0E; }
+.v2-complete-banner.show { display:block; }
+.v2-plan-card { margin:10px 16px 0; background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:13px 14px; }
+.v2-plan-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+.v2-card-title { font-size:13px; font-weight:900; color:var(--text); }
+.v2-small { font-size:10px; font-weight:700; color:var(--muted); line-height:1.45; }
+.v2-date-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin:9px 0; }
+.v2-date-row button, .v2-form-btn, .v2-rest-btn { border:1.5px solid var(--border); background:#F9FAFB; border-radius:10px; padding:8px 7px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:var(--text); cursor:pointer; }
+.v2-date-input { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:var(--text); }
+.v2-form-grid { display:grid; grid-template-columns:1fr; gap:7px; margin-top:9px; }
+.v2-input, .v2-select { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:9px 10px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--text); background:white; }
+.v2-inline-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:7px; }
+.v2-add-btn { width:100%; border:none; background:linear-gradient(135deg,#7B5CF5,#0EA5E9); color:white; border-radius:12px; padding:11px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:900; cursor:pointer; }
+.v2-rest-row { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:9px; padding-top:9px; border-top:1px solid var(--border); }
+.v2-rest-btn.on { background:#FEF3C7; border-color:#F59E0B; color:#92400E; }
+.v2-item-list { margin:10px 16px 0; }
+.v2-empty { background:white; border:1.5px dashed #C4B5FD; border-radius:var(--radius); padding:22px 16px; text-align:center; color:var(--muted); font-size:13px; font-weight:800; line-height:1.5; }
+.v2-item { background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 13px; margin-bottom:8px; }
+.v2-item-top { display:flex; gap:9px; align-items:flex-start; }
+.v2-cat { font-size:18px; width:26px; flex-shrink:0; }
+.v2-item-main { flex:1; min-width:0; }
+.v2-item-title { font-size:14px; font-weight:900; color:var(--text); line-height:1.35; }
+.v2-item-sub { font-size:11px; font-weight:700; color:var(--muted); margin-top:2px; }
+.v2-stepper { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; }
+.v2-step-btn { width:34px; height:34px; border-radius:50%; border:none; background:var(--purple-light); color:var(--purple); font-size:18px; font-weight:900; cursor:pointer; }
+.v2-step-btn:disabled { background:#F3F4F6; color:#D1D5DB; cursor:not-allowed; }
+.v2-count { flex:1; text-align:center; font-size:13px; font-weight:900; color:var(--text); }
+.v2-del { border:none; background:#FEE2E2; color:#DC2626; border-radius:10px; padding:7px 9px; font-size:12px; font-weight:900; cursor:pointer; }
+.v2-rule-list { margin:0; padding-left:16px; }
+.v2-rule-list li { margin:4px 0; }
+/* ════════════════════════════════════════
+   V2 BETA END
+════════════════════════════════════════ */
 </style>
 </head>
 <body>
@@ -427,6 +479,91 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
   </div>
 
+  <!-- ════════════════════════════════════════
+       V2 BETA START
+       계획 기반 학습 보상 시스템
+  ════════════════════════════════════════ -->
+  <div class="mode-switch-card">
+    <div class="mode-switch-label">학습 보상 방식</div>
+    <div class="mode-switch-row">
+      <button class="mode-btn active" id="reward-mode-legacy" onclick="setRewardMode('legacy')">기존 방식</button>
+      <button class="mode-btn" id="reward-mode-v2" onclick="setRewardMode('v2')">v2 베타</button>
+    </div>
+  </div>
+
+  <div id="v2-home-panel" class="v2-beta-panel">
+    <div class="v2-beta-note">
+      <div class="v2-note-title">🧪 v2 베타 — 9월 적용 전 테스트 중</div>
+      <div class="v2-note-sub">불편하면 언제든 기존 방식으로 돌아갈 수 있어요.</div>
+    </div>
+
+    <div class="v2-summary-grid">
+      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-planned">0개</div><div class="v2-summary-label">오늘 계획</div></div>
+      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-done">0 / 0</div><div class="v2-summary-label">완료</div></div>
+      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-rate">0%</div><div class="v2-summary-label">달성률</div></div>
+      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-reward">0원</div><div class="v2-summary-label">베타 예상 보상</div></div>
+    </div>
+    <div class="v2-summary-grid" style="grid-template-columns:1fr;margin-top:8px">
+      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-streak">🔥 0일</div><div class="v2-summary-label">연속 달성</div></div>
+    </div>
+    <div class="v2-complete-banner" id="v2-complete-banner">🎉 오늘 계획 완전 달성!</div>
+
+    <div class="v2-plan-card">
+      <div class="v2-plan-head">
+        <div>
+          <div class="v2-card-title">🌙 하루 계획 세우기</div>
+          <div class="v2-small">계획은 가급적 전날에 세우고, 필요한 경우 당일에도 세울 수 있어요.</div>
+        </div>
+      </div>
+      <div class="v2-date-row">
+        <button onclick="setV2PlanDate('today')">오늘</button>
+        <button onclick="setV2PlanDate('tomorrow')">내일</button>
+      </div>
+      <input class="v2-date-input" id="v2-plan-date" type="date" onchange="renderV2Home()">
+      <div class="v2-form-grid">
+        <select class="v2-select" id="v2-category" onchange="onV2CategoryChange()">
+          <option value="study">📚 학습</option>
+          <option value="reading">📖 독서</option>
+          <option value="exercise">🏃 운동</option>
+          <option value="hobby">🎨 취미</option>
+          <option value="etc">✏️ 기타</option>
+        </select>
+        <input class="v2-input" id="v2-title" placeholder="무엇을 할까요? 예: 수학 최상위 문제집">
+        <div class="v2-inline-grid">
+          <input class="v2-input" id="v2-minutes" type="number" min="1" value="40" placeholder="분">
+          <input class="v2-input" id="v2-count" type="number" min="1" value="1" placeholder="계획 횟수">
+        </div>
+        <button class="v2-add-btn" onclick="addV2PlanItem()">+ 계획 추가하기</button>
+      </div>
+      <div class="v2-rest-row">
+        <div>
+          <div class="v2-card-title" style="font-size:12px">🏖️ 계획 휴식일</div>
+          <div class="v2-small">보상은 없지만 연속 달성 기록은 유지돼요.</div>
+        </div>
+        <button class="v2-rest-btn" id="v2-rest-btn" onclick="toggleV2RestDay()">휴식일</button>
+      </div>
+    </div>
+
+    <div class="v2-plan-card">
+      <div class="v2-card-title">🐸 로운이의 계획 달성 규칙</div>
+      <div class="v2-small" style="margin-top:8px">
+        🌙 내일 할 일을 5개 이상 정해요. 계획을 다 만들면 💰 +1,000원<br>
+        ✅ 계획 하나를 끝낼 때마다 💰 +500원<br>
+        🎉 오늘 계획을 전부 성공하면 완료 보상의 +50%<br>
+        🚀 모두 성공했을 때 8개 +1,000원, 10개 +2,000원, 12개 이상 +3,000원<br>
+        🔥 10일 +10,000원, 20일 +20,000원, 30일 이후 10일마다 +30,000원
+      </div>
+    </div>
+
+    <div class="section-title" style="padding:14px 16px 0">✅ 오늘 계획 실행</div>
+    <div id="v2-today-list" class="v2-item-list"></div>
+    <div style="height:8px"></div>
+  </div>
+  <!-- ════════════════════════════════════════
+       V2 BETA END
+  ════════════════════════════════════════ -->
+
+  <div id="legacy-home-content">
   <div class="day-info" id="day-info">📅 평일 — 글쓰기 5~6줄</div>
 
   <!-- 연속기록 대시보드 -->
@@ -741,6 +878,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       📅 다른 날 학습 내용 입력하기
     </button>
     <div style="height:8px"></div>
+  </div>
   </div>
 </div>
 
@@ -1669,6 +1807,305 @@ function saveState() {
   syncXpToSupabase().then(() => { updateProgress(); updateLevelCard(); }).catch(error => console.warn('Supabase XP 저장 실패', error));
 }
 
+// ════════════════════════════════════════
+// V2 BETA START
+// 계획 기반 학습 보상 시스템
+// ════════════════════════════════════════
+const REWARD_MODE_KEY = 'rowoon_reward_mode_v1';
+const PLAN_V2_STORE_KEY = 'rowoon_plan_v2_beta';
+const V2_CATEGORIES = {
+  study: { label:'학습', icon:'📚', unitMinutes:40 },
+  reading: { label:'독서', icon:'📖', unitMinutes:30 },
+  exercise: { label:'운동', icon:'🏃', unitMinutes:60 },
+  hobby: { label:'취미', icon:'🎨', unitMinutes:40 },
+  etc: { label:'기타', icon:'✏️', unitMinutes:40 },
+};
+
+function loadRewardMode() {
+  return localStorage.getItem(REWARD_MODE_KEY) === 'v2' ? 'v2' : 'legacy';
+}
+
+function setRewardMode(mode) {
+  const nextMode = mode === 'v2' ? 'v2' : 'legacy';
+  localStorage.setItem(REWARD_MODE_KEY, nextMode);
+  applyRewardMode();
+}
+
+function applyRewardMode() {
+  const mode = loadRewardMode();
+  const legacy = document.getElementById('legacy-home-content');
+  const v2 = document.getElementById('v2-home-panel');
+  const legacyBtn = document.getElementById('reward-mode-legacy');
+  const v2Btn = document.getElementById('reward-mode-v2');
+  if (legacy) legacy.style.display = mode === 'v2' ? 'none' : 'block';
+  if (v2) v2.classList.toggle('show', mode === 'v2');
+  if (legacyBtn) legacyBtn.classList.toggle('active', mode !== 'v2');
+  if (v2Btn) v2Btn.classList.toggle('active', mode === 'v2');
+  if (mode === 'v2') renderV2Home();
+}
+
+function v2DateKey(date) {
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+}
+
+function loadV2PlanState() {
+  try {
+    return JSON.parse(localStorage.getItem(PLAN_V2_STORE_KEY) || '{}') || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveV2PlanState(state) {
+  localStorage.setItem(PLAN_V2_STORE_KEY, JSON.stringify(state || {}));
+}
+
+function getV2Day(state, dateKey) {
+  if (!state[dateKey]) state[dateKey] = { isRestDay:false, items:[] };
+  if (!Array.isArray(state[dateKey].items)) state[dateKey].items = [];
+  return state[dateKey];
+}
+
+function getV2TodayKey() {
+  return v2DateKey(getTestDate());
+}
+
+function ensureV2PlanDate() {
+  const input = document.getElementById('v2-plan-date');
+  if (!input) return getV2TodayKey();
+  if (!input.value) {
+    const tomorrow = new Date(getTestDate());
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    input.value = v2DateKey(tomorrow);
+  }
+  return input.value;
+}
+
+function setV2PlanDate(kind) {
+  const input = document.getElementById('v2-plan-date');
+  if (!input) return;
+  const d = new Date(getTestDate());
+  if (kind === 'tomorrow') d.setDate(d.getDate() + 1);
+  input.value = v2DateKey(d);
+  renderV2Home();
+}
+
+function onV2CategoryChange() {
+  const category = document.getElementById('v2-category')?.value || 'study';
+  const minutes = document.getElementById('v2-minutes');
+  const title = document.getElementById('v2-title');
+  if (minutes) minutes.value = V2_CATEGORIES[category]?.unitMinutes || 40;
+  if (title) title.placeholder = category === 'etc' ? '직접 입력해요' : '무엇을 할까요? 예: 수학 최상위 문제집';
+}
+
+function addV2PlanItem() {
+  const dateKey = ensureV2PlanDate();
+  const category = document.getElementById('v2-category')?.value || 'study';
+  const titleEl = document.getElementById('v2-title');
+  const minutesEl = document.getElementById('v2-minutes');
+  const countEl = document.getElementById('v2-count');
+  const title = (titleEl?.value || '').trim();
+  const plannedCount = Math.max(1, Number(countEl?.value || 1));
+  const unitMinutes = Math.max(1, Number(minutesEl?.value || V2_CATEGORIES[category]?.unitMinutes || 40));
+  if (!title) { alert('무엇을 할지 제목을 입력해주세요.'); return; }
+
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  day.isRestDay = false;
+  day.items.push({
+    id: 'v2-' + Date.now() + '-' + Math.random().toString(16).slice(2),
+    category: V2_CATEGORIES[category]?.label || '학습',
+    categoryKey: category,
+    title,
+    unitMinutes,
+    plannedCount,
+    completedCount: 0,
+    createdAt: new Date().toISOString(),
+    createdForDate: dateKey,
+  });
+  saveV2PlanState(state);
+  if (titleEl) titleEl.value = '';
+  renderV2Home();
+}
+
+function toggleV2RestDay() {
+  const dateKey = ensureV2PlanDate();
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  day.isRestDay = !day.isRestDay;
+  saveV2PlanState(state);
+  renderV2Home();
+}
+
+function updateV2Completed(dateKey, itemId, delta) {
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  const item = day.items.find(i => i.id === itemId);
+  if (!item) return;
+  const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(item.completedCount || 0) + delta));
+  item.completedCount = next;
+  saveV2PlanState(state);
+  renderV2Home();
+}
+
+function deleteV2PlanItem(dateKey, itemId) {
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  day.items = day.items.filter(item => item.id !== itemId);
+  saveV2PlanState(state);
+  renderV2Home();
+}
+
+function getV2PlanReward(day, dateKey) {
+  const planned = getV2PlannedCount(day);
+  if (!day || day.isRestDay || planned < 5) return 0;
+  return 1000;
+}
+
+function getV2CompletedReward(day) {
+  if (!day || day.isRestDay) return 0;
+  const nonExercise = (day.items || [])
+    .filter(item => item.categoryKey !== 'exercise')
+    .reduce((sum, item) => sum + Number(item.completedCount || 0), 0);
+  const exercise = Math.min(2, (day.items || [])
+    .filter(item => item.categoryKey === 'exercise')
+    .reduce((sum, item) => sum + Number(item.completedCount || 0), 0));
+  return (nonExercise + exercise) * 500;
+}
+
+function getV2PlannedCount(day) {
+  return (day?.items || []).reduce((sum, item) => sum + Number(item.plannedCount || 0), 0);
+}
+
+function getV2CompletedCount(day) {
+  return (day?.items || []).reduce((sum, item) => sum + Number(item.completedCount || 0), 0);
+}
+
+function isV2NormalPlan(day) {
+  return !day?.isRestDay && getV2PlannedCount(day) >= 5;
+}
+
+function isV2FullyComplete(day) {
+  return isV2NormalPlan(day) && getV2PlannedCount(day) > 0 && getV2CompletedCount(day) >= getV2PlannedCount(day);
+}
+
+function getV2ChallengeBonus(planned) {
+  if (planned >= 12) return 3000;
+  if (planned >= 10) return 2000;
+  if (planned >= 8) return 1000;
+  return 0;
+}
+
+function getV2StreakMilestoneReward(streak) {
+  if (streak <= 0 || streak % 10 !== 0) return 0;
+  if (streak === 10) return 10000;
+  if (streak === 20) return 20000;
+  return 30000;
+}
+
+function calcV2Streak(state, untilDateKey) {
+  let streak = 0;
+  const cursor = new Date(untilDateKey + 'T00:00:00');
+  for (let guard = 0; guard < 400; guard++) {
+    const dateKey = v2DateKey(cursor);
+    const day = state[dateKey];
+    if (!day) break;
+    if (day.isRestDay) {
+      cursor.setDate(cursor.getDate() - 1);
+      continue;
+    }
+    if (isV2FullyComplete(day)) streak++;
+    else break;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function calcV2Reward(day, state, dateKey) {
+  if (!day || day.isRestDay) return { total:0, planReward:0, completedReward:0, fullBonus:0, challengeBonus:0, streakBonus:0 };
+  const planned = getV2PlannedCount(day);
+  const planReward = getV2PlanReward(day, dateKey);
+  const completedReward = getV2CompletedReward(day);
+  const full = isV2FullyComplete(day);
+  const fullBonus = full ? Math.round(completedReward * 0.5) : 0;
+  const challengeBonus = full ? getV2ChallengeBonus(planned) : 0;
+  const streakBonus = full ? getV2StreakMilestoneReward(calcV2Streak(state, dateKey)) : 0;
+  return { total:planReward + completedReward + fullBonus + challengeBonus + streakBonus, planReward, completedReward, fullBonus, challengeBonus, streakBonus };
+}
+
+function escapeV2Text(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function renderV2Home() {
+  const inputDate = ensureV2PlanDate();
+  const todayKey = getV2TodayKey();
+  const state = loadV2PlanState();
+  const planDay = getV2Day(state, inputDate);
+  const todayDay = getV2Day(state, todayKey);
+  saveV2PlanState(state);
+
+  const restBtn = document.getElementById('v2-rest-btn');
+  if (restBtn) {
+    restBtn.classList.toggle('on', Boolean(planDay.isRestDay));
+    restBtn.textContent = planDay.isRestDay ? '휴식일 ON' : '휴식일';
+  }
+
+  const planned = getV2PlannedCount(todayDay);
+  const completed = getV2CompletedCount(todayDay);
+  const rate = planned ? Math.round(completed / planned * 100) : 0;
+  const reward = calcV2Reward(todayDay, state, todayKey);
+  const streak = calcV2Streak(state, todayKey);
+  const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  setText('v2-sum-planned', planned + '개');
+  setText('v2-sum-done', completed + ' / ' + planned);
+  setText('v2-sum-rate', rate + '%');
+  setText('v2-sum-reward', reward.total.toLocaleString() + '원');
+  setText('v2-sum-streak', '🔥 ' + streak + '일');
+  document.getElementById('v2-complete-banner')?.classList.toggle('show', isV2FullyComplete(todayDay));
+
+  renderV2TodayList(todayDay, todayKey);
+}
+
+function renderV2TodayList(day, dateKey) {
+  const list = document.getElementById('v2-today-list');
+  if (!list) return;
+  if (day?.isRestDay) {
+    list.innerHTML = '<div class="v2-empty">🏖️ 오늘은 계획 휴식일이에요.<br>보상은 없지만 연속 달성 기록은 유지돼요.</div>';
+    return;
+  }
+  if (!day || !day.items || day.items.length === 0) {
+    list.innerHTML = '<div class="v2-empty">먼저 오늘 계획을 세워주세요.<br>계획에 있는 항목만 실행 기록을 남길 수 있어요.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  day.items.forEach(item => {
+    const cat = V2_CATEGORIES[item.categoryKey] || { icon:'✏️', label:item.category || '기타' };
+    const done = Number(item.completedCount || 0);
+    const planned = Number(item.plannedCount || 1);
+    const div = document.createElement('div');
+    div.className = 'v2-item';
+    div.innerHTML = `
+      <div class="v2-item-top">
+        <div class="v2-cat">${cat.icon}</div>
+        <div class="v2-item-main">
+          <div class="v2-item-title">${escapeV2Text(item.title)}</div>
+          <div class="v2-item-sub">${item.unitMinutes}분 · 계획 ${planned}회 · 완료 ${done} / ${planned}</div>
+        </div>
+        <button class="v2-del" onclick="deleteV2PlanItem('${dateKey}','${item.id}')">삭제</button>
+      </div>
+      <div class="v2-stepper">
+        <button class="v2-step-btn" onclick="updateV2Completed('${dateKey}','${item.id}',-1)" ${done<=0?'disabled':''}>−</button>
+        <div class="v2-count">${done} / ${planned}</div>
+        <button class="v2-step-btn" onclick="updateV2Completed('${dateKey}','${item.id}',1)" ${done>=planned?'disabled':''}>+</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+// ════════════════════════════════════════
+// V2 BETA END
+// ════════════════════════════════════════
+
 function calcTotalReward() {
   const s=calcSessions(); let base=s>=7?5000:s===6?4000:s*500; let bonus=0;
   const writeReward=WE?2000:1000;
@@ -2151,6 +2588,7 @@ function showScreen(name){
   if(name==='stats'){updateStatsScreen();updateLevelCard();renderBadges();}
   if(name==='alba'){renderAlbaScreen();}
   if(name==='word')renderWordScreen();
+  if(name==='home')applyRewardMode();
   // past 화면은 네비 숨김
   if(name==='past'){
     document.querySelector('.bottom-nav').style.display='none';
@@ -3213,6 +3651,8 @@ function migrateWordGameXP() {
   wordList = loadWords();
   migrateWordGameXP(); // 과거 기록 XP 반영
   calcReward(); updateProgress(); buildStreakCalendar();
+  ensureV2PlanDate();
+  applyRewardMode();
   initAlba();
 
   // 스트릭 마일스톤 달성 축하 알림 (아직 알림 안 보낸 경우)
