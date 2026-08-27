@@ -413,9 +413,26 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .v2-step-btn { width:34px; height:34px; border-radius:50%; border:none; background:var(--purple-light); color:var(--purple); font-size:18px; font-weight:900; cursor:pointer; }
 .v2-step-btn:disabled { background:#F3F4F6; color:#D1D5DB; cursor:not-allowed; }
 .v2-count { flex:1; text-align:center; font-size:13px; font-weight:900; color:var(--text); }
+.v2-check-grid { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+.v2-check-label { display:flex; align-items:center; gap:4px; padding:6px 8px; border:1.5px solid var(--border); border-radius:10px; background:#F9FAFB; font-size:11px; font-weight:900; color:var(--muted); cursor:pointer; }
+.v2-check-label.done { background:var(--green-light); border-color:#86EFAC; color:#166534; }
+.v2-check-label input { width:15px; height:15px; accent-color:var(--green); }
+.v2-item-actions { display:flex; gap:6px; }
+.v2-edit { border:none; background:#E0F2FE; color:#0369A1; border-radius:10px; padding:7px 9px; font-size:12px; font-weight:900; cursor:pointer; }
 .v2-del { border:none; background:#FEE2E2; color:#DC2626; border-radius:10px; padding:7px 9px; font-size:12px; font-weight:900; cursor:pointer; }
 .v2-rule-list { margin:0; padding-left:16px; }
 .v2-rule-list li { margin:4px 0; }
+.v2-habit-list { margin:10px 16px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.v2-habit-card { background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 10px; cursor:pointer; }
+.v2-habit-card.done { background:#F0FDF4; border-color:#86EFAC; }
+.v2-habit-title { font-size:13px; font-weight:900; color:var(--text); }
+.v2-habit-sub { font-size:10px; font-weight:700; color:var(--muted); margin-top:4px; line-height:1.4; }
+.v2-date-tools { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin:9px 0; }
+.v2-date-tools button { border:1.5px solid var(--border); background:#F9FAFB; border-radius:10px; padding:8px 5px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:var(--text); cursor:pointer; }
+.v2-reward-lines { margin:8px 16px 0; background:white; border:1.5px solid var(--gold); border-radius:var(--radius); padding:12px 14px; }
+.v2-reward-line { display:flex; justify-content:space-between; gap:8px; font-size:11px; font-weight:800; color:var(--muted); padding:4px 0; border-bottom:1px solid #F3F4F6; }
+.v2-reward-line:last-child { border-bottom:none; }
+.v2-reward-line span:last-child { color:var(--purple); font-weight:900; }
 /* ════════════════════════════════════════
    V2 BETA END
 ════════════════════════════════════════ */
@@ -507,6 +524,10 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-streak">🔥 0일</div><div class="v2-summary-label">연속 달성</div></div>
     </div>
     <div class="v2-complete-banner" id="v2-complete-banner">🎉 오늘 계획 완전 달성!</div>
+    <div class="v2-reward-lines" id="v2-reward-lines"></div>
+
+    <div class="section-title" style="padding:14px 16px 0">🌅 기본 습관</div>
+    <div class="v2-habit-list" id="v2-habit-list"></div>
 
     <div class="v2-plan-card">
       <div class="v2-plan-head">
@@ -545,6 +566,18 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
 
     <div class="v2-plan-card">
+      <div class="v2-card-title">📅 계획 조회 · 실행 · 수정</div>
+      <div class="v2-small" style="margin-top:4px">선택한 날짜의 계획만 완료 표시할 수 있어요. 과거 계획도 여기서 다시 보고 수정할 수 있어요.</div>
+      <div class="v2-date-tools">
+        <button onclick="setV2ViewDate('yesterday')">어제</button>
+        <button onclick="setV2ViewDate('today')">오늘</button>
+        <button onclick="setV2ViewDate('tomorrow')">내일</button>
+      </div>
+      <input class="v2-date-input" id="v2-view-date" type="date" onchange="renderV2Home()">
+      <button class="v2-add-btn" style="margin-top:8px;background:linear-gradient(135deg,#22C55E,#0EA5E9)" onclick="copyV2ViewDateToPlanDate()">이 날짜에 계획 추가하기</button>
+    </div>
+
+    <div class="v2-plan-card">
       <div class="v2-card-title">🐸 로운이의 계획 달성 규칙</div>
       <div class="v2-small" style="margin-top:8px">
         🌙 내일 할 일을 5개 이상 정해요. 계획을 다 만들면 💰 +1,000원<br>
@@ -555,7 +588,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       </div>
     </div>
 
-    <div class="section-title" style="padding:14px 16px 0">✅ 오늘 계획 실행</div>
+    <div class="section-title" style="padding:14px 16px 0" id="v2-list-title">✅ 오늘 계획 실행</div>
     <div id="v2-today-list" class="v2-item-list"></div>
     <div style="height:8px"></div>
   </div>
@@ -1664,6 +1697,7 @@ async function bootstrapSupabaseSync() {
   try { await syncXpToSupabase(); }
   catch (error) { console.warn('Supabase XP 동기화 실패', error); }
   await syncFromSupabase();
+  await syncV2FromSupabase();
   const state = loadState();
   if (state) {
     const changedBonusDates = backfillMissionStreakBonuses(state.history || {}, state.claimedBonuses || (state.claimedBonuses = {}));
@@ -1681,6 +1715,8 @@ async function bootstrapSupabaseSync() {
   }
   try { await syncAllLocalDataToSupabase(); }
   catch (error) { console.warn('Supabase 자동 백업 실패', error); }
+  try { await syncAllV2ToSupabase(); }
+  catch (error) { console.warn('Supabase v2 자동 백업 실패', error); }
 }
 
 function queueTodayStudySync(date, record) {
@@ -1813,6 +1849,8 @@ function saveState() {
 // ════════════════════════════════════════
 const REWARD_MODE_KEY = 'rowoon_reward_mode_v1';
 const PLAN_V2_STORE_KEY = 'rowoon_plan_v2_beta';
+const SUPABASE_V2_SOURCE = 'rowoon-plan-v2-beta';
+let _supabaseV2SyncTimer = null;
 const V2_CATEGORIES = {
   study: { label:'학습', icon:'📚', unitMinutes:40 },
   reading: { label:'독서', icon:'📖', unitMinutes:30 },
@@ -1856,14 +1894,20 @@ function loadV2PlanState() {
   }
 }
 
-function saveV2PlanState(state) {
+function saveV2PlanState(state, shouldSync=true) {
   localStorage.setItem(PLAN_V2_STORE_KEY, JSON.stringify(state || {}));
+  if (shouldSync) queueV2Sync();
 }
 
 function getV2Day(state, dateKey) {
-  if (!state[dateKey]) state[dateKey] = { isRestDay:false, items:[] };
+  if (!state[dateKey]) state[dateKey] = { isRestDay:false, items:[], updatedAt:new Date().toISOString() };
   if (!Array.isArray(state[dateKey].items)) state[dateKey].items = [];
+  if (!state[dateKey].updatedAt) state[dateKey].updatedAt = new Date().toISOString();
   return state[dateKey];
+}
+
+function touchV2Day(day) {
+  if (day) day.updatedAt = new Date().toISOString();
 }
 
 function getV2TodayKey() {
@@ -1881,12 +1925,36 @@ function ensureV2PlanDate() {
   return input.value;
 }
 
+function ensureV2ViewDate() {
+  const input = document.getElementById('v2-view-date');
+  if (!input) return getV2TodayKey();
+  if (!input.value) input.value = getV2TodayKey();
+  return input.value;
+}
+
 function setV2PlanDate(kind) {
   const input = document.getElementById('v2-plan-date');
   if (!input) return;
   const d = new Date(getTestDate());
   if (kind === 'tomorrow') d.setDate(d.getDate() + 1);
   input.value = v2DateKey(d);
+  renderV2Home();
+}
+
+function setV2ViewDate(kind) {
+  const input = document.getElementById('v2-view-date');
+  if (!input) return;
+  const d = new Date(getTestDate());
+  if (kind === 'yesterday') d.setDate(d.getDate() - 1);
+  if (kind === 'tomorrow') d.setDate(d.getDate() + 1);
+  input.value = v2DateKey(d);
+  renderV2Home();
+}
+
+function copyV2ViewDateToPlanDate() {
+  const viewDate = ensureV2ViewDate();
+  const planInput = document.getElementById('v2-plan-date');
+  if (planInput) planInput.value = viewDate;
   renderV2Home();
 }
 
@@ -1923,6 +1991,7 @@ function addV2PlanItem() {
     createdAt: new Date().toISOString(),
     createdForDate: dateKey,
   });
+  touchV2Day(day);
   saveV2PlanState(state);
   if (titleEl) titleEl.value = '';
   renderV2Home();
@@ -1933,6 +2002,7 @@ function toggleV2RestDay() {
   const state = loadV2PlanState();
   const day = getV2Day(state, dateKey);
   day.isRestDay = !day.isRestDay;
+  touchV2Day(day);
   saveV2PlanState(state);
   renderV2Home();
 }
@@ -1944,14 +2014,57 @@ function updateV2Completed(dateKey, itemId, delta) {
   if (!item) return;
   const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(item.completedCount || 0) + delta));
   item.completedCount = next;
+  touchV2Day(day);
   saveV2PlanState(state);
   renderV2Home();
+}
+
+function setV2CompletedCount(dateKey, itemId, count) {
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  const item = day.items.find(i => i.id === itemId);
+  if (!item) return;
+  item.completedCount = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(count || 0)));
+  touchV2Day(day);
+  saveV2PlanState(state);
+  renderV2Home();
+}
+
+function setV2CompletedFromBox(dateKey, itemId, count, checked) {
+  setV2CompletedCount(dateKey, itemId, checked ? count : count - 1);
 }
 
 function deleteV2PlanItem(dateKey, itemId) {
   const state = loadV2PlanState();
   const day = getV2Day(state, dateKey);
   day.items = day.items.filter(item => item.id !== itemId);
+  touchV2Day(day);
+  saveV2PlanState(state);
+  renderV2Home();
+}
+
+function editV2PlanItem(dateKey, itemId) {
+  const state = loadV2PlanState();
+  const day = getV2Day(state, dateKey);
+  const item = day.items.find(i => i.id === itemId);
+  if (!item) return;
+  const title = prompt('계획 이름을 수정해주세요.', item.title || '');
+  if (title === null) return;
+  const nextTitle = title.trim();
+  if (!nextTitle) { alert('계획 이름은 비워둘 수 없어요.'); return; }
+  const countText = prompt('계획 횟수를 수정해주세요.', String(item.plannedCount || 1));
+  if (countText === null) return;
+  const plannedCount = Math.max(1, Number(countText || 1));
+  if (!Number.isFinite(plannedCount)) { alert('횟수는 숫자로 입력해주세요.'); return; }
+  const minutesText = prompt('1회 기준 시간을 분 단위로 수정해주세요.', String(item.unitMinutes || 40));
+  if (minutesText === null) return;
+  const unitMinutes = Math.max(1, Number(minutesText || 1));
+  if (!Number.isFinite(unitMinutes)) { alert('시간은 숫자로 입력해주세요.'); return; }
+  item.title = nextTitle;
+  item.plannedCount = Math.floor(plannedCount);
+  item.unitMinutes = Math.floor(unitMinutes);
+  item.completedCount = Math.min(Number(item.completedCount || 0), item.plannedCount);
+  touchV2Day(day);
   saveV2PlanState(state);
   renderV2Home();
 }
@@ -2037,13 +2150,56 @@ function escapeV2Text(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
+function getV2DayLabel(dateKey) {
+  const todayKey = getV2TodayKey();
+  const yesterday = new Date(getTestDate());
+  yesterday.setDate(yesterday.getDate() - 1);
+  const tomorrow = new Date(getTestDate());
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (dateKey === todayKey) return '오늘';
+  if (dateKey === v2DateKey(yesterday)) return '어제';
+  if (dateKey === v2DateKey(tomorrow)) return '내일';
+  const d = new Date(dateKey + 'T00:00:00');
+  return (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+}
+
+function renderV2Habits() {
+  const list = document.getElementById('v2-habit-list');
+  if (!list) return;
+  const state = loadState();
+  const history = state?.history || {};
+  const today = getTestDate();
+  const mStreak = calcHabitStreak('miracle', history, today);
+  const sStreak = calcHabitStreak('shower', history, today);
+  const habits = [
+    { key:'miracle', title:'🌅 미라클 모닝', sub:'6:15 이전 기상 · 기존 보상 별도 유지', streak:mStreak },
+    { key:'shower', title:'🚿 아침 샤워', sub:'기존 보상 별도 유지', streak:sStreak },
+  ];
+  list.innerHTML = '';
+  habits.forEach(habit => {
+    const done = Boolean(tasks[habit.key]?.done);
+    const next = Math.ceil((habit.streak + 1) / 10) * 10;
+    const card = document.createElement('div');
+    card.className = 'v2-habit-card' + (done ? ' done' : '');
+    card.onclick = () => toggleV2Habit(habit.key);
+    card.innerHTML = `<div class="v2-habit-title">${habit.title} ${done ? '✓' : ''}</div><div class="v2-habit-sub">${habit.streak}일 연속 · ${next - habit.streak}일 후 +5,000원<br>${habit.sub}</div>`;
+    list.appendChild(card);
+  });
+}
+
+function toggleV2Habit(key) {
+  toggleTask(key);
+  renderV2Habits();
+}
+
 function renderV2Home() {
   const inputDate = ensureV2PlanDate();
+  const viewDate = ensureV2ViewDate();
   const todayKey = getV2TodayKey();
   const state = loadV2PlanState();
   const planDay = getV2Day(state, inputDate);
-  const todayDay = getV2Day(state, todayKey);
-  saveV2PlanState(state);
+  const viewDay = getV2Day(state, viewDate);
+  saveV2PlanState(state, false);
 
   const restBtn = document.getElementById('v2-rest-btn');
   if (restBtn) {
@@ -2051,20 +2207,36 @@ function renderV2Home() {
     restBtn.textContent = planDay.isRestDay ? '휴식일 ON' : '휴식일';
   }
 
-  const planned = getV2PlannedCount(todayDay);
-  const completed = getV2CompletedCount(todayDay);
+  const planned = getV2PlannedCount(viewDay);
+  const completed = getV2CompletedCount(viewDay);
   const rate = planned ? Math.round(completed / planned * 100) : 0;
-  const reward = calcV2Reward(todayDay, state, todayKey);
-  const streak = calcV2Streak(state, todayKey);
+  const reward = calcV2Reward(viewDay, state, viewDate);
+  const streak = calcV2Streak(state, viewDate);
   const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
   setText('v2-sum-planned', planned + '개');
   setText('v2-sum-done', completed + ' / ' + planned);
   setText('v2-sum-rate', rate + '%');
   setText('v2-sum-reward', reward.total.toLocaleString() + '원');
   setText('v2-sum-streak', '🔥 ' + streak + '일');
-  document.getElementById('v2-complete-banner')?.classList.toggle('show', isV2FullyComplete(todayDay));
+  document.getElementById('v2-complete-banner')?.classList.toggle('show', isV2FullyComplete(viewDay));
+  renderV2RewardLines(reward);
+  renderV2Habits();
 
-  renderV2TodayList(todayDay, todayKey);
+  const title = document.getElementById('v2-list-title');
+  if (title) title.textContent = '✅ ' + getV2DayLabel(viewDate) + ' 계획 실행';
+  renderV2TodayList(viewDay, viewDate);
+}
+
+function renderV2RewardLines(reward) {
+  const el = document.getElementById('v2-reward-lines');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="v2-reward-line"><span>🧪 베타 예상 보상</span><span>${reward.total.toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>🌙 계획 작성</span><span>${reward.planReward.toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>✅ 실행 완료</span><span>${reward.completedReward.toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>🎉 모두 성공</span><span>${reward.fullBonus.toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>🚀 많이 도전</span><span>${reward.challengeBonus.toLocaleString()}원</span></div>
+    <div class="v2-reward-line"><span>🔥 연속 달성</span><span>${reward.streakBonus.toLocaleString()}원</span></div>`;
 }
 
 function renderV2TodayList(day, dateKey) {
@@ -2092,15 +2264,107 @@ function renderV2TodayList(day, dateKey) {
           <div class="v2-item-title">${escapeV2Text(item.title)}</div>
           <div class="v2-item-sub">${item.unitMinutes}분 · 계획 ${planned}회 · 완료 ${done} / ${planned}</div>
         </div>
-        <button class="v2-del" onclick="deleteV2PlanItem('${dateKey}','${item.id}')">삭제</button>
+        <div class="v2-item-actions">
+          <button class="v2-edit" onclick="editV2PlanItem('${dateKey}','${item.id}')">수정</button>
+          <button class="v2-del" onclick="deleteV2PlanItem('${dateKey}','${item.id}')">삭제</button>
+        </div>
       </div>
-      <div class="v2-stepper">
-        <button class="v2-step-btn" onclick="updateV2Completed('${dateKey}','${item.id}',-1)" ${done<=0?'disabled':''}>−</button>
-        <div class="v2-count">${done} / ${planned}</div>
-        <button class="v2-step-btn" onclick="updateV2Completed('${dateKey}','${item.id}',1)" ${done>=planned?'disabled':''}>+</button>
+      <div class="v2-check-grid">
+        ${Array.from({ length: planned }, (_, index) => {
+          const checked = index < done;
+          return `<label class="v2-check-label${checked ? ' done' : ''}"><input type="checkbox" ${checked ? 'checked' : ''} onchange="setV2CompletedFromBox('${dateKey}','${item.id}',${index + 1},this.checked);"> ${index + 1}회</label>`;
+        }).join('')}
       </div>`;
     list.appendChild(div);
   });
+}
+
+function v2PayloadForDate(dateKey, day) {
+  return {
+    version: 1,
+    date: dateKey,
+    isRestDay: Boolean(day?.isRestDay),
+    items: (day?.items || []),
+    reward: calcV2Reward(day, loadV2PlanState(), dateKey),
+    updatedAt: day?.updatedAt || new Date().toISOString(),
+  };
+}
+
+async function deleteV2Rows(table, dateKey) {
+  const rows = await supabaseRequest(table + '?select=id,memo&date=eq.' + encodeURIComponent(dateKey));
+  const v2Rows = (rows || []).filter(row => String(row.memo || '').startsWith(SUPABASE_V2_SOURCE));
+  await Promise.all(v2Rows.map(row => supabaseRequest(table + '?id=eq.' + encodeURIComponent(row.id), { method:'DELETE' })));
+}
+
+async function syncV2DayToSupabase(dateKey, day) {
+  if (!dateKey || !day) return;
+  await deleteV2Rows('study_sessions', dateKey);
+  await deleteV2Rows('rewards', dateKey);
+  const payload = v2PayloadForDate(dateKey, day);
+  const sessions = (day.items || []).map(item => ({
+    date: dateKey,
+    title: item.title || 'v2 계획',
+    subject: item.categoryKey || 'v2',
+    duration_minutes: Number(item.unitMinutes || 0) * Number(item.plannedCount || 1),
+    completed: Number(item.completedCount || 0) >= Number(item.plannedCount || 1),
+    memo: SUPABASE_V2_SOURCE + '; item=' + encodeURIComponent(JSON.stringify(item)),
+  }));
+  if (sessions.length) {
+    await supabaseRequest('study_sessions', {
+      method:'POST',
+      headers:{ Prefer:'return=minimal' },
+      body:JSON.stringify(sessions),
+    });
+  }
+  await supabaseRequest('rewards', {
+    method:'POST',
+    headers:{ Prefer:'return=minimal' },
+    body:JSON.stringify({
+      date: dateKey,
+      completed_count: getV2CompletedCount(day),
+      reward_amount: payload.reward.total,
+      memo: SUPABASE_V2_SOURCE + '; day=' + encodeURIComponent(JSON.stringify(payload)),
+    }),
+  });
+}
+
+function queueV2Sync() {
+  clearTimeout(_supabaseV2SyncTimer);
+  _supabaseV2SyncTimer = setTimeout(() => {
+    syncAllV2ToSupabase().catch(error => console.warn('Supabase v2 저장 실패', error));
+  }, 900);
+}
+
+async function syncAllV2ToSupabase() {
+  const state = loadV2PlanState();
+  const dates = Object.keys(state).filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date));
+  for (const date of dates) await syncV2DayToSupabase(date, state[date]);
+}
+
+async function syncV2FromSupabase() {
+  try {
+    const sourceFilter = encodeURIComponent(SUPABASE_V2_SOURCE + '*');
+    const rows = await supabaseRequest('rewards?select=date,memo&memo=like.' + sourceFilter);
+    const local = loadV2PlanState();
+    (rows || []).forEach(row => {
+      const raw = String(row.memo || '').match(/day=([^;]+)/)?.[1];
+      if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(row.date || '')) return;
+      try {
+        const payload = JSON.parse(decodeURIComponent(raw));
+        const localUpdated = Date.parse(local[row.date]?.updatedAt || '') || 0;
+        const remoteUpdated = Date.parse(payload.updatedAt || '') || 0;
+        if (localUpdated > remoteUpdated) return;
+        local[row.date] = {
+          isRestDay: Boolean(payload.isRestDay),
+          items: Array.isArray(payload.items) ? payload.items : [],
+          updatedAt: payload.updatedAt || new Date().toISOString(),
+        };
+      } catch (_) {}
+    });
+    localStorage.setItem(PLAN_V2_STORE_KEY, JSON.stringify(local));
+  } catch (error) {
+    console.warn('Supabase v2 불러오기 실패', error);
+  }
 }
 // ════════════════════════════════════════
 // V2 BETA END
