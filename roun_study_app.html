@@ -1069,7 +1069,6 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <button class="wv2-btn primary" id="wv2-lookup-btn" onclick="lookupWordV2()">찾기</button>
         </div>
         <input class="wv2-input" id="wv2-meaning" placeholder="한글 뜻">
-        <input class="wv2-input" id="wv2-pos" placeholder="품사">
         <textarea class="wv2-textarea" id="wv2-example" placeholder="영어 예문"></textarea>
         <textarea class="wv2-textarea" id="wv2-example-ko" placeholder="예문 해석"></textarea>
         <button class="wv2-btn green" onclick="saveWordV2FromForm()">저장</button>
@@ -1540,7 +1539,6 @@ async function syncWordV2ToSupabase(state) {
     meaning: word.meaningKo || '',
     example: word.example || '',
     translation: JSON.stringify({
-      partOfSpeech: word.partOfSpeech || '',
       exampleKo: word.exampleKo || '',
       reviewStatus: word.reviewStatus || 'NORMAL',
       reviewCorrectCount: Number(word.reviewCorrectCount || 0),
@@ -1594,7 +1592,6 @@ async function syncWordV2FromSupabase() {
         id:String(row.local_id),
         word:row.word,
         meaningKo:row.meaning || '',
-        partOfSpeech:meta.partOfSpeech || existing?.partOfSpeech || '',
         example:row.example || '',
         exampleKo:meta.exampleKo || existing?.exampleKo || '',
         reviewStatus:meta.reviewStatus || existing?.reviewStatus || 'NORMAL',
@@ -3281,16 +3278,15 @@ function getWordV2WeeklyWords(state) {
 }
 
 function wordV2Options(correctWord, state) {
-  const samePos = state.words.filter(w => w.id !== correctWord.id && w.partOfSpeech && w.partOfSpeech === correctWord.partOfSpeech);
-  const pool = (samePos.length >= 3 ? samePos : state.words.filter(w => w.id !== correctWord.id));
+  const pool = state.words.filter(w => w.id !== correctWord.id);
   const options = shuffle(pool).slice(0, 3).map(w => w.meaningKo || w.word);
   while (options.length < 3) options.push(['준비하다','선택하다','설명하다','도착하다'][options.length]);
   return shuffle([correctWord.meaningKo || correctWord.word, ...options]);
 }
 
 function wordV2BlankOptions(correctWord, state) {
-  const pool = state.words.filter(w => w.id !== correctWord.id && (!correctWord.partOfSpeech || w.partOfSpeech === correctWord.partOfSpeech));
-  const options = shuffle(pool.length >= 3 ? pool : state.words.filter(w => w.id !== correctWord.id)).slice(0, 3).map(w => w.word);
+  const pool = state.words.filter(w => w.id !== correctWord.id);
+  const options = shuffle(pool).slice(0, 3).map(w => w.word);
   while (options.length < 3) options.push(['decide','arrive','borrow','choose'][options.length]);
   return shuffle([correctWord.word, ...options]);
 }
@@ -3306,7 +3302,6 @@ function buildWordV2Questions(words, state, testType='PRACTICE') {
       wordId:word.id,
       word:word.word,
       meaningKo:word.meaningKo,
-      partOfSpeech:word.partOfSpeech,
       example:blanked || word.example || '',
       exampleKo:word.exampleKo || '',
       questionType,
@@ -3328,10 +3323,10 @@ async function lookupWordV2() {
   document.getElementById('wv2-word').value = word;
   const lookupBtn = document.getElementById('wv2-lookup-btn');
   const meaningEl = document.getElementById('wv2-meaning');
-  const posEl = document.getElementById('wv2-pos');
   const exampleEl = document.getElementById('wv2-example');
   const exampleKoEl = document.getElementById('wv2-example-ko');
   const fallbackExample = 'I learned the word "' + word + '" today.';
+  const fallbackExampleKo = '나는 오늘 "' + word + '"라는 단어를 배웠다.';
   if (lookupBtn) {
     lookupBtn.disabled = true;
     lookupBtn.textContent = '찾는 중...';
@@ -3348,14 +3343,13 @@ async function lookupWordV2() {
       }))
       .filter(item => /[가-힣]/.test(item.text) && !/[a-z]{3,}/i.test(item.text))
       .sort((a, b) => (b.quality - a.quality) || (b.match - a.match));
-    if (meaningEl && !meaningEl.value && candidates[0]) meaningEl.value = candidates[0].text;
-    if (posEl && !posEl.value) posEl.value = '';
-    if (exampleEl && !exampleEl.value) exampleEl.value = fallbackExample;
-    if (exampleKoEl && !exampleKoEl.value) exampleKoEl.value = '나는 오늘 "' + word + '"라는 단어를 배웠다.';
+    if (meaningEl) meaningEl.value = candidates[0]?.text || '';
+    if (exampleEl) exampleEl.value = fallbackExample;
+    if (exampleKoEl) exampleKoEl.value = fallbackExampleKo;
   } catch (_) {
-    if (posEl && !posEl.value) posEl.value = '';
-    if (exampleEl && !exampleEl.value) exampleEl.value = fallbackExample;
-    if (exampleKoEl && !exampleKoEl.value) exampleKoEl.value = '나는 오늘 "' + word + '"라는 단어를 배웠다.';
+    if (meaningEl) meaningEl.value = '';
+    if (exampleEl) exampleEl.value = fallbackExample;
+    if (exampleKoEl) exampleKoEl.value = fallbackExampleKo;
     alert('자동 뜻 찾기는 잠시 실패했어요. 예문은 채워두었으니 뜻만 직접 입력해주세요.');
   } finally {
     if (lookupBtn) {
@@ -3368,16 +3362,15 @@ async function lookupWordV2() {
 function saveWordV2FromForm() {
   const word = normalizeWordV2(document.getElementById('wv2-word')?.value);
   const meaningKo = (document.getElementById('wv2-meaning')?.value || '').trim();
-  const partOfSpeech = (document.getElementById('wv2-pos')?.value || '').trim();
   const example = (document.getElementById('wv2-example')?.value || '').trim();
   const exampleKo = (document.getElementById('wv2-example-ko')?.value || '').trim();
   if (!word || !meaningKo) { alert('단어와 한글 뜻은 꼭 필요해요.'); return; }
   const state = loadWordV2State();
   if (state.words.some(w => normalizeWordV2(w.word) === word)) { alert('이미 등록된 단어예요.'); return; }
   const now = new Date().toISOString();
-  state.words.push({ id:'wv2-' + Date.now(), word, meaningKo, partOfSpeech, example, exampleKo, reviewStatus:'NORMAL', reviewCorrectCount:0, createdAt:now, updatedAt:now });
+  state.words.push({ id:'wv2-' + Date.now(), word, meaningKo, example, exampleKo, reviewStatus:'NORMAL', reviewCorrectCount:0, createdAt:now, updatedAt:now });
   saveWordV2State(state);
-  ['wv2-word','wv2-meaning','wv2-pos','wv2-example','wv2-example-ko'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+  ['wv2-word','wv2-meaning','wv2-example','wv2-example-ko'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
   renderWordV2Screen();
 }
 
@@ -3493,7 +3486,7 @@ function renderWordV2Question() {
   const choiceArea = document.getElementById('wv2-choice-area');
   if (q.questionType === 'MEANING_TO_WORD') {
     document.getElementById('wv2-question').textContent = q.meaningKo;
-    document.getElementById('wv2-question-sub').textContent = q.partOfSpeech || '';
+    document.getElementById('wv2-question-sub').textContent = '';
     answerArea.style.display = 'block'; choiceArea.style.display = 'none';
     const input = document.getElementById('wv2-answer'); input.value = ''; input.disabled = false; setTimeout(() => input.focus(), 80);
   } else {
