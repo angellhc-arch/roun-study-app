@@ -1,12 +1,12 @@
-const CACHE_NAME = 'roun-study-app-shell-v1';
+const CACHE_NAME = 'roun-study-app-shell-v2';
 const APP_SHELL = [
   '/',
   '/roun_study_app.html',
   '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-512-maskable.png',
-  '/icons/apple-touch-icon.png',
+  '/icons/frog-192.png',
+  '/icons/frog-512.png',
+  '/icons/frog-512-maskable.png',
+  '/icons/frog-apple-touch-icon.png',
 ];
 
 self.addEventListener('install', event => {
