@@ -375,6 +375,8 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-stat-val { font-size:18px; font-weight:900; color:var(--purple); }
 .wv2-stat-label { font-size:9px; font-weight:800; color:var(--muted); margin-top:2px; }
 .wv2-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.wv2-actions.main { gap:9px; }
+.wv2-actions.main .wv2-btn { min-height:48px; font-size:14px; }
 .wv2-btn { border:none; border-radius:12px; padding:11px 9px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:900; cursor:pointer; background:var(--purple-light); color:var(--purple); }
 .wv2-btn.primary { background:linear-gradient(135deg,#0EA5E9,#7B5CF5); color:white; }
 .wv2-btn.gold { background:linear-gradient(135deg,#F59E0B,#EF4444); color:white; }
@@ -383,6 +385,13 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-input, .wv2-textarea, .wv2-select { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:9px 10px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--text); background:white; }
 .wv2-textarea { min-height:62px; resize:vertical; line-height:1.45; }
 .wv2-form { display:grid; gap:8px; margin-top:10px; }
+.wv2-register-card.collapsed .wv2-register-form { display:none; }
+.wv2-register-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.wv2-register-toggle { border:none; border-radius:12px; padding:10px 12px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:900; cursor:pointer; background:var(--purple); color:white; white-space:nowrap; }
+.wv2-register-card:not(.collapsed) .wv2-register-toggle { background:#F3F4F6; color:var(--muted); }
+.wv2-quick-flow { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:10px; }
+.wv2-flow-chip { background:white; border:1.5px solid var(--border); border-radius:12px; padding:8px 4px; text-align:center; font-size:10px; font-weight:900; color:var(--muted); }
+.wv2-flow-chip.on { background:var(--purple-light); border-color:#C4B5FD; color:var(--purple); }
 .wv2-word { border:1.5px solid var(--border); border-radius:12px; padding:11px 12px; margin-top:8px; }
 .wv2-word-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
 .wv2-word-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
@@ -1079,7 +1088,13 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div class="wv2-stat"><div class="wv2-stat-val" id="wv2-review-count">0</div><div class="wv2-stat-label">복습 중</div></div>
         <div class="wv2-stat"><div class="wv2-stat-val" id="wv2-test-status">없음</div><div class="wv2-stat-label">시험 대상</div></div>
       </div>
-      <div class="wv2-actions">
+      <div class="wv2-quick-flow">
+        <div class="wv2-flow-chip on">등록</div>
+        <div class="wv2-flow-chip">예습</div>
+        <div class="wv2-flow-chip">시험</div>
+        <div class="wv2-flow-chip">복습</div>
+      </div>
+      <div class="wv2-actions main">
         <button class="wv2-btn primary" id="wv2-preview-btn" onclick="startWordV2Practice('preview')">예습하기</button>
         <button class="wv2-btn green" id="wv2-review-btn" onclick="openWordV2Review()">복습하기</button>
         <button class="wv2-btn gold" id="wv2-daily-btn" onclick="startWordV2Test('DAILY')">시험응시</button>
@@ -1087,10 +1102,15 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       </div>
     </div>
 
-    <div class="wv2-card">
-      <div class="wv2-title">단어 등록</div>
-      <div class="wv2-sub">영어 단어만 입력해도 기본 정보를 찾아오고, 저장 전 직접 고칠 수 있어요.</div>
-      <div class="wv2-form">
+    <div class="wv2-card wv2-register-card collapsed" id="wv2-register-card">
+      <div class="wv2-register-head">
+        <div>
+          <div class="wv2-title">단어 등록</div>
+          <div class="wv2-sub" id="wv2-register-sub">필요할 때만 열어서 새 단어를 추가해요.</div>
+        </div>
+        <button class="wv2-register-toggle" id="wv2-register-toggle" onclick="toggleWordV2Register()">+ 등록</button>
+      </div>
+      <div class="wv2-form wv2-register-form">
         <div style="display:grid;grid-template-columns:1fr auto;gap:7px">
           <input class="wv2-input" id="wv2-word" placeholder="promise">
           <button class="wv2-btn primary" id="wv2-lookup-btn" onclick="lookupWordV2()">찾기</button>
@@ -3267,6 +3287,7 @@ let wordV2SelectedDate = null;
 let wordV2ReviewDate = null;
 let wordV2ReviewMode = 'list';
 let wordV2EditingId = null;
+let wordV2RegisterOpen = false;
 
 function kstDateKey(date=new Date()) {
   const kst = new Date(date.toLocaleString('en-US', { timeZone:'Asia/Seoul' }));
@@ -3313,7 +3334,7 @@ function getWordV2ById(state, wordId) {
 }
 
 function formatWordV2ShortDate(dateKey) {
-  return dateKey ? dateKey.slice(5).replace('-', '/') : '';
+  return dateKey ? dateKey.slice(5) : '';
 }
 
 function getWordV2TestId(type, dateKey=kstDateKey()) {
@@ -3491,7 +3512,23 @@ function saveWordV2FromForm() {
   state.words.push({ id:'wv2-' + Date.now(), word, meaningKo, example, exampleKo, reviewStatus:'NORMAL', reviewCorrectCount:0, createdAt:now, updatedAt:now });
   saveWordV2State(state);
   ['wv2-word','wv2-meaning','wv2-example','wv2-example-ko'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+  wordV2RegisterOpen = false;
   renderWordV2Screen();
+}
+
+function toggleWordV2Register(forceOpen=null) {
+  wordV2RegisterOpen = forceOpen === null ? !wordV2RegisterOpen : !!forceOpen;
+  renderWordV2RegisterState();
+  if (wordV2RegisterOpen) setTimeout(() => document.getElementById('wv2-word')?.focus(), 80);
+}
+
+function renderWordV2RegisterState() {
+  const card = document.getElementById('wv2-register-card');
+  const btn = document.getElementById('wv2-register-toggle');
+  const sub = document.getElementById('wv2-register-sub');
+  if (card) card.classList.toggle('collapsed', !wordV2RegisterOpen);
+  if (btn) btn.textContent = wordV2RegisterOpen ? '접기' : '+ 등록';
+  if (sub) sub.textContent = wordV2RegisterOpen ? '찾은 뒤 뜻과 예문을 확인하고 저장해요.' : '필요할 때만 열어서 새 단어를 추가해요.';
 }
 
 function setWordV2ListTab(tab) {
@@ -3574,6 +3611,13 @@ function renderWordV2Screen() {
     weekBtn.disabled = !isSunday || retryWeeklyWords.length === 0;
     weekBtn.textContent = !isSunday ? '일요일 주간시험' : weekly?.status === 'COMPLETED' ? '주간시험 다시 풀기' : '주간시험';
   }
+  renderWordV2RegisterState();
+  document.querySelectorAll('.wv2-flow-chip').forEach((chip, index) => {
+    chip.classList.toggle('on', index === 0 && wordV2RegisterOpen);
+    if (!wordV2RegisterOpen && index === 1) chip.classList.toggle('on', newWords.length > 0);
+    if (!wordV2RegisterOpen && index === 2) chip.classList.toggle('on', !newWords.length && !!dailyTestDate);
+    if (!wordV2RegisterOpen && index === 3) chip.classList.toggle('on', !newWords.length && !dailyTestDate && reviewWords.length > 0);
+  });
   const dateCard = document.getElementById('wv2-word-date-card');
   if (dateCard) dateCard.style.display = wordV2ListTab === 'words' ? 'block' : 'none';
   const dateInput = document.getElementById('wv2-word-date');

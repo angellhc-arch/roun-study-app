@@ -1,4 +1,4 @@
-const CACHE_NAME = 'roun-study-app-shell-v4';
+const CACHE_NAME = 'roun-study-app-shell-v5';
 const APP_SHELL = [
   '/',
   '/roun_study_app.html',
