@@ -45,6 +45,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .xp-bar { background:rgba(255,255,255,.25); border-radius:10px; height:7px; overflow:hidden; }
 .xp-fill { background:#FFD700; border-radius:10px; height:100%; transition:width .6s ease; }
 .level-badge { width:46px; height:46px; background:linear-gradient(135deg,#FFD700,#F5A623); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:#7C5400; border:3px solid rgba(255,255,255,.6); flex-shrink:0; text-align:center; line-height:1.3; }
+.home-mascot-img { position:absolute; left:0; bottom:-6px; width:84px; height:92px; object-fit:contain; filter:drop-shadow(0 3px 7px rgba(30,27,75,.18)); }
 
 .reward-banner { margin:12px 16px 0; background:var(--card); border-radius:var(--radius); border:1.5px solid var(--gold); padding:13px 15px; }
 .reward-top-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
@@ -399,9 +400,23 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-choice { border:1.5px solid var(--border); background:white; border-radius:12px; padding:11px 12px; text-align:left; font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; color:var(--text); cursor:pointer; }
 .wv2-choice.correct { background:#DCFCE7; border-color:#86EFAC; }
 .wv2-choice.wrong { background:#FFF1F2; border-color:#FECACA; }
-.wv2-mode-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:10px 16px 0; }
+.wv2-mode-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin:10px 16px 0; }
 .wv2-mode-tabs button { border:1.5px solid var(--border); background:white; border-radius:12px; padding:9px 6px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:900; color:var(--muted); cursor:pointer; }
 .wv2-mode-tabs button.on { background:var(--purple); color:white; border-color:var(--purple); }
+.wv2-layer { position:absolute; inset:0; z-index:190; background:var(--bg); display:none; flex-direction:column; overflow-y:auto; padding-bottom:80px; }
+.wv2-layer.show { display:flex; }
+.wv2-layer-head { background:linear-gradient(135deg,#22C55E,#0EA5E9); color:white; padding:16px 16px 18px; flex-shrink:0; }
+.wv2-layer-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.wv2-layer-close { width:36px; height:36px; border:none; border-radius:50%; background:rgba(255,255,255,.24); color:white; font-size:20px; font-weight:900; cursor:pointer; }
+.wv2-layer-title { font-size:20px; font-weight:900; }
+.wv2-layer-sub { font-size:11px; font-weight:700; opacity:.88; margin-top:4px; line-height:1.45; }
+.wv2-review-toolbar { margin:10px 16px 0; background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:13px 14px; }
+.wv2-review-mode-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.wv2-review-list { padding:4px 16px 0; }
+
+@media (max-width:480px), (display-mode:standalone) {
+  .wv2-layer { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
+}
 
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
@@ -542,33 +557,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         오늘도 같이 공부하자! 🐸
         <div style="position:absolute;left:10px;bottom:-7px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid white"></div>
       </div>
-      <svg width="78" height="90" viewBox="0 0 78 90" style="position:absolute;left:4px;bottom:-4px">
-        <ellipse cx="18" cy="18" rx="10" ry="9" fill="#3DB84C"/>
-        <ellipse cx="18" cy="17" rx="6" ry="5.5" fill="white"/>
-        <circle cx="18" cy="17" r="3.5" fill="#1a1a1a"/>
-        <circle cx="19.5" cy="15.5" r="1.2" fill="white"/>
-        <ellipse cx="60" cy="18" rx="10" ry="9" fill="#3DB84C"/>
-        <ellipse cx="60" cy="17" rx="6" ry="5.5" fill="white"/>
-        <circle cx="60" cy="17" r="3.5" fill="#1a1a1a"/>
-        <circle cx="61.5" cy="15.5" r="1.2" fill="white"/>
-        <ellipse cx="39" cy="32" rx="30" ry="20" fill="#3DB84C"/>
-        <ellipse cx="39" cy="38" rx="26" ry="24" fill="#FAD9C1"/>
-        <path d="M20 28 Q25 24 30 27" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-        <path d="M48 27 Q53 24 58 28" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-        <ellipse cx="27" cy="35" rx="7" ry="7.5" fill="#1a1a1a"/>
-        <ellipse cx="29" cy="33" rx="2.8" ry="2.8" fill="white"/>
-        <ellipse cx="51" cy="35" rx="7" ry="7.5" fill="#1a1a1a"/>
-        <ellipse cx="53" cy="33" rx="2.8" ry="2.8" fill="white"/>
-        <ellipse cx="39" cy="43" rx="2" ry="1.5" fill="#E8A88A"/>
-        <ellipse cx="39" cy="52" rx="5" ry="6" fill="#8B1A2A"/>
-        <ellipse cx="39" cy="50" rx="3.5" ry="2.5" fill="#C41E3A"/>
-        <ellipse cx="39" cy="76" rx="24" ry="18" fill="#3DB84C"/>
-        <ellipse cx="39" cy="78" rx="14" ry="11" fill="#E8F5E8"/>
-        <ellipse cx="14" cy="72" rx="7" ry="5" fill="#3DB84C" transform="rotate(-20 14 72)"/>
-        <ellipse cx="64" cy="72" rx="7" ry="5" fill="#3DB84C" transform="rotate(20 64 72)"/>
-        <ellipse cx="26" cy="89" rx="8" ry="5" fill="#3DB84C" transform="rotate(-10 26 89)"/>
-        <ellipse cx="52" cy="89" rx="8" ry="5" fill="#3DB84C" transform="rotate(10 52 89)"/>
-      </svg>
+      <img class="home-mascot-img" src="/icons/frog-home.png" alt="로운이 학습 캐릭터">
     </div>
   </div>
 
@@ -1126,13 +1115,32 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div class="wv2-title" id="wv2-word-date-title">등록 날짜별 단어</div>
       <div class="wv2-form">
         <input class="wv2-input" type="date" id="wv2-word-date" onchange="setWordV2Date(this.value)">
-        <div class="wv2-actions" id="wv2-review-mode-actions" style="display:none;margin-top:0">
-          <button class="wv2-btn" id="wv2-review-mode-list" onclick="setWordV2ReviewMode('list')">단어 목록</button>
-          <button class="wv2-btn" id="wv2-review-mode-quiz" onclick="setWordV2ReviewMode('quiz')">복습 시험</button>
-        </div>
       </div>
     </div>
     <div class="word-list-section"><div id="wv2-list"></div></div>
+  </div>
+
+  <div class="wv2-layer" id="wv2-review-overlay">
+    <div class="wv2-layer-head">
+      <div class="wv2-layer-top">
+        <div>
+          <div class="wv2-layer-title">복습하기</div>
+          <div class="wv2-layer-sub">날짜를 고르고 단어 카드로 보거나, 시험처럼 다시 풀어봐요.</div>
+        </div>
+        <button class="wv2-layer-close" onclick="closeWordV2Review()">×</button>
+      </div>
+    </div>
+    <div class="wv2-review-toolbar">
+      <div class="wv2-title">복습 날짜</div>
+      <div class="wv2-form">
+        <input class="wv2-input" type="date" id="wv2-review-date" onchange="setWordV2ReviewDate(this.value)">
+      </div>
+      <div class="wv2-review-mode-row">
+        <button class="wv2-btn" id="wv2-review-mode-list" onclick="setWordV2ReviewMode('list')">단어 목록</button>
+        <button class="wv2-btn" id="wv2-review-mode-quiz" onclick="setWordV2ReviewMode('quiz')">복습 시험</button>
+      </div>
+    </div>
+    <div class="wv2-review-list" id="wv2-review-list"></div>
   </div>
 
   <div id="wv2-quiz" style="display:none">
@@ -3494,9 +3502,15 @@ function setWordV2ListTab(tab) {
 
 function openWordV2Review() {
   const state = loadWordV2State();
-  wordV2ListTab = 'review';
   wordV2ReviewDate = wordV2ReviewDate || getWordV2DefaultReviewDate(state);
   wordV2ReviewMode = 'list';
+  wordV2EditingId = null;
+  document.getElementById('wv2-review-overlay')?.classList.add('show');
+  renderWordV2ReviewOverlay(state);
+}
+
+function closeWordV2Review() {
+  document.getElementById('wv2-review-overlay')?.classList.remove('show');
   wordV2EditingId = null;
   renderWordV2Screen();
 }
@@ -3504,12 +3518,17 @@ function openWordV2Review() {
 function setWordV2ReviewMode(mode) {
   wordV2ReviewMode = mode === 'quiz' ? 'quiz' : 'list';
   wordV2EditingId = null;
-  renderWordV2Screen();
+  renderWordV2ReviewOverlay();
+}
+
+function setWordV2ReviewDate(dateKey) {
+  wordV2ReviewDate = dateKey || getWordV2DefaultReviewDate(loadWordV2State());
+  wordV2EditingId = null;
+  renderWordV2ReviewOverlay();
 }
 
 function setWordV2Date(dateKey) {
-  if (wordV2ListTab === 'review') wordV2ReviewDate = dateKey || kstDateKey();
-  else wordV2SelectedDate = dateKey || kstDateKey();
+  wordV2SelectedDate = dateKey || kstDateKey();
   wordV2EditingId = null;
   renderWordV2Screen();
 }
@@ -3556,19 +3575,15 @@ function renderWordV2Screen() {
     weekBtn.textContent = !isSunday ? '일요일 주간시험' : weekly?.status === 'COMPLETED' ? '주간시험 다시 풀기' : '주간시험';
   }
   const dateCard = document.getElementById('wv2-word-date-card');
-  if (dateCard) dateCard.style.display = wordV2ListTab === 'words' || wordV2ListTab === 'review' ? 'block' : 'none';
+  if (dateCard) dateCard.style.display = wordV2ListTab === 'words' ? 'block' : 'none';
   const dateInput = document.getElementById('wv2-word-date');
   const dateTitle = document.getElementById('wv2-word-date-title');
-  const reviewModeActions = document.getElementById('wv2-review-mode-actions');
   if (!wordV2SelectedDate) wordV2SelectedDate = kstDateKey();
-  const activeDate = wordV2ListTab === 'review' ? wordV2ReviewDate : wordV2SelectedDate;
-  if (dateTitle) dateTitle.textContent = wordV2ListTab === 'review' ? '복습할 날짜 선택' : '등록 날짜별 단어';
-  if (dateInput && dateInput.value !== activeDate) dateInput.value = activeDate;
-  if (reviewModeActions) reviewModeActions.style.display = wordV2ListTab === 'review' ? 'grid' : 'none';
-  document.getElementById('wv2-review-mode-list')?.classList.toggle('primary', wordV2ListTab === 'review' && wordV2ReviewMode === 'list');
-  document.getElementById('wv2-review-mode-quiz')?.classList.toggle('primary', wordV2ListTab === 'review' && wordV2ReviewMode === 'quiz');
+  if (dateTitle) dateTitle.textContent = '등록 날짜별 단어';
+  if (dateInput && dateInput.value !== wordV2SelectedDate) dateInput.value = wordV2SelectedDate;
   ['words','tests'].forEach(tab => document.getElementById('wv2-tab-'+tab)?.classList.toggle('on', wordV2ListTab === tab));
   renderWordV2List(state);
+  if (document.getElementById('wv2-review-overlay')?.classList.contains('show')) renderWordV2ReviewOverlay(state);
 }
 
 function renderWordV2List(state) {
@@ -3586,15 +3601,7 @@ function renderWordV2List(state) {
     });
     return;
   }
-  if (wordV2ListTab === 'review' && wordV2ReviewMode === 'quiz') {
-    const words = getWordV2ReviewPracticeWords(state);
-    if (!words.length) { list.innerHTML = '<div class="word-empty-state"><div class="word-empty-msg">선택한 날짜에 복습할 단어가 없어요.</div></div>'; return; }
-    list.innerHTML = `<div class="wv2-word"><div class="wv2-word-top"><div><div class="wv2-word-en">복습 시험 · ${escapeV2Text(wordV2ReviewDate)}</div><div class="wv2-word-ko">선택한 날짜의 단어 ${words.length}개</div></div><span class="wv2-pill">연습</span></div><button class="wv2-btn green" style="width:100%;margin-top:10px" onclick="startWordV2Practice('review')">복습 시험 시작</button></div>`;
-    return;
-  }
-  const words = wordV2ListTab === 'review'
-    ? getWordV2ReviewPracticeWords(state)
-    : state.words.filter(word => getWordV2CreatedDate(word) === (wordV2SelectedDate || kstDateKey()));
+  const words = state.words.filter(word => getWordV2CreatedDate(word) === (wordV2SelectedDate || kstDateKey()));
   if (!words.length) { list.innerHTML = '<div class="word-empty-state"><div class="word-empty-msg">표시할 단어가 없어요.</div></div>'; return; }
   words.forEach(word => {
     const count = Number(word.reviewCorrectCount || 0);
@@ -3605,6 +3612,32 @@ function renderWordV2List(state) {
     } else {
       div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${escapeV2Text(word.word)}</div><div class="wv2-word-ko">${escapeV2Text(word.meaningKo)}</div><div class="word-item-ex">${escapeV2Text(word.example || '')}</div>${word.exampleKo ? `<div class="word-item-ex">${escapeV2Text(word.exampleKo)}</div>` : ''}</div><div class="wv2-word-actions"><span class="wv2-pill">${escapeV2Text(word.reviewStatus || 'NORMAL')} ${count}/7</span><button class="wv2-delete" title="단어 수정" onclick="editWordV2('${escapeV2Text(word.id)}')">✎</button><button class="wv2-delete" title="단어 삭제" onclick="deleteWordV2('${escapeV2Text(word.id)}')">×</button></div></div><div class="wv2-progress">${Array.from({length:7},(_,i)=>`<span class="wv2-dot${i<count?' on':''}"></span>`).join('')}</div>`;
     }
+    list.appendChild(div);
+  });
+}
+
+function renderWordV2ReviewOverlay(state=loadWordV2State()) {
+  if (!wordV2ReviewDate) wordV2ReviewDate = getWordV2DefaultReviewDate(state);
+  const dateInput = document.getElementById('wv2-review-date');
+  const list = document.getElementById('wv2-review-list');
+  if (dateInput && dateInput.value !== wordV2ReviewDate) dateInput.value = wordV2ReviewDate;
+  document.getElementById('wv2-review-mode-list')?.classList.toggle('primary', wordV2ReviewMode === 'list');
+  document.getElementById('wv2-review-mode-quiz')?.classList.toggle('primary', wordV2ReviewMode === 'quiz');
+  if (!list) return;
+  const words = getWordV2ReviewPracticeWords(state);
+  if (!words.length) {
+    list.innerHTML = '<div class="word-empty-state"><div class="word-empty-msg">선택한 날짜에 복습할 단어가 없어요.</div></div>';
+    return;
+  }
+  if (wordV2ReviewMode === 'quiz') {
+    list.innerHTML = `<div class="wv2-word"><div class="wv2-word-top"><div><div class="wv2-word-en">복습 시험 · ${escapeV2Text(wordV2ReviewDate)}</div><div class="wv2-word-ko">선택한 날짜의 단어 ${words.length}개를 시험처럼 풀어요.</div></div><span class="wv2-pill">연습</span></div><button class="wv2-btn green" style="width:100%;margin-top:10px" onclick="startWordV2Practice('review')">복습 시험 시작</button></div>`;
+    return;
+  }
+  list.innerHTML = '';
+  words.forEach(word => {
+    const div = document.createElement('div');
+    div.className = 'wv2-word';
+    div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${escapeV2Text(word.word)}</div><div class="wv2-word-ko">${escapeV2Text(word.meaningKo)}</div><div class="word-item-ex">${escapeV2Text(word.example || '')}</div>${word.exampleKo ? `<div class="word-item-ex">${escapeV2Text(word.exampleKo)}</div>` : ''}</div><span class="wv2-pill">${escapeV2Text(word.reviewStatus || 'NORMAL')} ${Number(word.reviewCorrectCount || 0)}/7</span></div>`;
     list.appendChild(div);
   });
 }
@@ -3705,6 +3738,7 @@ function startWordV2Test(type) {
 }
 
 function showWordV2Quiz() {
+  document.getElementById('wv2-review-overlay')?.classList.remove('show');
   document.getElementById('wv2-home').style.display = 'none';
   document.getElementById('wv2-quiz').style.display = 'block';
   renderWordV2Question();
