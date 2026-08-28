@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="로운이 학습">
 <title>로운이의 공부 습관 앱</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -146,6 +152,14 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .nav-icon { font-size:19px; }
 .nav-label { font-size:9px; font-weight:800; color:var(--muted); }
 .nav-item.active .nav-label { color:var(--purple); }
+
+.pwa-install { position:absolute; left:14px; right:14px; bottom:82px; background:white; border:1.5px solid var(--purple-light); border-radius:14px; padding:11px 12px; display:none; align-items:center; gap:10px; box-shadow:0 10px 28px rgba(30,27,75,.14); z-index:180; }
+.pwa-install.show { display:flex; }
+.pwa-install-text { flex:1; min-width:0; }
+.pwa-install-title { font-size:12px; font-weight:900; color:var(--text); }
+.pwa-install-sub { font-size:10px; font-weight:700; color:var(--muted); margin-top:1px; }
+.pwa-install-btn { border:none; border-radius:10px; padding:8px 10px; background:var(--purple); color:white; font-family:'Nunito',sans-serif; font-size:11px; font-weight:900; cursor:pointer; white-space:nowrap; }
+.pwa-install-close { width:26px; height:26px; border:none; border-radius:50%; background:#F3F4F6; color:var(--muted); font-size:16px; font-weight:900; cursor:pointer; }
 
 .popup-overlay { position:absolute; inset:0; background:rgba(0,0,0,.5); display:none; align-items:flex-end; justify-content:center; z-index:200; }
 .popup-overlay.show { display:flex; }
@@ -481,6 +495,14 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 </head>
 <body>
 <div class="phone-shell">
+<div class="pwa-install" id="pwa-install">
+  <div class="pwa-install-text">
+    <div class="pwa-install-title">로운이 학습 앱 설치</div>
+    <div class="pwa-install-sub">홈 화면에서 바로 열 수 있어요.</div>
+  </div>
+  <button class="pwa-install-btn" id="pwa-install-btn" type="button">앱 설치</button>
+  <button class="pwa-install-close" id="pwa-install-close" type="button" aria-label="설치 안내 닫기">×</button>
+</div>
 
 <!-- ══════════════════ HOME ══════════════════ -->
 <div class="screen active" id="screen-home">
@@ -5233,6 +5255,56 @@ if (window.visualViewport) {
     }
   });
 }
+
+let deferredPwaInstallPrompt = null;
+
+function isPwaStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function hidePwaInstallBanner() {
+  document.getElementById('pwa-install')?.classList.remove('show');
+}
+
+function maybeShowPwaInstallBanner() {
+  const banner = document.getElementById('pwa-install');
+  if (!banner || isPwaStandalone() || !deferredPwaInstallPrompt) return;
+  if (localStorage.getItem('roun_pwa_install_dismissed') === '1') return;
+  banner.classList.add('show');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(error => {
+      console.warn('PWA Service Worker 등록 실패', error);
+    });
+  });
+}
+
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  deferredPwaInstallPrompt = event;
+  maybeShowPwaInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPwaInstallPrompt = null;
+  localStorage.setItem('roun_pwa_install_dismissed', '1');
+  hidePwaInstallBanner();
+});
+
+document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+  if (!deferredPwaInstallPrompt) return;
+  deferredPwaInstallPrompt.prompt();
+  await deferredPwaInstallPrompt.userChoice.catch(() => null);
+  deferredPwaInstallPrompt = null;
+  hidePwaInstallBanner();
+});
+
+document.getElementById('pwa-install-close')?.addEventListener('click', () => {
+  localStorage.setItem('roun_pwa_install_dismissed', '1');
+  hidePwaInstallBanner();
+});
 </script>
 </body>
 </html>
