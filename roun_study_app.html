@@ -1053,12 +1053,12 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div class="wv2-grid">
         <div class="wv2-stat"><div class="wv2-stat-val" id="wv2-new-count">0</div><div class="wv2-stat-label">새 단어</div></div>
         <div class="wv2-stat"><div class="wv2-stat-val" id="wv2-review-count">0</div><div class="wv2-stat-label">복습 중</div></div>
-        <div class="wv2-stat"><div class="wv2-stat-val" id="wv2-test-status">미응시</div><div class="wv2-stat-label">오늘 시험</div></div>
+        <div class="wv2-stat"><div class="wv2-stat-val" id="wv2-test-status">없음</div><div class="wv2-stat-label">시험 대상</div></div>
       </div>
       <div class="wv2-actions">
-        <button class="wv2-btn primary" onclick="startWordV2Practice('preview')">예습하기</button>
-        <button class="wv2-btn green" onclick="startWordV2Practice('review')">복습하기</button>
-        <button class="wv2-btn gold" id="wv2-daily-btn" onclick="startWordV2Test('DAILY')">오늘의 시험</button>
+        <button class="wv2-btn primary" id="wv2-preview-btn" onclick="startWordV2Practice('preview')">예습하기</button>
+        <button class="wv2-btn green" id="wv2-review-btn" onclick="startWordV2Practice('review')">복습하기</button>
+        <button class="wv2-btn gold" id="wv2-daily-btn" onclick="startWordV2Test('DAILY')">시험응시</button>
         <button class="wv2-btn" id="wv2-weekly-btn" onclick="startWordV2Test('WEEKLY')">주간시험</button>
       </div>
     </div>
@@ -3265,6 +3265,10 @@ function getWordV2ById(state, wordId) {
   return (state.words || []).find(word => String(word.id) === String(wordId));
 }
 
+function formatWordV2ShortDate(dateKey) {
+  return dateKey ? dateKey.slice(5).replace('-', '/') : '';
+}
+
 function getWordV2TestId(type, dateKey=kstDateKey()) {
   if (type === 'WEEKLY') {
     const d = new Date(dateKey + 'T00:00:00');
@@ -3280,16 +3284,38 @@ function getWordV2ReviewWords(state) {
   return state.words.filter(w => (w.reviewStatus || 'NORMAL') === 'REVIEWING' && Number(w.reviewCorrectCount || 0) < 7);
 }
 
-function getWordV2NewWords(state, limit=20) {
-  const today = kstDateKey();
+function getWordV2TestedWordIds(state) {
   const testedIds = new Set(Object.values(state.tests || {})
     .filter(test => test.status === 'COMPLETED')
     .flatMap(t => t.questions || [])
     .map(q => q.wordId));
-  return state.words
+  return testedIds;
+}
+
+function getWordV2NextTestDate(state) {
+  const testedIds = getWordV2TestedWordIds(state);
+  const nextWord = [...(state.words || [])]
     .filter(w => (w.reviewStatus || 'NORMAL') === 'NORMAL' && !testedIds.has(w.id))
+    .sort((a, b) => {
+      const dateCompare = getWordV2CreatedDate(a).localeCompare(getWordV2CreatedDate(b));
+      return dateCompare || String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+    })[0];
+  return nextWord ? getWordV2CreatedDate(nextWord) : null;
+}
+
+function getWordV2DailyTestDate(state) {
+  return getWordV2NextTestDate(state) || (getWordV2ReviewWords(state).length ? kstDateKey() : null);
+}
+
+function getWordV2NewWords(state, limit=20, dateKey=null) {
+  const testedIds = getWordV2TestedWordIds(state);
+  const targetDate = dateKey || getWordV2NextTestDate(state);
+  if (!targetDate) return [];
+  return state.words
+    .filter(w => (w.reviewStatus || 'NORMAL') === 'NORMAL' && !testedIds.has(w.id) && getWordV2CreatedDate(w) === targetDate)
+    .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(0, limit)
-    .map(w => ({ ...w, assignedDate:today }));
+    .map(w => ({ ...w, assignedDate:targetDate }));
 }
 
 function getWordV2WeekRange(dateKey=kstDateKey()) {
@@ -3318,8 +3344,6 @@ function getWordV2WordsFromTest(state, test) {
 }
 
 function getWordV2WordsForDate(state, dateKey) {
-  const test = state.tests?.[getWordV2TestId('DAILY', dateKey)];
-  if (test?.status === 'COMPLETED') return getWordV2WordsFromTest(state, test);
   return state.words.filter(word => getWordV2CreatedDate(word) === dateKey);
 }
 
@@ -3439,20 +3463,33 @@ function setWordV2Date(dateKey) {
 function renderWordV2Screen() {
   const state = loadWordV2State();
   const today = kstDateKey();
-  const daily = state.tests[getWordV2TestId('DAILY', today)];
+  const dailyTestDate = getWordV2DailyTestDate(state);
+  const daily = dailyTestDate ? state.tests[getWordV2TestId('DAILY', dailyTestDate)] : null;
   const weekly = state.tests[getWordV2TestId('WEEKLY', today)];
   const reviewWords = getWordV2ReviewWords(state);
-  const newWords = getWordV2NewWords(state);
+  const newWords = getWordV2NewWords(state, 20, dailyTestDate);
   const weeklyWords = getWordV2WeeklyWords(state);
   const setText = (id, text) => { const el=document.getElementById(id); if(el)el.textContent=text; };
   setText('wv2-new-count', newWords.length);
   setText('wv2-review-count', reviewWords.length);
-  setText('wv2-test-status', daily?.status === 'COMPLETED' ? '완료' : '미응시');
+  setText('wv2-test-status', dailyTestDate ? dailyTestDate.slice(5) : '없음');
+  if (!wordV2ReviewDate) wordV2ReviewDate = getWordV2DefaultReviewDate(state);
+  const previewBtn = document.getElementById('wv2-preview-btn');
+  if (previewBtn) {
+    previewBtn.disabled = newWords.length === 0;
+    previewBtn.textContent = dailyTestDate && newWords.length ? '예습하기(' + formatWordV2ShortDate(dailyTestDate) + ')' : '예습하기';
+  }
+  const reviewBtn = document.getElementById('wv2-review-btn');
+  if (reviewBtn) {
+    const reviewDateWords = getWordV2ReviewPracticeWords(state);
+    reviewBtn.disabled = reviewDateWords.length === 0;
+    reviewBtn.textContent = '복습하기(' + formatWordV2ShortDate(wordV2ReviewDate) + ')';
+  }
   const dailyBtn = document.getElementById('wv2-daily-btn');
   if (dailyBtn) {
     const dailyWords = daily?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, daily) : [...newWords, ...reviewWords];
     dailyBtn.disabled = dailyWords.length === 0;
-    dailyBtn.textContent = daily?.status === 'COMPLETED' ? '오늘의 시험 다시 풀기' : '오늘의 시험';
+    dailyBtn.textContent = dailyTestDate ? '시험응시(' + formatWordV2ShortDate(dailyTestDate) + ')' : '시험응시';
   }
   const weekCard = document.getElementById('wv2-week-card');
   const weekBtn = document.getElementById('wv2-weekly-btn');
@@ -3469,7 +3506,6 @@ function renderWordV2Screen() {
   const dateInput = document.getElementById('wv2-word-date');
   const dateTitle = document.getElementById('wv2-word-date-title');
   if (!wordV2SelectedDate) wordV2SelectedDate = kstDateKey();
-  if (!wordV2ReviewDate) wordV2ReviewDate = getWordV2DefaultReviewDate(state);
   const activeDate = wordV2ListTab === 'review' ? wordV2ReviewDate : wordV2SelectedDate;
   if (dateTitle) dateTitle.textContent = wordV2ListTab === 'review' ? '복습할 날짜 선택' : '등록 날짜별 단어';
   if (dateInput && dateInput.value !== activeDate) dateInput.value = activeDate;
@@ -3589,15 +3625,17 @@ function startWordV2Practice(kind) {
 function startWordV2Test(type) {
   const state = loadWordV2State();
   const today = kstDateKey();
-  const id = getWordV2TestId(type, today);
+  const targetDate = type === 'DAILY' ? getWordV2DailyTestDate(state) : today;
+  if (!targetDate) { alert('시험 볼 단어가 없어요.'); return; }
+  const id = getWordV2TestId(type, targetDate);
   const existing = state.tests[id];
   const isOfficialAttempt = existing?.status !== 'COMPLETED';
   const words = existing?.status === 'COMPLETED'
     ? getWordV2WordsFromTest(state, existing)
-    : type === 'WEEKLY' ? getWordV2WeeklyWords(state) : [...getWordV2NewWords(state), ...getWordV2ReviewWords(state)];
+    : type === 'WEEKLY' ? getWordV2WeeklyWords(state) : [...getWordV2NewWords(state, 20, targetDate), ...getWordV2ReviewWords(state)];
   if (!words.length) { alert('시험 볼 단어가 없어요.'); return; }
   const now = new Date().toISOString();
-  const test = { id, testDate:today, testType:type, status:'IN_PROGRESS', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:now, completedAt:null };
+  const test = { id, testDate:targetDate, testType:type, status:'IN_PROGRESS', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:now, completedAt:null };
   wordV2Session = { mode:type, testId:id, test, questions:test.questions, index:0, answered:false, practice:false, official:isOfficialAttempt };
   showWordV2Quiz();
 }
@@ -3720,7 +3758,7 @@ function finishWordV2Session() {
     };
     wordV2Session.questions.forEach(q => applyWordV2ReviewResult(state, q, test.testType));
     state.tests[wordV2Session.testId] = test;
-    if (test.testType === 'DAILY' && test.testDate === kstDateKey()) wordV2ReviewDate = test.testDate;
+    if (test.testType === 'DAILY') wordV2ReviewDate = test.testDate;
     saveWordV2State(state);
   }
   const fb = document.getElementById('wv2-feedback');
