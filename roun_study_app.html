@@ -1098,7 +1098,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <button class="wv2-btn primary" id="wv2-preview-btn" onclick="startWordV2Practice('preview')">예습하기</button>
         <button class="wv2-btn green" id="wv2-review-btn" onclick="openWordV2Review()">복습하기</button>
         <button class="wv2-btn gold" id="wv2-daily-btn" onclick="startWordV2Test('DAILY')">시험응시</button>
-        <button class="wv2-btn" id="wv2-weekly-btn" onclick="startWordV2Test('WEEKLY')">주간시험</button>
+        <button class="wv2-btn" id="wv2-weekly-btn" onclick="startWordV2Test('WEEKLY')">주말시험</button>
       </div>
     </div>
 
@@ -1123,8 +1123,8 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
 
     <div class="wv2-card" id="wv2-week-card" style="display:none">
-      <div class="wv2-title">이번 주 단어 챌린지</div>
-      <div class="wv2-sub" id="wv2-week-sub">이번 주 시험 단어 0개</div>
+      <div class="wv2-title">주말 단어 챌린지</div>
+      <div class="wv2-sub" id="wv2-week-sub">이번 주말 시험 단어 0개</div>
     </div>
 
     <div class="wv2-mode-tabs">
@@ -3440,18 +3440,82 @@ function wordV2BlankOptions(correctWord, state) {
   return shuffle([correctWord.word, ...options]);
 }
 
+function getWordV2BlankPattern(word) {
+  const base = normalizeWordV2(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!base) return null;
+  const irregular = {
+    be:['am','are','is','was','were','been','being'],
+    become:['became','become'],
+    begin:['began','begun','beginning'],
+    break:['broke','broken'],
+    bring:['brought'],
+    build:['built'],
+    buy:['bought'],
+    catch:['caught'],
+    choose:['chose','chosen'],
+    come:['came','come'],
+    do:['did','done','doing'],
+    drink:['drank','drunk'],
+    drive:['drove','driven'],
+    eat:['ate','eaten'],
+    fall:['fell','fallen'],
+    feel:['felt'],
+    find:['found'],
+    fly:['flew','flown'],
+    get:['got','gotten','getting'],
+    give:['gave','given'],
+    go:['went','gone','going'],
+    grow:['grew','grown'],
+    have:['has','had','having'],
+    know:['knew','known'],
+    leave:['left'],
+    make:['made','making'],
+    meet:['met'],
+    read:['read','reading'],
+    run:['ran','running'],
+    say:['said'],
+    see:['saw','seen'],
+    send:['sent'],
+    sing:['sang','sung'],
+    sit:['sat','sitting'],
+    sleep:['slept'],
+    speak:['spoke','spoken'],
+    swim:['swam','swum'],
+    take:['took','taken','taking'],
+    teach:['taught'],
+    tell:['told'],
+    think:['thought'],
+    write:['wrote','written','writing'],
+  };
+  const forms = new Set([base, base + 's', base + 'es', base + 'ed', base + 'ing']);
+  if (base.endsWith('e')) {
+    forms.add(base.slice(0, -1) + 'ing');
+    forms.add(base + 'd');
+  }
+  if (base.endsWith('y')) forms.add(base.slice(0, -1) + 'ies');
+  (irregular[normalizeWordV2(word)] || []).forEach(form => forms.add(form.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  return new RegExp('\\b(' + [...forms].sort((a,b) => b.length - a.length).join('|') + ')\\b', 'i');
+}
+
+function makeWordV2BlankExample(word, example) {
+  const text = String(example || '');
+  const pattern = getWordV2BlankPattern(word);
+  if (!text || !pattern || !pattern.test(text)) return '';
+  return text.replace(pattern, '_____');
+}
+
 function buildWordV2Questions(words, state, testType='PRACTICE') {
   return shuffle(words).map((word, index) => {
-    const types = word.example ? ['MEANING_TO_WORD','WORD_TO_MEANING','EXAMPLE_BLANK'] : ['MEANING_TO_WORD','WORD_TO_MEANING'];
+    const blanked = makeWordV2BlankExample(word.word, word.example);
+    const types = blanked ? ['MEANING_TO_WORD','WORD_TO_MEANING','EXAMPLE_BLANK'] : ['MEANING_TO_WORD','WORD_TO_MEANING'];
     const questionType = types[index % types.length];
-    const blanked = (word.example || '').replace(new RegExp('\\b' + word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'ig'), '_____');
     const choices = questionType === 'WORD_TO_MEANING' ? wordV2Options(word, state) : questionType === 'EXAMPLE_BLANK' ? wordV2BlankOptions(word, state) : [];
     return {
       id:'wv2q-' + Date.now() + '-' + index + '-' + Math.random().toString(16).slice(2),
       wordId:word.id,
       word:word.word,
       meaningKo:word.meaningKo,
-      example:blanked || word.example || '',
+      example:questionType === 'EXAMPLE_BLANK' ? blanked : (word.example || ''),
       exampleKo:word.exampleKo || '',
       questionType,
       questionOrder:index + 1,
@@ -3605,11 +3669,11 @@ function renderWordV2Screen() {
   const weekBtn = document.getElementById('wv2-weekly-btn');
   const isSunday = new Date(today + 'T00:00:00').getDay() === 0;
   if (weekCard) weekCard.style.display = isSunday ? 'block' : 'none';
-  setText('wv2-week-sub', '이번 주 시험 단어 ' + weeklyWords.length + '개');
+  setText('wv2-week-sub', '이번 주말 시험 단어 ' + weeklyWords.length + '개');
   if (weekBtn) {
     const retryWeeklyWords = weekly?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, weekly) : weeklyWords;
     weekBtn.disabled = !isSunday || retryWeeklyWords.length === 0;
-    weekBtn.textContent = !isSunday ? '일요일 주간시험' : weekly?.status === 'COMPLETED' ? '주간시험 다시 풀기' : '주간시험';
+    weekBtn.textContent = !isSunday ? '일요일 주말시험' : weekly?.status === 'COMPLETED' ? '주말시험 다시 풀기' : '주말시험';
   }
   renderWordV2RegisterState();
   document.querySelectorAll('.wv2-flow-chip').forEach((chip, index) => {
@@ -3640,7 +3704,7 @@ function renderWordV2List(state) {
     tests.slice(0, 20).forEach(test => {
       const div = document.createElement('div');
       div.className = 'wv2-word';
-      div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${test.testType === 'WEEKLY' ? '주간시험' : '오늘의 시험'} · ${test.testDate}</div><div class="wv2-word-ko">${test.status} · ${test.correctCount || 0}/${test.totalQuestions || 0}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${Math.round(((test.correctCount||0)/(test.totalQuestions||1))*100)}%</span><button class="wv2-delete" title="시험 결과 삭제" onclick="deleteWordV2Test('${escapeV2Text(test.id)}')">×</button></div></div>`;
+      div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${test.testType === 'WEEKLY' ? '주말시험' : '오늘의 시험'} · ${test.testDate}</div><div class="wv2-word-ko">${test.status} · ${test.correctCount || 0}/${test.totalQuestions || 0}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${Math.round(((test.correctCount||0)/(test.totalQuestions||1))*100)}%</span><button class="wv2-delete" title="시험 결과 삭제" onclick="deleteWordV2Test('${escapeV2Text(test.id)}')">×</button></div></div>`;
       list.appendChild(div);
     });
     return;
@@ -3736,7 +3800,7 @@ function deleteWordV2Test(testId) {
   const state = loadWordV2State();
   const test = state.tests?.[testId];
   if (!test) return;
-  const label = (test.testType === 'WEEKLY' ? '주간시험' : '오늘의 시험') + ' · ' + test.testDate;
+  const label = (test.testType === 'WEEKLY' ? '주말시험' : '오늘의 시험') + ' · ' + test.testDate;
   if (!confirm(label + ' 결과를 삭제하고 다시 공식 테스트를 볼 수 있게 할까요?')) return;
   delete state.tests[testId];
   recalcWordV2ReviewState(state);
@@ -3785,6 +3849,16 @@ function showWordV2Quiz() {
   document.getElementById('wv2-review-overlay')?.classList.remove('show');
   document.getElementById('wv2-home').style.display = 'none';
   document.getElementById('wv2-quiz').style.display = 'block';
+  const kind = document.getElementById('wv2-quiz-kind');
+  if (kind && wordV2Session) {
+    kind.textContent = wordV2Session.mode === 'WEEKLY'
+      ? '주말시험'
+      : wordV2Session.mode === 'DAILY'
+        ? '시험'
+        : wordV2Session.mode === 'review'
+          ? '복습'
+          : '예습';
+  }
   renderWordV2Question();
 }
 
