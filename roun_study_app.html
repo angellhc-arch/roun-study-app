@@ -651,9 +651,10 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div class="v2-card-title">🐸 로운이의 계획 달성 규칙</div>
       <div class="v2-small" style="margin-top:8px">
         🌙 내일 할 일을 5개 이상 정해요. 계획을 다 만들면 💰 +1,000원<br>
-        ✅ 계획 하나를 끝낼 때마다 💰 +500원<br>
-        🎉 오늘 계획을 전부 성공하면 완료 보상의 +50%<br>
-        🚀 모두 성공했을 때 8개 +1,000원, 10개 +2,000원, 12개 이상 +3,000원<br>
+        ✅ 평일은 계획 1개당 +500원, 주말은 1개당 +1,000원<br>
+        🎉 평일에는 전부 성공하면 완료 보상의 +50%<br>
+        🚀 평일 많이 도전: 8개 +1,000원, 10개 +2,000원, 12개 이상 +3,000원<br>
+        🏆 주말 프리미엄: 11개 +2,000원, 12개 +4,000원, 13개 이상 +7,000원<br>
         🔥 10일 +10,000원, 20일 +20,000원, 30일 이후 10일마다 +30,000원
       </div>
     </div>
@@ -2305,6 +2306,7 @@ function addV2PlanItem() {
     createdForDate: dateKey,
   });
   touchV2Plan(day);
+  refreshV2RewardSnapshot(state, dateKey);
   saveV2PlanState(state);
   if (titleEl) titleEl.value = '';
   renderV2Home();
@@ -2316,6 +2318,7 @@ function toggleV2RestDay() {
   const day = getV2Day(state, dateKey);
   day.isRestDay = !day.isRestDay;
   touchV2Plan(day);
+  refreshV2RewardSnapshot(state, dateKey);
   saveV2PlanState(state);
   renderV2Home();
 }
@@ -2328,6 +2331,7 @@ function updateV2Completed(dateKey, itemId, delta) {
   const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(item.completedCount || 0) + delta));
   item.completedCount = next;
   touchV2Record(day);
+  refreshV2RewardSnapshot(state, dateKey);
   saveV2PlanState(state);
   renderV2Home();
 }
@@ -2340,6 +2344,7 @@ function setV2CompletedCount(dateKey, itemId, count) {
   const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(count || 0)));
   item.completedCount = next;
   touchV2Record(day);
+  refreshV2RewardSnapshot(state, dateKey);
   saveV2PlanState(state);
   renderV2Home();
 }
@@ -2354,6 +2359,7 @@ function deleteV2PlanItem(dateKey, itemId) {
   const day = getV2Day(state, dateKey);
   day.items = day.items.filter(item => item.id !== itemId);
   touchV2Plan(day);
+  refreshV2RewardSnapshot(state, dateKey);
   saveV2PlanState(state);
   renderV2Home();
 }
@@ -2376,6 +2382,7 @@ function editV2PlanItem(dateKey, itemId) {
   item.plannedCount = Math.floor(plannedCount);
   item.completedCount = Math.min(Number(item.completedCount || 0), item.plannedCount);
   touchV2Plan(day);
+  refreshV2RewardSnapshot(state, dateKey);
   saveV2PlanState(state);
   renderV2Home();
 }
@@ -2383,18 +2390,13 @@ function editV2PlanItem(dateKey, itemId) {
 function getV2PlanReward(day, dateKey) {
   const planned = getV2PlannedCount(day);
   if (!day || day.isRestDay || planned < 5) return 0;
+  if (isV2Weekend(dateKey)) return 0;
   return 1000;
 }
 
 function getV2CompletedReward(day) {
   if (!day || day.isRestDay) return 0;
-  const nonExercise = (day.items || [])
-    .filter(item => item.categoryKey !== 'exercise')
-    .reduce((sum, item) => sum + Number(item.completedCount || 0), 0);
-  const exercise = Math.min(2, (day.items || [])
-    .filter(item => item.categoryKey === 'exercise')
-    .reduce((sum, item) => sum + Number(item.completedCount || 0), 0));
-  return (nonExercise + exercise) * 500;
+  return getV2RewardCompletedCount(day) * getV2UnitRewardForDate(day.rewardDateKey || getV2TodayKey());
 }
 
 function getV2PlannedCount(day) {
@@ -2403,6 +2405,27 @@ function getV2PlannedCount(day) {
 
 function getV2CompletedCount(day) {
   return (day?.items || []).reduce((sum, item) => sum + Number(item.completedCount || 0), 0);
+}
+
+function isV2Weekend(dateKey) {
+  const date = new Date(dateKey + 'T00:00:00');
+  const day = date.getDay();
+  return day === 0 || day === 6;
+}
+
+function getV2UnitRewardForDate(dateKey) {
+  return isV2Weekend(dateKey) ? 1000 : 500;
+}
+
+function getV2RewardCompletedCount(day) {
+  if (!day || day.isRestDay) return 0;
+  const nonExercise = (day.items || [])
+    .filter(item => item.categoryKey !== 'exercise')
+    .reduce((sum, item) => sum + Number(item.completedCount || 0), 0);
+  const exercise = Math.min(2, (day.items || [])
+    .filter(item => item.categoryKey === 'exercise')
+    .reduce((sum, item) => sum + Number(item.completedCount || 0), 0));
+  return nonExercise + exercise;
 }
 
 function isV2NormalPlan(day) {
@@ -2418,6 +2441,31 @@ function getV2ChallengeBonus(planned) {
   if (planned >= 10) return 2000;
   if (planned >= 8) return 1000;
   return 0;
+}
+
+function getV2WeekendPremium(completed) {
+  if (completed >= 13) return 7000;
+  if (completed === 12) return 4000;
+  if (completed === 11) return 2000;
+  return 0;
+}
+
+function getV2WeekendPremiumText(completed, baseReward, premium) {
+  if (completed >= 13) {
+    return '🏆 주말 최고 보상 달성! 기본 보상 ' + baseReward.toLocaleString() + '원 + 프리미엄 ' + premium.toLocaleString() + '원';
+  }
+  const next = completed < 11 ? 11 : completed < 12 ? 12 : 13;
+  const nextPremium = getV2WeekendPremium(next);
+  const nextTotal = next * 1000 + nextPremium;
+  return (next - completed) + '개 더 달성하면 ' + next + '개 프리미엄 → 총 ' + nextTotal.toLocaleString() + '원';
+}
+
+function getV2PlanCompletionEstimate(day, dateKey) {
+  if (!day || day.isRestDay) return 0;
+  const planned = getV2PlannedCount(day);
+  if (isV2Weekend(dateKey)) return planned * 1000 + getV2WeekendPremium(planned);
+  const base = planned * 500;
+  return base + Math.round(base * 0.5) + getV2ChallengeBonus(planned);
 }
 
 function getV2StreakMilestoneReward(streak) {
@@ -2445,17 +2493,79 @@ function calcV2Streak(state, untilDateKey) {
   return streak;
 }
 
-function calcV2Reward(day, state, dateKey) {
+function calcV2LiveReward(day, state, dateKey) {
   const habitReward = getV2HabitReward(dateKey);
-  if (!day || day.isRestDay) return { total:habitReward.total, planReward:0, completedReward:0, fullBonus:0, challengeBonus:0, streakBonus:0, habitReward };
+  const base = {
+    total:habitReward.total,
+    planReward:0,
+    completedReward:0,
+    fullBonus:0,
+    challengeBonus:0,
+    weekendPremium:0,
+    streakBonus:0,
+    habitReward,
+    unitReward:getV2UnitRewardForDate(dateKey),
+    rewardCompletedCount:0,
+    isWeekend:isV2Weekend(dateKey),
+    premiumText:'',
+  };
+  if (!day || day.isRestDay) return base;
   const planned = getV2PlannedCount(day);
   const planReward = getV2PlanReward(day, dateKey);
-  const completedReward = getV2CompletedReward(day);
+  const rewardCompletedCount = getV2RewardCompletedCount(day);
+  const unitReward = getV2UnitRewardForDate(dateKey);
+  const completedReward = rewardCompletedCount * unitReward;
   const full = isV2FullyComplete(day);
-  const fullBonus = full ? Math.round(completedReward * 0.5) : 0;
-  const challengeBonus = full ? getV2ChallengeBonus(planned) : 0;
+  const weekend = isV2Weekend(dateKey);
+  const fullBonus = !weekend && full ? Math.round(completedReward * 0.5) : 0;
+  const challengeBonus = !weekend && full ? getV2ChallengeBonus(planned) : 0;
+  const weekendPremium = weekend ? getV2WeekendPremium(rewardCompletedCount) : 0;
   const streakBonus = full ? getV2StreakMilestoneReward(calcV2Streak(state, dateKey)) : 0;
-  return { total:planReward + completedReward + fullBonus + challengeBonus + streakBonus + habitReward.total, planReward, completedReward, fullBonus, challengeBonus, streakBonus, habitReward };
+  return {
+    ...base,
+    total:planReward + completedReward + fullBonus + challengeBonus + weekendPremium + streakBonus + habitReward.total,
+    planReward,
+    completedReward,
+    fullBonus,
+    challengeBonus,
+    weekendPremium,
+    streakBonus,
+    unitReward,
+    rewardCompletedCount,
+    premiumText:weekend ? getV2WeekendPremiumText(rewardCompletedCount, completedReward, weekendPremium) : '',
+  };
+}
+
+function getV2StoredReward(day, dateKey) {
+  const snapshot = day?.rewardSnapshot;
+  if (!snapshot || dateKey >= getV2TodayKey()) return null;
+  return {
+    total:Number(snapshot.total || 0),
+    planReward:Number(snapshot.planReward || 0),
+    completedReward:Number(snapshot.completedReward || 0),
+    fullBonus:Number(snapshot.fullBonus || 0),
+    challengeBonus:Number(snapshot.challengeBonus || 0),
+    weekendPremium:Number(snapshot.weekendPremium || 0),
+    streakBonus:Number(snapshot.streakBonus || 0),
+    habitReward:snapshot.habitReward || { total:0, miracle:0, shower:0, milestone:0 },
+    unitReward:Number(snapshot.unitReward || getV2UnitRewardForDate(dateKey)),
+    rewardCompletedCount:Number(snapshot.rewardCompletedCount || getV2CompletedCount(day)),
+    isWeekend:Boolean(snapshot.isWeekend ?? isV2Weekend(dateKey)),
+    premiumText:snapshot.premiumText || '',
+    stored:true,
+  };
+}
+
+function calcV2Reward(day, state, dateKey) {
+  return getV2StoredReward(day, dateKey) || calcV2LiveReward(day, state, dateKey);
+}
+
+function refreshV2RewardSnapshot(state, dateKey) {
+  const day = state?.[dateKey];
+  if (!day) return;
+  day.rewardDateKey = dateKey;
+  day.rewardSnapshot = { ...calcV2LiveReward(day, state, dateKey), savedAt:new Date().toISOString() };
+  delete day.rewardDateKey;
 }
 
 function getV2HabitReward(dateKey) {
@@ -2554,7 +2664,7 @@ function renderV2Home() {
   const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
   setText('v2-sum-planned', planned + '개');
   setText('v2-sum-planned-label', getV2DayLabel(viewDate) + ' 계획');
-  setText('v2-sum-done', completed + ' / ' + planned);
+  setText('v2-sum-done', reward.rewardCompletedCount + ' / ' + planned);
   setText('v2-sum-rate', rate + '%');
   setText('v2-sum-reward', reward.total.toLocaleString() + '원');
   setText('v2-sum-streak', '🔥 ' + streak + '일');
@@ -2577,7 +2687,8 @@ function renderV2Home() {
     editToggle.textContent = _v2PlanEditMode ? '수정 종료' : '계획 수정';
   }
   setText('v2-plan-form-title', _v2PlanEditMode ? '✏️ ' + getV2DayLabel(viewDate) + ' 계획 수정' : '🌙 하루 계획 세우기');
-  setText('v2-plan-form-sub', '선택한 날짜에 계획을 추가해요. 기존 항목은 아래 목록에서 수정하거나 삭제할 수 있어요.');
+  const plannedReward = getV2PlanCompletionEstimate(viewDay, viewDate);
+  setText('v2-plan-form-sub', getV2DayLabel(viewDate) + ' 모두 달성 시 ' + plannedReward.toLocaleString() + '원 예상');
 
   const title = document.getElementById('v2-list-title');
   if (title) title.textContent = '✅ ' + getV2DayLabel(viewDate) + ' 계획 실행';
@@ -2587,16 +2698,25 @@ function renderV2Home() {
 function renderV2RewardLines(reward) {
   const el = document.getElementById('v2-reward-lines');
   if (!el) return;
-  el.innerHTML = `
-    <div class="v2-reward-line"><span>🧪 베타 예상 보상</span><span>${reward.total.toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🌙 계획 작성</span><span>${reward.planReward.toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>✅ 실행 완료</span><span>${reward.completedReward.toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🎉 모두 성공</span><span>${reward.fullBonus.toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🚀 많이 도전</span><span>${reward.challengeBonus.toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🔥 연속 달성</span><span>${reward.streakBonus.toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🌅 미라클 모닝</span><span>${(reward.habitReward?.miracle || 0).toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🚿 아침 샤워</span><span>${(reward.habitReward?.shower || 0).toLocaleString()}원</span></div>
-    <div class="v2-reward-line"><span>🎊 습관 연속 축하금</span><span>${(reward.habitReward?.milestone || 0).toLocaleString()}원</span></div>`;
+  const lines = [
+    ['🧪 선택 날짜 총 보상', reward.total],
+    ['✅ 계획 달성 보상 (' + reward.rewardCompletedCount + '개 × ' + reward.unitReward.toLocaleString() + '원)', reward.completedReward],
+  ];
+  if (reward.isWeekend) {
+    if (reward.weekendPremium > 0) lines.push(['🏆 주말 프리미엄', reward.weekendPremium]);
+    if (reward.premiumText) lines.push([reward.premiumText, null]);
+  } else {
+    lines.splice(1, 0, ['🌙 계획 작성', reward.planReward]);
+    lines.push(['🎉 모두 성공', reward.fullBonus]);
+    lines.push(['🚀 많이 도전', reward.challengeBonus]);
+    lines.push(['🔥 연속 달성', reward.streakBonus]);
+  }
+  lines.push(['🌅 미라클 모닝', reward.habitReward?.miracle || 0]);
+  lines.push(['🚿 아침 샤워', reward.habitReward?.shower || 0]);
+  lines.push(['🎊 습관 연속 축하금', reward.habitReward?.milestone || 0]);
+  el.innerHTML = lines.map(([label, amount]) =>
+    `<div class="v2-reward-line"><span>${escapeV2Text(label)}</span><span>${amount === null ? '' : Number(amount || 0).toLocaleString() + '원'}</span></div>`
+  ).join('');
 }
 
 function renderV2TodayList(day, dateKey) {
@@ -2611,6 +2731,7 @@ function renderV2TodayList(day, dateKey) {
     return;
   }
   list.innerHTML = '';
+  const unitReward = getV2UnitRewardForDate(dateKey);
   day.items.forEach(item => {
     const cat = V2_CATEGORIES[item.categoryKey] || { icon:'✏️', label:item.category || '기타' };
     const done = Number(item.completedCount || 0);
@@ -2622,7 +2743,7 @@ function renderV2TodayList(day, dateKey) {
         <div class="v2-cat">${cat.icon}</div>
         <div class="v2-item-main">
           <div class="v2-item-title">${escapeV2Text(item.title)}</div>
-          <div class="v2-item-sub">${item.unitMinutes}분 · 계획 ${planned}회 · 완료 ${done} / ${planned}</div>
+          <div class="v2-item-sub">${item.unitMinutes}분 · 계획 ${planned}회 · 완료 ${done} / ${planned} · 달성 시 +${unitReward.toLocaleString()}원</div>
         </div>
       </div>
       <div class="v2-check-grid">
@@ -2637,12 +2758,16 @@ function renderV2TodayList(day, dateKey) {
 }
 
 function v2PayloadForDate(dateKey, day) {
+  const state = loadV2PlanState();
+  refreshV2RewardSnapshot(state, dateKey);
+  const snapshot = state[dateKey]?.rewardSnapshot || calcV2LiveReward(day, state, dateKey);
   return {
     version: 1,
     date: dateKey,
     isRestDay: Boolean(day?.isRestDay),
     items: (day?.items || []),
-    reward: calcV2Reward(day, loadV2PlanState(), dateKey),
+    reward: snapshot,
+    rewardSnapshot: snapshot,
     updatedAt: day?.updatedAt || null,
     planUpdatedAt: day?.planUpdatedAt || day?.updatedAt || null,
   };
@@ -2679,7 +2804,7 @@ async function syncV2DayToSupabase(dateKey, day) {
     headers:{ Prefer:'return=minimal' },
     body:JSON.stringify({
       date: dateKey,
-      completed_count: getV2CompletedCount(day),
+      completed_count: Number(payload.rewardSnapshot?.rewardCompletedCount || getV2RewardCompletedCount(day)),
       reward_amount: payload.reward.total,
       memo: SUPABASE_V2_SOURCE + '; day=' + encodeURIComponent(JSON.stringify(payload)),
     }),
@@ -2715,6 +2840,7 @@ async function syncV2FromSupabase() {
         local[row.date] = {
           isRestDay: Boolean(payload.isRestDay),
           items: Array.isArray(payload.items) ? payload.items : [],
+          rewardSnapshot: payload.rewardSnapshot || payload.reward || null,
           updatedAt: payload.updatedAt || null,
           planUpdatedAt: payload.planUpdatedAt || payload.updatedAt || null,
         };
