@@ -3074,6 +3074,32 @@ function calcAlbaMonthCount(yr, mo) {
       return y === yr && m === mo;
     }).length;
 }
+
+function getAlbaItemsForDate(dateKey) {
+  const state = loadAlbaState();
+  return (state.todayItems || [])
+    .map(item => ({ ...item, date:normalizeDate(item.date) }))
+    .filter(item => item.date === dateKey);
+}
+
+function getAlbaRewardForDate(dateKey) {
+  return getAlbaItemsForDate(dateKey)
+    .filter(item => item.done)
+    .reduce((sum, item) => sum + Number(item.totalReward || 0), 0);
+}
+
+function renderAlbaRewardDetail(parent, dateKey) {
+  const doneItems = getAlbaItemsForDate(dateKey).filter(item => item.done);
+  if (!doneItems.length) return false;
+  const total = doneItems.reduce((sum, item) => sum + Number(item.totalReward || 0), 0);
+  appendDayDetailLine(parent, '💼 알바 보상 합계', total, { bg:'#DCFCE7', color:'#166534', amountColor:'#15803D' });
+  doneItems.forEach(item => {
+    const label = (item.emoji ? item.emoji + ' ' : '') + (item.label || '알바');
+    appendDayDetailLine(parent, label, item.totalReward || 0, { bg:'#F0FDF4', color:'#166534', amountColor:'#15803D' });
+  });
+  return true;
+}
+
 function calcSessions() {
   let s=0;
   ['math1','math2','eng1','eng2','flex','read1','read2','exercise'].forEach(k=>{
@@ -3358,7 +3384,7 @@ function renderHistory(){
       const dayTotal=doneItems.reduce((s,i)=>s+(i.totalReward||0),0);
       const card=document.createElement('div');
       card.className='hist-day-card '+(doneItems.length>0?'complete':'partial');
-      card.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:13px 14px">
+      card.innerHTML=`<div onclick="openDayDetail('${dateKey}')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer">
         <div style="width:46px;height:46px;border-radius:50%;background:#DCFCE7;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
           <div style="font-size:9px;font-weight:800;color:#15803D">${dow}</div>
           <div style="font-size:19px;font-weight:900;color:#15803D;line-height:1">${id}</div>
@@ -3472,15 +3498,17 @@ function openDayDetail(key){
   const v2State=loadV2PlanState();
   const hasPlan=hasV2Plan(v2State[key]);
   const v2Reward=getV2RewardForStats(key,v2State);
+  const albaReward=getAlbaRewardForDate(key);
   const[y,m,dn]=key.split('-').map(Number);
   const date=new Date(y,m-1,dn);
   const dow=['일','월','화','수','목','금','토'][date.getDay()];
   document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';
-  const dayReward=(d?.reward||0)+v2Reward;
+  const dayReward=(d?.reward||0)+v2Reward+albaReward;
   document.getElementById('detail-reward').textContent=dayReward>0?dayReward.toLocaleString()+'원':'0원';
   const items=document.getElementById('detail-items');
   items.innerHTML='';
   renderPlanRewardDetail(items,key);
+  renderAlbaRewardDetail(items,key);
   (d?.streakBonuses||[]).forEach(bonus=>{
     const div=document.createElement('div');
     div.className='detail-item';
@@ -3490,7 +3518,7 @@ function openDayDetail(key){
   });
   Object.entries(TASK_NAMES).forEach(([k,name])=>{
     const done=d?d.completed.includes(k):false;
-    if(hasPlan && !done) return;
+    if((hasPlan || !d) && !done) return;
     const subj=SUBJ_MAP[k];
     const div=document.createElement('div');
     div.className='detail-item';
