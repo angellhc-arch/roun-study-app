@@ -1651,6 +1651,12 @@ async function deleteRowsBySource(table, source) {
   await Promise.all((rows || []).map(row => supabaseRequest(table + '?id=eq.' + encodeURIComponent(row.id), { method:'DELETE' })));
 }
 
+async function deleteRowsByMemoPrefix(table, prefix) {
+  const rows = await supabaseRequest(table + '?select=id,memo');
+  const targetRows = (rows || []).filter(row => String(row.memo || '').startsWith(prefix));
+  await Promise.all(targetRows.map(row => supabaseRequest(table + '?id=eq.' + encodeURIComponent(row.id), { method:'DELETE' })));
+}
+
 async function syncWordsToSupabase(words) {
   await deleteSourceRows('words');
   const rows = (words || []).filter(word => word?.word).map(word => ({
@@ -1688,7 +1694,7 @@ async function syncWordV2ToSupabase(state) {
     word: '__word_v2_state__',
     meaning: '',
     example: '',
-    translation: JSON.stringify({ tests:completedTests, updatedAt:new Date().toISOString() }),
+    translation: JSON.stringify({ tests:completedTests, rewardLedger:state?.rewardLedger || {}, updatedAt:new Date().toISOString() }),
     source: WORD_V2_SOURCE,
   });
   if (words.length) await supabaseRequest('words', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(words) });
@@ -1701,6 +1707,18 @@ async function syncWordV2ToSupabase(state) {
     source: WORD_V2_SOURCE,
   }));
   if (sessions.length) await supabaseRequest('word_game_sessions', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(sessions) });
+  await syncWordV2RewardsToSupabase(state);
+}
+
+async function syncWordV2RewardsToSupabase(state) {
+  await deleteRowsByMemoPrefix('rewards', WORD_V2_SOURCE);
+  const rows = getWordV2RewardRecords(state).map(record => ({
+    date:record.examDate,
+    completed_count:Number(record.correctCount || 0),
+    reward_amount:Number(record.rewardAmount || 0),
+    memo:WORD_V2_SOURCE + '; exam_id=' + encodeURIComponent(record.examId) + '; exam_type=' + encodeURIComponent(record.examType) + '; score=' + Number(record.score || 0) + '; total=' + Number(record.totalCount || 0) + '; granted_at=' + encodeURIComponent(record.rewardGrantedAt || ''),
+  }));
+  if (rows.length) await supabaseRequest('rewards', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(rows) });
 }
 
 async function syncWordV2FromSupabase() {
@@ -1713,6 +1731,7 @@ async function syncWordV2FromSupabase() {
       try {
         const snapshot = JSON.parse(stateRow.translation || '{}') || {};
         if (snapshot.tests) local.tests = { ...(local.tests || {}), ...snapshot.tests };
+        if (snapshot.rewardLedger) local.rewardLedger = { ...(local.rewardLedger || {}), ...snapshot.rewardLedger };
       } catch (_) {}
     }
     const localById = new Map((local.words || []).map(word => [String(word.id), word]));
@@ -1738,6 +1757,7 @@ async function syncWordV2FromSupabase() {
       };
     });
     local.words = words;
+    local.rewardLedger = local.rewardLedger || {};
     localStorage.setItem(WORD_V2_STORE_KEY, JSON.stringify(local));
   } catch (error) {
     console.warn('Supabase 단어게임 v2 불러오기 실패', error);
@@ -2816,17 +2836,18 @@ function renderV2Home() {
   const completed = getV2CompletedCount(viewDay);
   const rate = planned ? Math.round(completed / planned * 100) : 0;
   const reward = calcV2Reward(viewDay, state, viewDate);
+  const wordReward = getWordV2RewardForDate(viewDate);
   const streak = calcV2Streak(state, viewDate);
   const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
   setText('v2-sum-planned', planned + '개');
   setText('v2-sum-planned-label', getV2DayLabel(viewDate) + ' 계획');
   setText('v2-sum-done', reward.rewardCompletedCount + ' / ' + planned);
   setText('v2-sum-rate', rate + '%');
-  setText('v2-sum-reward', reward.total.toLocaleString() + '원');
+  setText('v2-sum-reward', (Number(reward.total || 0) + wordReward).toLocaleString() + '원');
   setText('v2-sum-streak', '🔥 ' + streak + '일');
   setText('v2-edit-meta', '계획 마지막 수정: ' + formatV2DateTime(viewDay.planUpdatedAt || viewDay.updatedAt));
   document.getElementById('v2-complete-banner')?.classList.toggle('show', isV2FullyComplete(viewDay));
-  renderV2RewardLines(reward);
+  renderV2RewardLines(reward, wordReward);
   renderV2Habits();
   updateV2NotificationButton();
 
@@ -2852,11 +2873,11 @@ function renderV2Home() {
   renderV2TodayList(viewDay, viewDate);
 }
 
-function renderV2RewardLines(reward) {
+function renderV2RewardLines(reward, wordReward=0) {
   const el = document.getElementById('v2-reward-lines');
   if (!el) return;
   const lines = [
-    ['🧪 선택 날짜 총 보상', reward.total],
+    ['🧪 선택 날짜 총 보상', Number(reward.total || 0) + Number(wordReward || 0)],
     ['✅ 계획 달성 보상 (' + reward.rewardCompletedCount + '개 × ' + reward.unitReward.toLocaleString() + '원)', reward.completedReward],
   ];
   if (reward.isWeekend) {
@@ -2871,6 +2892,7 @@ function renderV2RewardLines(reward) {
   lines.push(['🌅 미라클 모닝', reward.habitReward?.miracle || 0]);
   lines.push(['🚿 아침 샤워', reward.habitReward?.shower || 0]);
   lines.push(['🎊 습관 연속 축하금', reward.habitReward?.milestone || 0]);
+  if (wordReward > 0) lines.push(['🔤 단어시험 보상', wordReward]);
   el.innerHTML = lines.map(([label, amount]) =>
     `<div class="v2-reward-line"><span>${escapeV2Text(label)}</span><span>${amount === null ? '' : Number(amount || 0).toLocaleString() + '원'}</span></div>`
   ).join('');
@@ -3049,7 +3071,7 @@ function calcStreak(history, today) {
   return streak;
 }
 function calcTotalAccum(history) {
-  return Object.values(history).reduce((sum,r) => sum + (r.reward||0), 0) + getV2TotalRewardForStats();
+  return Object.values(history).reduce((sum,r) => sum + (r.reward||0), 0) + getV2TotalRewardForStats() + getWordV2TotalRewardForStats();
 }
 
 // 이달 알바 누적 보상 계산
@@ -3100,6 +3122,16 @@ function renderAlbaRewardDetail(parent, dateKey) {
   return true;
 }
 
+function renderWordV2RewardDetail(parent, dateKey) {
+  const records = getWordV2RewardRecords().filter(record => record.examDate === dateKey);
+  if (!records.length) return false;
+  records.forEach(record => {
+    const label = '🔤 ' + record.rewardType + ' · ' + record.score + '점 · ' + record.correctCount + '/' + record.totalCount;
+    appendDayDetailLine(parent, label, record.rewardAmount || 0, { bg:'#F5F3FF', color:'#5B21B6', amountColor:'#6D28D9' });
+  });
+  return true;
+}
+
 function calcSessions() {
   let s=0;
   ['math1','math2','eng1','eng2','flex','read1','read2','exercise'].forEach(k=>{
@@ -3125,6 +3157,7 @@ function calcReward() {
   const s=calcSessions(); let base=s>=7?5000:s===6?4000:s*500; let bonus=0; const chips=[];
   const writeReward=WE?2000:1000;
   const _st=loadState(); const _h=_st?.history||{}; const today=getTestDate();
+  const todayKey=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
   const mStreak=calcHabitStreak('miracle',_h,today);
   const sStreak=calcHabitStreak('shower',_h,today);
   const mBonus=getMiracleBonus();
@@ -3140,13 +3173,14 @@ function calcReward() {
   if(tasks.write.done){bonus+=writeReward;chips.push({t:'✏️ 글쓰기 +'+writeReward.toLocaleString()+'원',c:'g'});}
   const extraDone=extraItems.filter(e=>e.done).length; const extraBonus=extraDone*2000;
   if(extraDone>0){bonus+=extraBonus;chips.push({t:'⚡ 추가공부 '+extraDone+'회 +'+extraBonus.toLocaleString()+'원',c:'g'});}
-  const total=base+bonus;
+  const todayWordReward=getWordV2RewardForDate(todayKey);
+  const total=base+bonus+todayWordReward;
   document.getElementById('today-reward').textContent=total.toLocaleString()+'원';
   document.getElementById('today-status').textContent='학습 '+s+'/7회\n기본 '+base.toLocaleString()+'원';
   const ce=document.getElementById('reward-chips'); ce.innerHTML='';
   if(base>0){const c=document.createElement('div');c.className='rchip p';c.textContent='기본 '+base.toLocaleString()+'원';ce.appendChild(c);}
+  if(todayWordReward>0){const c=document.createElement('div');c.className='rchip p';c.textContent='단어시험 +'+todayWordReward.toLocaleString()+'원';ce.appendChild(c);}
   chips.forEach(ch=>{const c=document.createElement('div');c.className='rchip '+ch.c;c.textContent=ch.t;ce.appendChild(c);});
-  const todayKey=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
   const pastStudyAccum=Object.entries(_h)
     .filter(([k])=>{
       if(k===todayKey || !/^\d{4}-\d{2}-\d{2}$/.test(k)) return false;
@@ -3154,7 +3188,7 @@ function calcReward() {
       return year===today.getFullYear() && month===today.getMonth()+1;
     })
     .reduce((sum,[,r])=>sum+(r.reward||0),0);
-  const studyAccum = pastStudyAccum + total;
+  const studyAccum = pastStudyAccum + total + getWordV2MonthRewardForStats(today.getFullYear(), today.getMonth()+1) - todayWordReward;
   const albaAccum = calcAlbaMonthAccum(today.getFullYear(), today.getMonth()+1);
   document.getElementById('accum-reward').textContent=(studyAccum+albaAccum).toLocaleString()+'원';
   const saEl=document.getElementById('accum-study'); if(saEl)saEl.textContent=studyAccum.toLocaleString()+'원';
@@ -3308,6 +3342,10 @@ const as=loadAlbaState();(as.todayItems||[]).forEach(i=>{
   const[iy,im]=nd.split('-').map(Number);if(!iy||!im)return;
   const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}
 });
+getWordV2RewardRecords().forEach(record=>{
+  const[iy,im]=String(record.examDate||'').split('-').map(Number);if(!iy||!im)return;
+  const k=iy+'-'+im;if(!seen.has(k)){seen.add(k);res.push(k);}
+});
 const v2State=loadV2PlanState();Object.keys(v2State).forEach(dateKey=>{
   if(!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)||!hasV2Plan(v2State[dateKey]))return;
   const[iy,im]=dateKey.split('-').map(Number);if(!iy||!im)return;
@@ -3354,7 +3392,8 @@ function renderHistory(){
 
   // 월 요약
   const v2MonthReward=getV2MonthRewardForStats(y,mo);
-  const studyReward=filtered.reduce((a,b)=>a+b.reward,0)+v2MonthReward;
+  const wordMonthReward=getWordV2MonthRewardForStats(y,mo);
+  const studyReward=filtered.reduce((a,b)=>a+b.reward,0)+v2MonthReward+wordMonthReward;
   const v2StateForMonth=loadV2PlanState();
   const completeDays=filtered.filter(d=>d.status==='complete'||isV2FullyComplete(v2StateForMonth[d.key])).length;
   const albaMonthReward=calcAlbaMonthAccum(y,mo);
@@ -3409,22 +3448,25 @@ function renderHistory(){
     const albaDayReward=albaDayItems.filter(i=>i.done).reduce((s,i)=>s+(i.totalReward||0),0);
     const hasAlba=albaDayItems.length>0;
     const v2DayReward=getV2RewardForStats(d.key);
-    const totalDayReward=d.reward+v2DayReward+albaDayReward;
+    const wordDayRecords=getWordV2RewardRecords().filter(record=>record.examDate===d.key);
+    const wordDayReward=getWordV2RewardForDate(d.key);
+    const totalDayReward=d.reward+v2DayReward+wordDayReward+albaDayReward;
 
     // 완전히 빈 날은 스킵
-    if(d.status==='empty'&&!hasAlba&&v2DayReward<=0)return;
+    if(d.status==='empty'&&!hasAlba&&v2DayReward<=0&&wordDayRecords.length===0)return;
     // 학습 필터: 알바만 있고 학습 없으면 스킵
-    if(histFilter==='study'&&d.status==='empty'&&v2DayReward<=0)return;
+    if(histFilter==='study'&&d.status==='empty'&&v2DayReward<=0&&wordDayRecords.length===0)return;
 
     const dow=['일','월','화','수','목','금','토'][d.date.getDay()];
     const dn=d.date.getDate();
     const isToday=d.date.toDateString()===getTestDate().toDateString();
     const dotBg=d.status==='complete'?'#EDE9FE':d.status==='partial'?'#FEF3C7':'#F3F4F6';
     const dotClr=d.status==='complete'?'var(--purple)':d.status==='partial'?'#D97706':'var(--muted)';
-    const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':v2DayReward>0?'🧪 계획 기록':'기록 없음';
+    const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':v2DayReward>0?'🧪 계획 기록':wordDayRecords.length?'🔤 단어시험 보상':'기록 없음';
     const rewardBits=[];
     if(d.reward>0)rewardBits.push(`<span style="background:#EDE9FE;color:var(--purple);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">📚 ${d.reward.toLocaleString()}원</span>`);
     if(v2DayReward>0)rewardBits.push(`<span style="background:#F0F9FF;color:#0369A1;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">🧪 계획 ${v2DayReward.toLocaleString()}원</span>`);
+    if(wordDayRecords.length)rewardBits.push(`<span style="background:#F5F3FF;color:#6D28D9;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">🔤 단어 ${wordDayReward.toLocaleString()}원</span>`);
     (d.streakBonuses||[]).forEach(bonus=>rewardBits.push(`<span style="background:#FFF7ED;color:#C2410C;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:900">🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클':'샤워'} ${bonus.streakDays}일 +${Number(bonus.reward).toLocaleString()}원</span>`));
     if(albaDayReward>0)rewardBits.push(`<span style="background:#DCFCE7;color:#15803D;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">💼 ${albaDayReward.toLocaleString()}원</span>`);
     const subjCounts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];subjCounts[s]=(subjCounts[s]||0)+1;});
@@ -3498,16 +3540,18 @@ function openDayDetail(key){
   const v2State=loadV2PlanState();
   const hasPlan=hasV2Plan(v2State[key]);
   const v2Reward=getV2RewardForStats(key,v2State);
+  const wordReward=getWordV2RewardForDate(key);
   const albaReward=getAlbaRewardForDate(key);
   const[y,m,dn]=key.split('-').map(Number);
   const date=new Date(y,m-1,dn);
   const dow=['일','월','화','수','목','금','토'][date.getDay()];
   document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';
-  const dayReward=(d?.reward||0)+v2Reward+albaReward;
+  const dayReward=(d?.reward||0)+v2Reward+wordReward+albaReward;
   document.getElementById('detail-reward').textContent=dayReward>0?dayReward.toLocaleString()+'원':'0원';
   const items=document.getElementById('detail-items');
   items.innerHTML='';
   renderPlanRewardDetail(items,key);
+  renderWordV2RewardDetail(items,key);
   renderAlbaRewardDetail(items,key);
   (d?.streakBonuses||[]).forEach(bonus=>{
     const div=document.createElement('div');
@@ -3593,7 +3637,7 @@ function updateStatsScreen(){
   const v2State=loadV2PlanState();
   const todayKey=getV2TodayKey();
   const streak=calcV2Streak(v2State,todayKey);
-  const monthReward=getV2MonthRewardForStats(yr,mo);
+  const monthReward=getV2MonthRewardForStats(yr,mo)+getWordV2MonthRewardForStats(yr,mo);
   const monthSessions=calcV2MonthCompletedCount(v2State,yr,mo);
   const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';
   const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';
@@ -3708,15 +3752,17 @@ function loadWordV2State() {
     state.words = Array.isArray(state.words) ? state.words : [];
     state.tests = state.tests || {};
     state.tests = Object.fromEntries(Object.entries(state.tests).filter(([, test]) => test?.status === 'COMPLETED'));
+    state.rewardLedger = state.rewardLedger || {};
     return state;
   } catch (_) {
-    return { words:[], tests:{} };
+    return { words:[], tests:{}, rewardLedger:{} };
   }
 }
 
 function saveWordV2State(state) {
-  const nextState = state || { words:[], tests:{} };
+  const nextState = state || { words:[], tests:{}, rewardLedger:{} };
   nextState.tests = Object.fromEntries(Object.entries(nextState.tests || {}).filter(([, test]) => test?.status === 'COMPLETED'));
+  nextState.rewardLedger = nextState.rewardLedger || {};
   localStorage.setItem(WORD_V2_STORE_KEY, JSON.stringify(nextState));
   syncAuxiliaryDataToSupabase();
 }
@@ -4053,6 +4099,96 @@ function getWordV2DailyTestForDate(state, dateKey) {
   return state.tests?.[getWordV2TestId('DAILY', dateKey)] || null;
 }
 
+function getWordV2Score(correct, total) {
+  return Math.round(getWordV2ScoreValue(correct, total));
+}
+
+function getWordV2ScoreValue(correct, total) {
+  if (!Number(total)) return 0;
+  return (Number(correct || 0) / Number(total)) * 100;
+}
+
+function getWordV2ExamRewardAmount(type, score) {
+  const value = Number(score || 0);
+  if (type === 'WEEKLY') {
+    if (value >= 100) return 10000;
+    if (value >= 95) return 7000;
+    if (value >= 90) return 5000;
+    if (value >= 80) return 3000;
+    return 0;
+  }
+  if (value >= 100) return 1000;
+  if (value >= 90) return 600;
+  if (value >= 80) return 400;
+  return 0;
+}
+
+function getWordV2ExamRewardLabel(type) {
+  return type === 'WEEKLY' ? '주말 단어 종합시험' : '평일 단어시험';
+}
+
+function buildWordV2ExamReward(test, completedAt) {
+  const score = getWordV2Score(test.correctCount, test.totalQuestions);
+  const rewardAmount = getWordV2ExamRewardAmount(test.testType, getWordV2ScoreValue(test.correctCount, test.totalQuestions));
+  return {
+    examId:test.id,
+    examType:test.testType,
+    examDate:test.testDate,
+    rewardType:getWordV2ExamRewardLabel(test.testType),
+    score,
+    correctCount:Number(test.correctCount || 0),
+    totalCount:Number(test.totalQuestions || 0),
+    rewardAmount,
+    rewardGranted:rewardAmount > 0,
+    rewardGrantedAt:completedAt,
+  };
+}
+
+function grantWordV2ExamReward(state, test, completedAt) {
+  state.rewardLedger = state.rewardLedger || {};
+  const existing = state.rewardLedger[test.id];
+  if (existing) return existing;
+  const reward = buildWordV2ExamReward(test, completedAt);
+  state.rewardLedger[test.id] = reward;
+  return reward;
+}
+
+function getWordV2RewardRecords(state=loadWordV2State()) {
+  const ledgerRecords = Object.values(state.rewardLedger || {});
+  const testRecords = Object.values(state.tests || {}).map(test => test.examReward).filter(Boolean);
+  const byId = new Map();
+  [...ledgerRecords, ...testRecords].forEach(record => {
+    if (!record?.examId || !record?.examDate) return;
+    byId.set(record.examId, {
+      ...record,
+      rewardAmount:Number(record.rewardAmount || 0),
+      score:Number(record.score || 0),
+      correctCount:Number(record.correctCount || 0),
+      totalCount:Number(record.totalCount || 0),
+    });
+  });
+  return [...byId.values()];
+}
+
+function getWordV2RewardForDate(dateKey, state=loadWordV2State()) {
+  return getWordV2RewardRecords(state)
+    .filter(record => record.examDate === dateKey)
+    .reduce((sum, record) => sum + Number(record.rewardAmount || 0), 0);
+}
+
+function getWordV2TotalRewardForStats(state=loadWordV2State()) {
+  return getWordV2RewardRecords(state).reduce((sum, record) => sum + Number(record.rewardAmount || 0), 0);
+}
+
+function getWordV2MonthRewardForStats(year, month, state=loadWordV2State()) {
+  return getWordV2RewardRecords(state)
+    .filter(record => {
+      const [y, m] = String(record.examDate || '').split('-').map(Number);
+      return y === year && m === month;
+    })
+    .reduce((sum, record) => sum + Number(record.rewardAmount || 0), 0);
+}
+
 function getWordV2CountsForDate(state, dateKey) {
   const registered = getWordV2WordsForDate(state, dateKey).length;
   const preview = getWordV2NewWords(state, Infinity, dateKey).length;
@@ -4341,7 +4477,10 @@ function renderWordV2List(state) {
     tests.slice(0, 20).forEach(test => {
       const div = document.createElement('div');
       div.className = 'wv2-word';
-      div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${test.testType === 'WEEKLY' ? '주말시험' : '오늘의 시험'} · ${test.testDate}</div><div class="wv2-word-ko">${test.status} · ${test.correctCount || 0}/${test.totalQuestions || 0}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${Math.round(((test.correctCount||0)/(test.totalQuestions||1))*100)}%</span><button class="wv2-delete" title="시험 결과 삭제" onclick="deleteWordV2Test('${escapeV2Text(test.id)}')">×</button></div></div>`;
+      const reward = test.examReward || state.rewardLedger?.[test.id] || null;
+      const score = getWordV2Score(test.correctCount, test.totalQuestions);
+      const rewardText = reward ? ' · +' + Number(reward.rewardAmount || 0).toLocaleString() + '원' : '';
+      div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${test.testType === 'WEEKLY' ? '주말 단어 종합시험' : '평일 단어시험'} · ${test.testDate}</div><div class="wv2-word-ko">${test.status} · ${test.correctCount || 0}/${test.totalQuestions || 0}${rewardText}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${score}점</span><button class="wv2-delete" title="시험 결과 삭제" onclick="deleteWordV2Test('${escapeV2Text(test.id)}')">×</button></div></div>`;
       list.appendChild(div);
     });
     return;
@@ -4650,6 +4789,8 @@ function nextWordV2Question() {
 function finishWordV2Session() {
   const correct = wordV2Session.questions.filter(q => q.isCorrect).length;
   const total = wordV2Session.questions.length;
+  let examReward = null;
+  let isRewardOfficial = false;
   if (!wordV2Session.practice && wordV2Session.official) {
     const state = loadWordV2State();
     const completedAt = new Date().toISOString();
@@ -4662,17 +4803,31 @@ function finishWordV2Session() {
       questions:wordV2Session.questions,
       completedAt,
     };
+    examReward = grantWordV2ExamReward(state, test, completedAt);
+    test.examReward = examReward;
+    test.rewardAmount = Number(examReward.rewardAmount || 0);
+    test.rewardGranted = true;
+    isRewardOfficial = true;
     wordV2Session.questions.forEach(q => applyWordV2ReviewResult(state, q, test));
     state.tests[wordV2Session.testId] = test;
     if (test.testType === 'DAILY') wordV2ReviewDate = test.testDate;
     saveWordV2State(state);
+  } else if (!wordV2Session.practice) {
+    const state = loadWordV2State();
+    examReward = state.rewardLedger?.[wordV2Session.testId] || wordV2Session.test?.examReward || null;
   }
   const fb = document.getElementById('wv2-feedback');
   document.getElementById('wv2-quiz-fill').style.width = '100%';
   document.getElementById('wv2-answer-area').style.display = 'none';
   document.getElementById('wv2-choice-area').style.display = 'none';
   fb.className = 'game-feedback correct show';
-  fb.innerHTML = `<div class="game-feedback-emoji">🏁</div><div class="game-feedback-msg">완료! ${correct} / ${total}</div>`;
+  const score = getWordV2Score(correct, total);
+  const rewardAmount = Number(examReward?.rewardAmount || 0);
+  const rewardLabel = wordV2Session.mode === 'WEEKLY' ? '이번 시험 보상' : '오늘 단어시험 보상';
+  const rewardHtml = !wordV2Session.practice
+    ? `<div class="game-feedback-xp">${isRewardOfficial ? rewardLabel : '최초 시험 보상 고정'}<br>+${rewardAmount.toLocaleString()}원</div>`
+    : '';
+  fb.innerHTML = `<div class="game-feedback-emoji">🏁</div><div class="game-feedback-msg">완료! ${score}점 · ${correct} / ${total}</div>${rewardHtml}`;
   const next = document.getElementById('wv2-next-btn');
   next.className = 'game-next-btn show';
   next.textContent = '단어 홈으로';
