@@ -1098,7 +1098,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div class="wv2-flow-chip">복습</div>
       </div>
       <div class="wv2-actions main">
-        <button class="wv2-btn primary" id="wv2-preview-btn" onclick="startWordV2Practice('preview')">예습하기</button>
+        <button class="wv2-btn primary" id="wv2-preview-btn" onclick="openWordV2Preview()">예습하기</button>
         <button class="wv2-btn green" id="wv2-review-btn" onclick="openWordV2Review()">복습하기</button>
         <button class="wv2-btn gold" id="wv2-daily-btn" onclick="startWordV2Test('DAILY')">시험응시</button>
         <button class="wv2-btn" id="wv2-weekly-btn" onclick="startWordV2Test('WEEKLY')">주말시험</button>
@@ -1134,17 +1134,6 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <button class="on" id="wv2-tab-words" onclick="setWordV2ListTab('words')">단어장</button>
       <button id="wv2-tab-tests" onclick="setWordV2ListTab('tests')">시험기록</button>
     </div>
-    <div class="wv2-card" id="wv2-calendar-card">
-      <div class="wv2-title">단어 달력</div>
-      <div class="wv2-sub">날짜별 예습, 복습, 시험 단어 개수를 확인해요.</div>
-      <div class="wv2-calendar-tabs">
-        <button class="wv2-calendar-tab on" id="wv2-cal-registered" onclick="setWordV2CalendarMode('registered')">등록</button>
-        <button class="wv2-calendar-tab" id="wv2-cal-preview" onclick="setWordV2CalendarMode('preview')">예습</button>
-        <button class="wv2-calendar-tab" id="wv2-cal-review" onclick="setWordV2CalendarMode('review')">복습</button>
-        <button class="wv2-calendar-tab" id="wv2-cal-test" onclick="setWordV2CalendarMode('test')">시험</button>
-      </div>
-      <div class="wv2-calendar-grid" id="wv2-calendar-grid"></div>
-    </div>
     <div class="wv2-card" id="wv2-word-date-card">
       <div class="wv2-title" id="wv2-word-date-title">등록 날짜별 단어</div>
       <div class="wv2-form">
@@ -1152,6 +1141,29 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       </div>
     </div>
     <div class="word-list-section"><div id="wv2-list"></div></div>
+  </div>
+
+  <div class="wv2-layer" id="wv2-preview-overlay">
+    <div class="wv2-layer-head">
+      <div class="wv2-layer-top">
+        <div>
+          <div class="wv2-layer-title">예습하기</div>
+          <div class="wv2-layer-sub">날짜를 고르고 단어와 뜻, 예문을 먼저 익혀요.</div>
+        </div>
+        <button class="wv2-layer-close" onclick="closeWordV2Preview()">×</button>
+      </div>
+    </div>
+    <div class="wv2-review-toolbar">
+      <div class="wv2-title">예습 날짜</div>
+      <div class="wv2-form">
+        <input class="wv2-input" type="date" id="wv2-preview-date" onchange="setWordV2PreviewDate(this.value)">
+      </div>
+      <div class="wv2-review-mode-row">
+        <button class="wv2-btn" id="wv2-preview-mode-list" onclick="setWordV2PreviewMode('list')">단어 목록</button>
+        <button class="wv2-btn" id="wv2-preview-mode-quiz" onclick="setWordV2PreviewMode('quiz')">예습 시험</button>
+      </div>
+    </div>
+    <div class="wv2-review-list" id="wv2-preview-list"></div>
   </div>
 
   <div class="wv2-layer" id="wv2-review-overlay">
@@ -3610,6 +3622,8 @@ function applyDateSettings(){
 let wordV2ListTab = 'words';
 let wordV2Session = null;
 let wordV2SelectedDate = null;
+let wordV2PreviewDate = null;
+let wordV2PreviewMode = 'list';
 let wordV2ReviewDate = null;
 let wordV2ReviewMode = 'list';
 let wordV2EditingId = null;
@@ -3748,10 +3762,40 @@ function getWordV2WordsForDate(state, dateKey) {
   return state.words.filter(word => getWordV2CreatedDate(word) === dateKey);
 }
 
-function getWordV2DefaultReviewDate(state) {
+function getWordV2WordDates(state) {
+  return [...new Set((state.words || []).map(getWordV2CreatedDate).filter(Boolean))].sort();
+}
+
+function getWordV2DefaultWordDate(state, preferredDate=null) {
+  const dates = getWordV2WordDates(state);
+  if (!dates.length) return '';
+  if (preferredDate && dates.includes(preferredDate)) return preferredDate;
   const today = kstDateKey();
-  const daily = state.tests?.[getWordV2TestId('DAILY', today)];
-  return daily?.status === 'COMPLETED' ? today : addDaysToDateKey(today, -1);
+  const pastDates = dates.filter(dateKey => dateKey <= today);
+  const beforeOrToday = pastDates[pastDates.length - 1];
+  return beforeOrToday || dates[dates.length - 1];
+}
+
+function validateWordV2WordDate(dateKey, previousDate=null) {
+  const state = loadWordV2State();
+  const fallback = getWordV2DefaultWordDate(state, previousDate);
+  if (!dateKey) return fallback;
+  if (getWordV2WordDates(state).includes(dateKey)) return dateKey;
+  alert('단어를 입력한 날짜만 선택할 수 있어요.');
+  return fallback;
+}
+
+function getWordV2DefaultReviewDate(state) {
+  return getWordV2DefaultWordDate(state, addDaysToDateKey(kstDateKey(), -1));
+}
+
+function getWordV2DefaultPreviewDate(state) {
+  return getWordV2DefaultWordDate(state, getWordV2DailyTestDate(state));
+}
+
+function getWordV2PreviewPracticeWords(state) {
+  if (!wordV2PreviewDate) wordV2PreviewDate = getWordV2DefaultPreviewDate(state);
+  return getWordV2WordsForDate(state, wordV2PreviewDate);
 }
 
 function getWordV2ReviewPracticeWords(state) {
@@ -3999,15 +4043,54 @@ function renderWordV2Calendar(state) {
   });
 }
 
+function syncWordV2DateInput(input, state, dateKey) {
+  if (!input) return;
+  const dates = getWordV2WordDates(state);
+  input.min = dates[0] || '';
+  input.max = dates[dates.length - 1] || '';
+  if (input.value !== dateKey) input.value = dateKey || '';
+}
+
 function setWordV2ListTab(tab) {
   wordV2ListTab = tab;
   wordV2EditingId = null;
   renderWordV2Screen();
 }
 
+function openWordV2Preview() {
+  const state = loadWordV2State();
+  const date = getWordV2DefaultPreviewDate(state);
+  if (!date) { alert('예습할 단어가 없어요.'); return; }
+  wordV2PreviewDate = date;
+  wordV2PreviewMode = 'list';
+  wordV2EditingId = null;
+  document.getElementById('wv2-preview-overlay')?.classList.add('show');
+  renderWordV2PreviewOverlay(state);
+}
+
+function closeWordV2Preview() {
+  document.getElementById('wv2-preview-overlay')?.classList.remove('show');
+  wordV2EditingId = null;
+  renderWordV2Screen();
+}
+
+function setWordV2PreviewMode(mode) {
+  wordV2PreviewMode = mode === 'quiz' ? 'quiz' : 'list';
+  wordV2EditingId = null;
+  renderWordV2PreviewOverlay();
+}
+
+function setWordV2PreviewDate(dateKey) {
+  wordV2PreviewDate = validateWordV2WordDate(dateKey, wordV2PreviewDate);
+  wordV2EditingId = null;
+  renderWordV2PreviewOverlay();
+}
+
 function openWordV2Review() {
   const state = loadWordV2State();
-  wordV2ReviewDate = wordV2ReviewDate || getWordV2DefaultReviewDate(state);
+  const date = getWordV2DefaultReviewDate(state);
+  if (!date) { alert('복습할 단어가 없어요.'); return; }
+  wordV2ReviewDate = date;
   wordV2ReviewMode = 'list';
   wordV2EditingId = null;
   document.getElementById('wv2-review-overlay')?.classList.add('show');
@@ -4027,13 +4110,13 @@ function setWordV2ReviewMode(mode) {
 }
 
 function setWordV2ReviewDate(dateKey) {
-  wordV2ReviewDate = dateKey || getWordV2DefaultReviewDate(loadWordV2State());
+  wordV2ReviewDate = validateWordV2WordDate(dateKey, wordV2ReviewDate);
   wordV2EditingId = null;
   renderWordV2ReviewOverlay();
 }
 
 function setWordV2Date(dateKey) {
-  wordV2SelectedDate = dateKey || kstDateKey();
+  wordV2SelectedDate = validateWordV2WordDate(dateKey, wordV2SelectedDate);
   wordV2EditingId = null;
   renderWordV2Screen();
 }
@@ -4054,8 +4137,9 @@ function renderWordV2Screen() {
   if (!wordV2ReviewDate) wordV2ReviewDate = getWordV2DefaultReviewDate(state);
   const previewBtn = document.getElementById('wv2-preview-btn');
   if (previewBtn) {
-    previewBtn.disabled = newWords.length === 0;
-    previewBtn.textContent = dailyTestDate && newWords.length ? '예습하기(' + formatWordV2ShortDate(dailyTestDate) + ')' : '예습하기';
+    const previewDate = getWordV2DefaultPreviewDate(state);
+    previewBtn.disabled = state.words.length === 0;
+    previewBtn.textContent = previewDate ? '예습하기(' + formatWordV2ShortDate(previewDate) + ')' : '예습하기';
   }
   const reviewBtn = document.getElementById('wv2-review-btn');
   if (reviewBtn) {
@@ -4090,12 +4174,12 @@ function renderWordV2Screen() {
   if (dateCard) dateCard.style.display = wordV2ListTab === 'words' ? 'block' : 'none';
   const dateInput = document.getElementById('wv2-word-date');
   const dateTitle = document.getElementById('wv2-word-date-title');
-  if (!wordV2SelectedDate) wordV2SelectedDate = kstDateKey();
-  if (dateTitle) dateTitle.textContent = getWordV2CalendarModeLabel();
-  if (dateInput && dateInput.value !== wordV2SelectedDate) dateInput.value = wordV2SelectedDate;
+  if (!wordV2SelectedDate || !getWordV2WordDates(state).includes(wordV2SelectedDate)) wordV2SelectedDate = getWordV2DefaultWordDate(state);
+  if (dateTitle) dateTitle.textContent = '등록 날짜별 단어';
+  syncWordV2DateInput(dateInput, state, wordV2SelectedDate);
   ['words','tests'].forEach(tab => document.getElementById('wv2-tab-'+tab)?.classList.toggle('on', wordV2ListTab === tab));
-  renderWordV2Calendar(state);
   renderWordV2List(state);
+  if (document.getElementById('wv2-preview-overlay')?.classList.contains('show')) renderWordV2PreviewOverlay(state);
   if (document.getElementById('wv2-review-overlay')?.classList.contains('show')) renderWordV2ReviewOverlay(state);
 }
 
@@ -4116,26 +4200,8 @@ function renderWordV2List(state) {
   }
   const selectedDate = wordV2SelectedDate || kstDateKey();
   const daily = getWordV2DailyTestForDate(state, selectedDate);
-  const words = wordV2CalendarMode === 'preview'
-    ? getWordV2NewWords(state, Infinity, selectedDate)
-    : wordV2CalendarMode === 'review'
-      ? getWordV2WordsForDate(state, selectedDate)
-      : wordV2CalendarMode === 'test' && daily?.status === 'COMPLETED'
-        ? getWordV2WordsFromTest(state, daily)
-        : state.words.filter(word => getWordV2CreatedDate(word) === selectedDate);
+  const words = state.words.filter(word => getWordV2CreatedDate(word) === selectedDate);
   if (!words.length) { list.innerHTML = '<div class="word-empty-state"><div class="word-empty-msg">표시할 단어가 없어요.</div></div>'; return; }
-  if (wordV2CalendarMode === 'preview') {
-    const intro = document.createElement('div');
-    intro.className = 'wv2-word';
-    intro.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">예습 · ${escapeV2Text(selectedDate)}</div><div class="wv2-word-ko">아래 단어 ${words.length}개를 미리 보고 연습해요.</div></div><span class="wv2-pill">${words.length}개</span></div><button class="wv2-btn primary" style="width:100%;margin-top:10px" onclick="startWordV2PracticeForDate('preview','${escapeV2Text(selectedDate)}')">예습 시작</button>`;
-    list.appendChild(intro);
-  }
-  if (wordV2CalendarMode === 'test') {
-    const intro = document.createElement('div');
-    intro.className = 'wv2-word';
-    intro.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">시험 · ${escapeV2Text(selectedDate)}</div><div class="wv2-word-ko">${daily?.status === 'COMPLETED' ? '완료 ' + (daily.correctCount || 0) + '/' + (daily.totalQuestions || words.length) : '아직 공식 시험 전'} · 단어 ${words.length}개</div></div><span class="wv2-pill">${daily?.status === 'COMPLETED' ? Math.round(((daily.correctCount||0)/(daily.totalQuestions||1))*100) + '%' : '대기'}</span></div>`;
-    list.appendChild(intro);
-  }
   words.forEach(word => {
     const count = Number(word.reviewCorrectCount || 0);
     const div = document.createElement('div');
@@ -4149,11 +4215,41 @@ function renderWordV2List(state) {
   });
 }
 
+function renderWordV2StudyWords(list, words) {
+  list.innerHTML = '';
+  words.forEach(word => {
+    const div = document.createElement('div');
+    div.className = 'wv2-word';
+    div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${escapeV2Text(word.word)}</div><div class="wv2-word-ko">${escapeV2Text(word.meaningKo)}</div><div class="word-item-ex">${escapeV2Text(word.example || '')}</div>${word.exampleKo ? `<div class="word-item-ex">${escapeV2Text(word.exampleKo)}</div>` : ''}</div><span class="wv2-pill">${escapeV2Text(word.reviewStatus || 'NORMAL')} ${Number(word.reviewCorrectCount || 0)}/7</span></div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderWordV2PreviewOverlay(state=loadWordV2State()) {
+  if (!wordV2PreviewDate || !getWordV2WordDates(state).includes(wordV2PreviewDate)) wordV2PreviewDate = getWordV2DefaultPreviewDate(state);
+  const dateInput = document.getElementById('wv2-preview-date');
+  const list = document.getElementById('wv2-preview-list');
+  syncWordV2DateInput(dateInput, state, wordV2PreviewDate);
+  document.getElementById('wv2-preview-mode-list')?.classList.toggle('primary', wordV2PreviewMode === 'list');
+  document.getElementById('wv2-preview-mode-quiz')?.classList.toggle('primary', wordV2PreviewMode === 'quiz');
+  if (!list) return;
+  const words = getWordV2PreviewPracticeWords(state);
+  if (!words.length) {
+    list.innerHTML = '<div class="word-empty-state"><div class="word-empty-msg">선택한 날짜에 예습할 단어가 없어요.</div></div>';
+    return;
+  }
+  if (wordV2PreviewMode === 'quiz') {
+    list.innerHTML = `<div class="wv2-word"><div class="wv2-word-top"><div><div class="wv2-word-en">예습 시험 · ${escapeV2Text(wordV2PreviewDate)}</div><div class="wv2-word-ko">선택한 날짜의 단어 ${words.length}개를 시험처럼 풀어요.</div></div><span class="wv2-pill">연습</span></div><button class="wv2-btn primary" style="width:100%;margin-top:10px" onclick="startWordV2PracticeForDate('preview','${escapeV2Text(wordV2PreviewDate)}')">예습 시험 시작</button></div>`;
+    return;
+  }
+  renderWordV2StudyWords(list, words);
+}
+
 function renderWordV2ReviewOverlay(state=loadWordV2State()) {
-  if (!wordV2ReviewDate) wordV2ReviewDate = getWordV2DefaultReviewDate(state);
+  if (!wordV2ReviewDate || !getWordV2WordDates(state).includes(wordV2ReviewDate)) wordV2ReviewDate = getWordV2DefaultReviewDate(state);
   const dateInput = document.getElementById('wv2-review-date');
   const list = document.getElementById('wv2-review-list');
-  if (dateInput && dateInput.value !== wordV2ReviewDate) dateInput.value = wordV2ReviewDate;
+  syncWordV2DateInput(dateInput, state, wordV2ReviewDate);
   document.getElementById('wv2-review-mode-list')?.classList.toggle('primary', wordV2ReviewMode === 'list');
   document.getElementById('wv2-review-mode-quiz')?.classList.toggle('primary', wordV2ReviewMode === 'quiz');
   if (!list) return;
@@ -4166,13 +4262,7 @@ function renderWordV2ReviewOverlay(state=loadWordV2State()) {
     list.innerHTML = `<div class="wv2-word"><div class="wv2-word-top"><div><div class="wv2-word-en">복습 시험 · ${escapeV2Text(wordV2ReviewDate)}</div><div class="wv2-word-ko">선택한 날짜의 단어 ${words.length}개를 시험처럼 풀어요.</div></div><span class="wv2-pill">연습</span></div><button class="wv2-btn green" style="width:100%;margin-top:10px" onclick="startWordV2Practice('review')">복습 시험 시작</button></div>`;
     return;
   }
-  list.innerHTML = '';
-  words.forEach(word => {
-    const div = document.createElement('div');
-    div.className = 'wv2-word';
-    div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${escapeV2Text(word.word)}</div><div class="wv2-word-ko">${escapeV2Text(word.meaningKo)}</div><div class="word-item-ex">${escapeV2Text(word.example || '')}</div>${word.exampleKo ? `<div class="word-item-ex">${escapeV2Text(word.exampleKo)}</div>` : ''}</div><span class="wv2-pill">${escapeV2Text(word.reviewStatus || 'NORMAL')} ${Number(word.reviewCorrectCount || 0)}/7</span></div>`;
-    list.appendChild(div);
-  });
+  renderWordV2StudyWords(list, words);
 }
 
 function editWordV2(wordId) {
