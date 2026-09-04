@@ -383,6 +383,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-btn.green { background:linear-gradient(135deg,#22C55E,#0EA5E9); color:white; }
 .wv2-btn:disabled { background:#E5E7EB; color:#9CA3AF; cursor:not-allowed; }
 .wv2-input, .wv2-textarea, .wv2-select { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:9px 10px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--text); background:white; }
+.wv2-input:disabled { background:#F3F4F6; color:#9CA3AF; cursor:not-allowed; }
 .wv2-textarea { min-height:62px; resize:vertical; line-height:1.45; }
 .wv2-form { display:grid; gap:8px; margin-top:10px; }
 .wv2-register-card.collapsed .wv2-register-form { display:none; }
@@ -431,6 +432,21 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-day-cell-title { font-size:12px; font-weight:900; color:var(--text); }
 .wv2-day-cell-main { font-size:10px; font-weight:900; color:var(--purple); margin-top:3px; }
 .wv2-day-cell-sub { font-size:9px; font-weight:800; color:var(--muted); line-height:1.45; margin-top:3px; }
+.wv2-date-picker { position:absolute; inset:0; z-index:230; background:rgba(30,27,75,.45); display:none; align-items:flex-end; }
+.wv2-date-picker.show { display:flex; }
+.wv2-date-sheet { width:100%; background:white; border-radius:22px 22px 0 0; padding:18px 18px 26px; }
+.wv2-date-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; }
+.wv2-date-month { font-size:18px; font-weight:900; color:var(--text); }
+.wv2-date-nav { display:flex; gap:8px; }
+.wv2-date-nav button, .wv2-date-close { width:34px; height:34px; border:none; border-radius:50%; background:#F3F4F6; color:var(--text); font-size:18px; font-weight:900; cursor:pointer; }
+.wv2-date-week, .wv2-date-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center; }
+.wv2-date-week div { font-size:12px; font-weight:900; color:var(--muted); padding:6px 0; }
+.wv2-date-day { height:38px; border:none; border-radius:10px; background:white; color:var(--text); font-family:'Nunito',sans-serif; font-size:15px; font-weight:900; cursor:pointer; }
+.wv2-date-day.other { color:#C4C4CC; }
+.wv2-date-day.has { background:#EDE9FE; color:var(--purple); }
+.wv2-date-day.selected { background:var(--purple); color:white; }
+.wv2-date-day:disabled { background:white; color:#D1D5DB; cursor:not-allowed; }
+.wv2-date-day.other:disabled { color:#E5E7EB; }
 
 @media (max-width:480px), (display-mode:standalone) {
   .wv2-layer { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
@@ -1137,7 +1153,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="wv2-card" id="wv2-word-date-card">
       <div class="wv2-title" id="wv2-word-date-title">등록 날짜별 단어</div>
       <div class="wv2-form">
-        <input class="wv2-input" type="date" id="wv2-word-date" onchange="setWordV2Date(this.value)">
+        <input class="wv2-input" type="text" id="wv2-word-date" readonly onclick="openWordV2DatePicker('word')" placeholder="단어 입력 날짜 없음">
       </div>
     </div>
     <div class="word-list-section"><div id="wv2-list"></div></div>
@@ -1156,7 +1172,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="wv2-review-toolbar">
       <div class="wv2-title">예습 날짜</div>
       <div class="wv2-form">
-        <input class="wv2-input" type="date" id="wv2-preview-date" onchange="setWordV2PreviewDate(this.value)">
+        <input class="wv2-input" type="text" id="wv2-preview-date" readonly onclick="openWordV2DatePicker('preview')" placeholder="단어 입력 날짜 없음">
       </div>
       <div class="wv2-review-mode-row">
         <button class="wv2-btn" id="wv2-preview-mode-list" onclick="setWordV2PreviewMode('list')">단어 목록</button>
@@ -1179,7 +1195,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="wv2-review-toolbar">
       <div class="wv2-title">복습 날짜</div>
       <div class="wv2-form">
-        <input class="wv2-input" type="date" id="wv2-review-date" onchange="setWordV2ReviewDate(this.value)">
+        <input class="wv2-input" type="text" id="wv2-review-date" readonly onclick="openWordV2DatePicker('review')" placeholder="단어 입력 날짜 없음">
       </div>
       <div class="wv2-review-mode-row">
         <button class="wv2-btn" id="wv2-review-mode-list" onclick="setWordV2ReviewMode('list')">단어 목록</button>
@@ -1187,6 +1203,21 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       </div>
     </div>
     <div class="wv2-review-list" id="wv2-review-list"></div>
+  </div>
+
+  <div class="wv2-date-picker" id="wv2-date-picker" onclick="if(event.target===this)closeWordV2DatePicker()">
+    <div class="wv2-date-sheet">
+      <div class="wv2-date-head">
+        <button class="wv2-date-close" onclick="closeWordV2DatePicker()">×</button>
+        <div class="wv2-date-month" id="wv2-date-month">2026년 9월</div>
+        <div class="wv2-date-nav">
+          <button onclick="moveWordV2DatePickerMonth(-1)">‹</button>
+          <button onclick="moveWordV2DatePickerMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="wv2-date-week"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div>
+      <div class="wv2-date-grid" id="wv2-date-grid"></div>
+    </div>
   </div>
 
   <div id="wv2-quiz" style="display:none">
@@ -3629,6 +3660,8 @@ let wordV2ReviewMode = 'list';
 let wordV2EditingId = null;
 let wordV2RegisterOpen = false;
 let wordV2CalendarMode = 'registered';
+let wordV2DatePickerContext = 'word';
+let wordV2DatePickerMonth = null;
 
 function kstDateKey(date=new Date()) {
   const kst = new Date(date.toLocaleString('en-US', { timeZone:'Asia/Seoul' }));
@@ -3676,6 +3709,23 @@ function getWordV2ById(state, wordId) {
 
 function formatWordV2ShortDate(dateKey) {
   return dateKey ? dateKey.slice(5) : '';
+}
+
+function formatWordV2DateInput(dateKey) {
+  if (!dateKey) return '';
+  const [year, month, day] = String(dateKey).split('-');
+  if (!year || !month || !day) return '';
+  return year + '. ' + month + '. ' + day + '.';
+}
+
+function parseWordV2DateKey(dateKey) {
+  const [year, month, day] = String(dateKey || '').split('-').map(Number);
+  const parsed = new Date(year, month - 1, day || 1);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function makeWordV2DateKey(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
 }
 
 function getWordV2TestId(type, dateKey=kstDateKey()) {
@@ -4045,9 +4095,80 @@ function renderWordV2Calendar(state) {
 function syncWordV2DateInput(input, state, dateKey) {
   if (!input) return;
   const dates = getWordV2WordDates(state);
-  input.min = dates[0] || '';
-  input.max = dates[dates.length - 1] || '';
-  if (input.value !== dateKey) input.value = dateKey || '';
+  input.value = formatWordV2DateInput(dateKey);
+  input.dataset.date = dateKey || '';
+  input.style.cursor = dates.length ? 'pointer' : 'not-allowed';
+  input.disabled = dates.length === 0;
+}
+
+function getWordV2DatePickerValue(context) {
+  if (context === 'preview') return wordV2PreviewDate;
+  if (context === 'review') return wordV2ReviewDate;
+  return wordV2SelectedDate;
+}
+
+function chooseWordV2DatePickerDate(dateKey) {
+  if (!dateKey) return;
+  closeWordV2DatePicker();
+  if (wordV2DatePickerContext === 'preview') setWordV2PreviewDate(dateKey);
+  else if (wordV2DatePickerContext === 'review') setWordV2ReviewDate(dateKey);
+  else setWordV2Date(dateKey);
+}
+
+function openWordV2DatePicker(context='word') {
+  const state = loadWordV2State();
+  const dates = getWordV2WordDates(state);
+  if (!dates.length) return;
+  wordV2DatePickerContext = context;
+  const selected = getWordV2DatePickerValue(context) || getWordV2DefaultWordDate(state);
+  wordV2DatePickerMonth = parseWordV2DateKey(selected || dates[dates.length - 1]);
+  document.getElementById('wv2-date-picker')?.classList.add('show');
+  renderWordV2DatePicker(state);
+}
+
+function closeWordV2DatePicker() {
+  document.getElementById('wv2-date-picker')?.classList.remove('show');
+}
+
+function moveWordV2DatePickerMonth(delta) {
+  const base = wordV2DatePickerMonth || new Date();
+  wordV2DatePickerMonth = new Date(base.getFullYear(), base.getMonth() + delta, 1);
+  renderWordV2DatePicker();
+}
+
+function renderWordV2DatePicker(state=loadWordV2State()) {
+  const grid = document.getElementById('wv2-date-grid');
+  const monthLabel = document.getElementById('wv2-date-month');
+  if (!grid) return;
+  const wordDates = new Set(getWordV2WordDates(state));
+  const selected = getWordV2DatePickerValue(wordV2DatePickerContext);
+  const monthDate = wordV2DatePickerMonth || parseWordV2DateKey(selected || getWordV2DefaultWordDate(state));
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  if (monthLabel) monthLabel.textContent = year + '년 ' + (month + 1) + '월';
+
+  const first = new Date(year, month, 1);
+  const start = new Date(first);
+  start.setDate(1 - first.getDay());
+  grid.innerHTML = '';
+  for (let i = 0; i < 42; i++) {
+    const day = new Date(start);
+    day.setDate(start.getDate() + i);
+    const dateKey = makeWordV2DateKey(day);
+    const hasWords = wordDates.has(dateKey);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = [
+      'wv2-date-day',
+      day.getMonth() !== month ? 'other' : '',
+      hasWords ? 'has' : '',
+      dateKey === selected ? 'selected' : '',
+    ].filter(Boolean).join(' ');
+    button.textContent = day.getDate();
+    button.disabled = !hasWords;
+    if (hasWords) button.onclick = () => chooseWordV2DatePickerDate(dateKey);
+    grid.appendChild(button);
+  }
 }
 
 function setWordV2ListTab(tab) {
