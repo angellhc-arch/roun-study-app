@@ -3781,7 +3781,6 @@ function validateWordV2WordDate(dateKey, previousDate=null) {
   const fallback = getWordV2DefaultWordDate(state, previousDate);
   if (!dateKey) return fallback;
   if (getWordV2WordDates(state).includes(dateKey)) return dateKey;
-  alert('단어를 입력한 날짜만 선택할 수 있어요.');
   return fallback;
 }
 
