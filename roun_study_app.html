@@ -422,6 +422,15 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-review-toolbar { margin:10px 16px 0; background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:13px 14px; }
 .wv2-review-mode-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
 .wv2-review-list { padding:4px 16px 0; }
+.wv2-calendar-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:10px; }
+.wv2-calendar-tab { border:1.5px solid var(--border); background:white; border-radius:12px; padding:8px 4px; font-family:'Nunito',sans-serif; font-size:10px; font-weight:900; color:var(--muted); cursor:pointer; }
+.wv2-calendar-tab.on { background:var(--purple); border-color:var(--purple); color:white; }
+.wv2-calendar-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:10px; }
+.wv2-day-cell { border:1.5px solid var(--border); background:#F9FAFB; border-radius:12px; padding:8px 6px; text-align:center; cursor:pointer; font-family:'Nunito',sans-serif; min-height:70px; }
+.wv2-day-cell.on { background:#F5F3FF; border-color:#A78BFA; }
+.wv2-day-cell-title { font-size:12px; font-weight:900; color:var(--text); }
+.wv2-day-cell-main { font-size:10px; font-weight:900; color:var(--purple); margin-top:3px; }
+.wv2-day-cell-sub { font-size:9px; font-weight:800; color:var(--muted); line-height:1.45; margin-top:3px; }
 
 @media (max-width:480px), (display-mode:standalone) {
   .wv2-layer { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
@@ -574,25 +583,18 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
        V2 BETA START
        계획 기반 학습 보상 시스템
   ════════════════════════════════════════ -->
-  <div class="mode-switch-card">
-    <div class="mode-switch-label">학습 보상 방식</div>
-    <div class="mode-switch-row">
-      <button class="mode-btn active" id="reward-mode-legacy" onclick="setRewardMode('legacy')">기존 방식</button>
-      <button class="mode-btn" id="reward-mode-v2" onclick="setRewardMode('v2')">v2 베타</button>
-    </div>
-  </div>
-
   <div id="v2-home-panel" class="v2-beta-panel">
     <div class="v2-beta-note">
-      <div class="v2-note-title">🧪 v2 베타 — 9월 적용 전 테스트 중</div>
-      <div class="v2-note-sub">불편하면 언제든 기존 방식으로 돌아갈 수 있어요.</div>
+      <div class="v2-note-title">🧪 계획 베타</div>
+      <div class="v2-note-sub">이제 홈과 통계는 새 계획 기준으로 표시돼요.</div>
+      <button class="v2-edit-toggle" id="v2-notification-btn" style="margin-top:8px" onclick="enableV2PlanNotifications()">아침 알림 켜기</button>
     </div>
 
     <div class="v2-summary-grid">
       <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-planned">0개</div><div class="v2-summary-label" id="v2-sum-planned-label">선택 날짜 계획</div></div>
       <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-done">0 / 0</div><div class="v2-summary-label">완료</div></div>
       <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-rate">0%</div><div class="v2-summary-label">달성률</div></div>
-      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-reward">0원</div><div class="v2-summary-label">베타 예상 보상</div></div>
+      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-reward">0원</div><div class="v2-summary-label">예상 보상</div></div>
     </div>
     <div class="v2-summary-grid" style="grid-template-columns:1fr;margin-top:8px">
       <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-streak">🔥 0일</div><div class="v2-summary-label">연속 달성</div></div>
@@ -1074,7 +1076,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="header-top">
       <div>
         <div class="greeting">예습 → 시험 → 복습 졸업</div>
-        <div class="username">단어게임 v2 🧠</div>
+        <div class="username">단어게임 🧠</div>
       </div>
       <div class="level-badge level-badge-sync">Lv<br>1</div>
     </div>
@@ -1132,6 +1134,17 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <button class="on" id="wv2-tab-words" onclick="setWordV2ListTab('words')">단어장</button>
       <button id="wv2-tab-tests" onclick="setWordV2ListTab('tests')">시험기록</button>
     </div>
+    <div class="wv2-card" id="wv2-calendar-card">
+      <div class="wv2-title">단어 달력</div>
+      <div class="wv2-sub">날짜별 예습, 복습, 시험 단어 개수를 확인해요.</div>
+      <div class="wv2-calendar-tabs">
+        <button class="wv2-calendar-tab on" id="wv2-cal-registered" onclick="setWordV2CalendarMode('registered')">등록</button>
+        <button class="wv2-calendar-tab" id="wv2-cal-preview" onclick="setWordV2CalendarMode('preview')">예습</button>
+        <button class="wv2-calendar-tab" id="wv2-cal-review" onclick="setWordV2CalendarMode('review')">복습</button>
+        <button class="wv2-calendar-tab" id="wv2-cal-test" onclick="setWordV2CalendarMode('test')">시험</button>
+      </div>
+      <div class="wv2-calendar-grid" id="wv2-calendar-grid"></div>
+    </div>
     <div class="wv2-card" id="wv2-word-date-card">
       <div class="wv2-title" id="wv2-word-date-title">등록 날짜별 단어</div>
       <div class="wv2-form">
@@ -1171,7 +1184,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div class="game-progress-label" id="wv2-quiz-progress">1 / 1 문제</div>
         <div class="game-progress-bar"><div class="game-progress-fill" id="wv2-quiz-fill" style="width:0%"></div></div>
       </div>
-      <div class="game-xp-display" id="wv2-quiz-kind">v2</div>
+      <div class="game-xp-display" id="wv2-quiz-kind">단어</div>
     </div>
     <div class="wv2-quiz-card">
       <div class="game-stage-badge" id="wv2-qtype">문제</div>
@@ -1279,7 +1292,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       <div><div class="stat-icon" style="margin-bottom:2px">💰</div><div class="stat-label">이달 총 보상 (학습+알바)</div></div>
       <div class="stat-value" id="stat-total-accum" style="font-size:22px">0원</div>
     </div>
-    <div class="stat-card"><div class="stat-icon">📖</div><div class="stat-value" id="stat-month-sessions">0회</div><div class="stat-label">이달 공부 횟수</div></div>
+    <div class="stat-card"><div class="stat-icon">📖</div><div class="stat-value" id="stat-month-sessions">0회</div><div class="stat-label">이달 완료 횟수</div></div>
     <div class="stat-card"><div class="stat-icon">🗓️</div><div class="stat-value" id="stat-alba-count">0회</div><div class="stat-label">이달 알바 횟수</div></div>
   </div>
   <div style="margin:0 16px 12px;background:#F8F7FF;border:1.5px solid #DDD6FE;border-radius:var(--radius);padding:12px 14px">
@@ -1292,7 +1305,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <div class="streak-row" id="streak-calendar"></div>
   </div>
   <div class="full-card">
-    <div class="full-card-title">📐 과목별 공부 횟수 (이번 달)</div>
+    <div class="full-card-title">📐 과목별 완료 횟수 (이번 달)</div>
     <div>
       <div class="bar-row"><div class="bar-label">독서</div><div class="bar-track"><div class="bar-fill" id="bar-read" style="width:0%;background:#22C55E"></div></div><div class="bar-count" id="cnt-read">0회</div></div>
       <div class="bar-row"><div class="bar-label">영어</div><div class="bar-track"><div class="bar-fill" id="bar-eng" style="width:0%;background:#3B82F6"></div></div><div class="bar-count" id="cnt-eng">0회</div></div>
@@ -1429,8 +1442,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 <div class="bottom-nav">
   <div class="nav-item active" id="nav-home" onclick="showScreen('home')"><div class="nav-icon">🏠</div><div class="nav-label">홈</div></div>
   <div class="nav-item" id="nav-alba" onclick="showScreen('alba')"><div class="nav-icon">💼</div><div class="nav-label">알바</div></div>
-  <div class="nav-item" id="nav-word" onclick="showScreen('word')"><div class="nav-icon">🎮</div><div class="nav-label">단어게임</div></div>
-  <div class="nav-item" id="nav-word2" onclick="showScreen('word2')"><div class="nav-icon">🧠</div><div class="nav-label">단어v2</div></div>
+  <div class="nav-item" id="nav-word" onclick="showScreen('word2')"><div class="nav-icon">🧠</div><div class="nav-label">단어게임</div></div>
   <div class="nav-item" id="nav-history" onclick="showScreen('history')"><div class="nav-icon">📖</div><div class="nav-label">기록</div></div>
   <div class="nav-item" id="nav-stats" onclick="showScreen('stats')"><div class="nav-icon">📊</div><div class="nav-label">통계·뱃지</div></div>
 </div>
@@ -1621,6 +1633,7 @@ async function syncWordV2ToSupabase(state) {
       firstWrongAt: word.firstWrongAt || null,
       lastTestedAt: word.lastTestedAt || null,
       masteredAt: word.masteredAt || null,
+      testHistory: Array.isArray(word.testHistory) ? word.testHistory : [],
       createdAt: word.createdAt || null,
       updatedAt: word.updatedAt || null,
     }),
@@ -1676,6 +1689,7 @@ async function syncWordV2FromSupabase() {
         firstWrongAt:meta.firstWrongAt || existing?.firstWrongAt || null,
         lastTestedAt:meta.lastTestedAt || existing?.lastTestedAt || null,
         masteredAt:meta.masteredAt || existing?.masteredAt || null,
+        testHistory:Array.isArray(meta.testHistory) ? meta.testHistory : (Array.isArray(existing?.testHistory) ? existing.testHistory : []),
         createdAt:meta.createdAt || existing?.createdAt || null,
         updatedAt:meta.updatedAt || existing?.updatedAt || null,
       };
@@ -2039,6 +2053,7 @@ async function migrateLocalStudyToSupabase(button) {
       syncXpToSupabase(),
       syncWordsToSupabase(loadWords()),
       syncWordGamesToSupabase(loadWordGameState()),
+      syncWordV2ToSupabase(loadWordV2State()),
       syncAlbaToSupabase(loadAlbaState()),
     ]);
     button.textContent = completed + '일 백업 완료!';
@@ -2134,6 +2149,8 @@ function saveState() {
 // ════════════════════════════════════════
 const REWARD_MODE_KEY = 'rowoon_reward_mode_v1';
 const PLAN_V2_STORE_KEY = 'rowoon_plan_v2_beta';
+const PLAN_V2_NOTIFY_KEY = 'rowoon_plan_v2_morning_notify';
+const PLAN_V2_NOTIFY_SENT_KEY = 'rowoon_plan_v2_morning_notify_sent';
 const SUPABASE_V2_SOURCE = 'rowoon-plan-v2-beta';
 let _supabaseV2SyncTimer = null;
 let _v2PlanEditMode = false;
@@ -2146,26 +2163,82 @@ const V2_CATEGORIES = {
 };
 
 function loadRewardMode() {
-  return localStorage.getItem(REWARD_MODE_KEY) === 'v2' ? 'v2' : 'legacy';
+  return 'v2';
 }
 
 function setRewardMode(mode) {
-  const nextMode = mode === 'v2' ? 'v2' : 'legacy';
-  localStorage.setItem(REWARD_MODE_KEY, nextMode);
+  localStorage.setItem(REWARD_MODE_KEY, 'v2');
   applyRewardMode();
 }
 
 function applyRewardMode() {
-  const mode = loadRewardMode();
+  const mode = 'v2';
   const legacy = document.getElementById('legacy-home-content');
   const v2 = document.getElementById('v2-home-panel');
   const legacyBtn = document.getElementById('reward-mode-legacy');
   const v2Btn = document.getElementById('reward-mode-v2');
-  if (legacy) legacy.style.display = mode === 'v2' ? 'none' : 'block';
-  if (v2) v2.classList.toggle('show', mode === 'v2');
-  if (legacyBtn) legacyBtn.classList.toggle('active', mode !== 'v2');
-  if (v2Btn) v2Btn.classList.toggle('active', mode === 'v2');
-  if (mode === 'v2') renderV2Home();
+  if (legacy) legacy.style.display = 'none';
+  if (v2) v2.classList.add('show');
+  if (legacyBtn) legacyBtn.classList.remove('active');
+  if (v2Btn) v2Btn.classList.add('active');
+  renderV2Home();
+}
+
+function isV2PlanNotificationEnabled() {
+  return localStorage.getItem(PLAN_V2_NOTIFY_KEY) === '1';
+}
+
+function updateV2NotificationButton() {
+  const btn = document.getElementById('v2-notification-btn');
+  if (!btn) return;
+  const unsupported = !('Notification' in window);
+  const enabled = isV2PlanNotificationEnabled() && !unsupported;
+  btn.textContent = unsupported ? '알림 미지원' : enabled ? '아침 알림 켜짐' : '아침 알림 켜기';
+  btn.classList.toggle('on', enabled);
+  btn.disabled = unsupported;
+}
+
+async function enableV2PlanNotifications() {
+  if (!('Notification' in window)) {
+    alert('이 브라우저에서는 알림을 지원하지 않아요.');
+    updateV2NotificationButton();
+    return;
+  }
+  let permission = Notification.permission;
+  if (permission === 'default') permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    localStorage.setItem(PLAN_V2_NOTIFY_KEY, '0');
+    alert('브라우저 알림 권한을 허용하면 아침 계획 알림을 받을 수 있어요.');
+    updateV2NotificationButton();
+    return;
+  }
+  localStorage.setItem(PLAN_V2_NOTIFY_KEY, '1');
+  updateV2NotificationButton();
+  maybeNotifyMissingV2MorningPlan();
+}
+
+function showV2PlanNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (navigator.serviceWorker?.ready) {
+    navigator.serviceWorker.ready
+      .then(reg => reg.showNotification(title, { body, icon:'/icons/frog-192.png', badge:'/icons/frog-192.png', tag:'rowoon-v2-plan-morning', renotify:false }))
+      .catch(() => new Notification(title, { body, icon:'/icons/frog-192.png', tag:'rowoon-v2-plan-morning' }));
+    return;
+  }
+  new Notification(title, { body, icon:'/icons/frog-192.png', tag:'rowoon-v2-plan-morning' });
+}
+
+function maybeNotifyMissingV2MorningPlan(force=false) {
+  if (!isV2PlanNotificationEnabled() || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = getTestDate();
+  const hour = now.getHours();
+  if (!force && (hour < 6 || hour >= 11)) return;
+  const todayKey = getV2TodayKey();
+  const state = loadV2PlanState();
+  if (hasV2Plan(state[todayKey])) return;
+  if (!force && localStorage.getItem(PLAN_V2_NOTIFY_SENT_KEY) === todayKey) return;
+  localStorage.setItem(PLAN_V2_NOTIFY_SENT_KEY, todayKey);
+  showV2PlanNotification('로운이 오늘 계획이 비어 있어요', '홈에서 오늘 계획을 먼저 세워볼까요?');
 }
 
 function v2DateKey(date) {
@@ -2605,6 +2678,46 @@ function getV2MonthRewardForStats(year, month) {
     .reduce((sum, dateKey) => sum + getV2RewardForStats(dateKey, state), 0);
 }
 
+function getV2MonthKeysForStats(state, year, month) {
+  return Object.keys(state || {}).filter(dateKey => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
+    const [y, m] = dateKey.split('-').map(Number);
+    return y === year && m === month && hasV2Plan(state[dateKey]);
+  });
+}
+
+function calcV2SubjectCountsForMonth(state, year, month) {
+  const counts = { read:0, eng:0, math:0, write:0 };
+  getV2MonthKeysForStats(state, year, month).forEach(dateKey => {
+    (state[dateKey]?.items || []).forEach(item => {
+      const done = Number(item.completedCount || 0);
+      const title = String(item.title || '');
+      if (item.categoryKey === 'reading') counts.read += done;
+      else if (/영어|english/i.test(title)) counts.eng += done;
+      else if (/수학|math/i.test(title)) counts.math += done;
+      else if (/글쓰기|쓰기|요약|write/i.test(title)) counts.write += done;
+    });
+  });
+  return counts;
+}
+
+function calcV2MonthCompletedCount(state, year, month) {
+  return getV2MonthKeysForStats(state, year, month)
+    .reduce((sum, dateKey) => sum + getV2CompletedCount(state[dateKey]), 0);
+}
+
+function calcV2BestStreak(state) {
+  const dates = Object.keys(state || {}).filter(dateKey => /^\d{4}-\d{2}-\d{2}$/.test(dateKey)).sort();
+  if (!dates.length) return 0;
+  let best = 0;
+  dates.forEach(dateKey => { best = Math.max(best, calcV2Streak(state, dateKey)); });
+  return best;
+}
+
+function calcV2TotalCompleteDays(state) {
+  return Object.keys(state || {}).filter(dateKey => /^\d{4}-\d{2}-\d{2}$/.test(dateKey) && isV2FullyComplete(state[dateKey])).length;
+}
+
 function escapeV2Text(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
@@ -2672,6 +2785,7 @@ function renderV2Home() {
   document.getElementById('v2-complete-banner')?.classList.toggle('show', isV2FullyComplete(viewDay));
   renderV2RewardLines(reward);
   renderV2Habits();
+  updateV2NotificationButton();
 
   const missingTarget = getV2MissingPlanTarget(state);
   const cta = document.getElementById('v2-plan-cta');
@@ -3055,8 +3169,7 @@ function buildStreakCalendar(){
   const cal=document.getElementById('streak-calendar');
   if(!cal)return;
   cal.innerHTML='';
-  const state=loadState();
-  const history=state?.history||{};
+  const state=loadV2PlanState();
   const today=getTestDate();
 
   for(let i=19;i>=0;i--){
@@ -3065,22 +3178,18 @@ function buildStreakCalendar(){
     const key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
     const dow=['일','월','화','수','목','금','토'][d.getDay()];
     const label=i===0?'오늘':dow;
-    const isWE=d.getDay()===0||d.getDay()===6;
-    const rec=history[key];
-    const sessions=rec?.sessions||0;
+    const rec=state[key];
 
     let status;
-    if(i===0)            status='today';
-    else if(sessions>=6) status='done';
-    else if(isWE)        status='miss'; // 주말 미달성: 회색이지만 연속 유지 (툴팁으로 안내)
-    else                 status='miss';
+    if(i===0) status='today';
+    else if(isV2FullyComplete(rec)) status='done';
+    else status='miss';
 
     const dot=document.createElement('div');
     dot.className='streak-dot '+status;
-    // 주말 미달성은 회색이지만 패스 표시
-    if(i!==0 && isWE && sessions<6){
-      dot.style.opacity='0.4';
-      dot.title='주말 패스 (연속 유지)';
+    if(i!==0 && rec?.isRestDay){
+      dot.style.opacity='0.55';
+      dot.title='계획 휴식일';
     }
     dot.textContent=label;
     cal.appendChild(dot);
@@ -3243,10 +3352,10 @@ function renderHistory(){
     const isToday=d.date.toDateString()===getTestDate().toDateString();
     const dotBg=d.status==='complete'?'#EDE9FE':d.status==='partial'?'#FEF3C7':'#F3F4F6';
     const dotClr=d.status==='complete'?'var(--purple)':d.status==='partial'?'#D97706':'var(--muted)';
-    const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':v2DayReward>0?'🧪 v2 계획 기록':'기록 없음';
+    const statusLabel=d.status==='complete'?'✅ 모두 완료':d.status==='partial'?'⚡ 일부 완료':v2DayReward>0?'🧪 계획 기록':'기록 없음';
     const rewardBits=[];
     if(d.reward>0)rewardBits.push(`<span style="background:#EDE9FE;color:var(--purple);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">📚 ${d.reward.toLocaleString()}원</span>`);
-    if(v2DayReward>0)rewardBits.push(`<span style="background:#F0F9FF;color:#0369A1;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">🧪 v2 ${v2DayReward.toLocaleString()}원</span>`);
+    if(v2DayReward>0)rewardBits.push(`<span style="background:#F0F9FF;color:#0369A1;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">🧪 계획 ${v2DayReward.toLocaleString()}원</span>`);
     (d.streakBonuses||[]).forEach(bonus=>rewardBits.push(`<span style="background:#FFF7ED;color:#C2410C;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:900">🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클':'샤워'} ${bonus.streakDays}일 +${Number(bonus.reward).toLocaleString()}원</span>`));
     if(albaDayReward>0)rewardBits.push(`<span style="background:#DCFCE7;color:#15803D;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800">💼 ${albaDayReward.toLocaleString()}원</span>`);
     const subjCounts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];subjCounts[s]=(subjCounts[s]||0)+1;});
@@ -3274,7 +3383,7 @@ function renderHistory(){
   if(list.children.length===0)list.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;font-weight:700">이달 기록이 없어요</div>';
 }
 
-function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const v2Reward=getV2RewardForStats(key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';const dayReward=(d?.reward||0)+v2Reward;document.getElementById('detail-reward').textContent=dayReward>0?dayReward.toLocaleString()+'원':'0원';const items=document.getElementById('detail-items');items.innerHTML='';if(v2Reward>0){const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#F0F9FF;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#0369A1;font-weight:900';div.textContent=`🧪 v2 계획 보상 +${v2Reward.toLocaleString()}원`;items.appendChild(div);}(d?.streakBonuses||[]).forEach(bonus=>{const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#FFF7ED;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#C2410C;font-weight:900';div.textContent=`🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클 모닝':'아침 샤워'} ${bonus.streakDays}일 연속 보상 +${Number(bonus.reward).toLocaleString()}원`;items.appendChild(div);});Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
+function openDayDetail(key){const allData=getHistoryData();const d=allData.find(r=>r.key===key);const v2Reward=getV2RewardForStats(key);const[y,m,dn]=key.split('-').map(Number);const date=new Date(y,m-1,dn);const dow=['일','월','화','수','목','금','토'][date.getDay()];document.getElementById('detail-date-title').textContent=y+'년 '+m+'월 '+dn+'일 ('+dow+')';const dayReward=(d?.reward||0)+v2Reward;document.getElementById('detail-reward').textContent=dayReward>0?dayReward.toLocaleString()+'원':'0원';const items=document.getElementById('detail-items');items.innerHTML='';if(v2Reward>0){const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#F0F9FF;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#0369A1;font-weight:900';div.textContent=`🧪 계획 보상 +${v2Reward.toLocaleString()}원`;items.appendChild(div);}(d?.streakBonuses||[]).forEach(bonus=>{const div=document.createElement('div');div.className='detail-item';div.style.cssText='background:#FFF7ED;border-radius:10px;margin-bottom:6px;padding:10px 12px;color:#C2410C;font-weight:900';div.textContent=`🔥 ${bonus.type==='mission'?'미션':bonus.type==='miracle'?'미라클 모닝':'아침 샤워'} ${bonus.streakDays}일 연속 보상 +${Number(bonus.reward).toLocaleString()}원`;items.appendChild(div);});Object.entries(TASK_NAMES).forEach(([k,name])=>{const done=d?d.completed.includes(k):false;const subj=SUBJ_MAP[k];const div=document.createElement('div');div.className='detail-item';div.innerHTML=`<div class="detail-check ${done?'done':'miss'}">${done?'✓':'✕'}</div><div class="detail-item-name${done?'':' miss'}">${name}</div>${subj&&done?`<div class="detail-subj-chip">${subj}</div>`:''}`;items.appendChild(div);});const subjEl=document.getElementById('detail-subjects');subjEl.innerHTML='';if(d&&d.subjects.length>0){const counts={};d.completed.filter(k=>SUBJ_MAP[k]).forEach(k=>{const s=SUBJ_MAP[k];counts[s]=(counts[s]||0)+1;});Object.entries(counts).forEach(([s,n])=>{const sp=document.createElement('span');sp.className='hist-schip';sp.textContent=s+' '+n+'회';subjEl.appendChild(sp);});}else{subjEl.innerHTML='<span style="font-size:12px;color:var(--muted);font-weight:600">과목 기록 없음</span>';}document.getElementById('day-detail-overlay').classList.add('show');}
 function closeDayDetail(e){if(e.target.id==='day-detail-overlay')closeDayDetailDirect();}
 function closeDayDetailDirect(){document.getElementById('day-detail-overlay').classList.remove('show');}
 
@@ -3326,13 +3435,23 @@ function calcBestStreak(history) {
   return best;
 }
 
-function updateStatsScreen(){const state=loadState();const history=state?.history||{};const today=getTestDate();const yr=today.getFullYear(),mo=today.getMonth()+1;const streak=calcStreak(history,today);const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';const monthKeys=Object.keys(history).filter(k=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return false;const[y,m]=k.split('-').map(Number);return y===yr&&m===mo;});const monthReward=monthKeys.reduce((s,k)=>s+(history[k].reward||0),0)+getV2MonthRewardForStats(yr,mo);const monthSessions=monthKeys.reduce((s,k)=>s+(history[k].sessions||0),0);const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';
+function updateStatsScreen(){
+  const today=getTestDate();
+  const yr=today.getFullYear(),mo=today.getMonth()+1;
+  const v2State=loadV2PlanState();
+  const todayKey=getV2TodayKey();
+  const streak=calcV2Streak(v2State,todayKey);
+  const monthReward=getV2MonthRewardForStats(yr,mo);
+  const monthSessions=calcV2MonthCompletedCount(v2State,yr,mo);
+  const sel=document.getElementById('stat-streak');if(sel)sel.textContent=streak+'일';
+  const mra=document.getElementById('stat-month-accum');const mse=document.getElementById('stat-month-sessions');const xpe=document.getElementById('stat-xp');if(mra)mra.textContent=monthReward.toLocaleString()+'원';if(mse)mse.textContent=monthSessions+'회';if(xpe)xpe.textContent=xp.toLocaleString()+'XP';
 const albaMonR=calcAlbaMonthAccum(yr,mo);const albaCntR=calcAlbaMonthCount(yr,mo);
 const saE=document.getElementById('stat-alba-accum');if(saE)saE.textContent=albaMonR.toLocaleString()+'원';
 const scE=document.getElementById('stat-alba-count');if(scE)scE.textContent=albaCntR+'회';
-const stE=document.getElementById('stat-total-accum');if(stE)stE.textContent=(monthReward+albaMonR).toLocaleString()+'원';const subjectCounts={read:0,eng:0,math:0,write:0};monthKeys.forEach(k=>{const rec=history[k];if(!rec?.completed)return;if(rec.completed.includes('read1'))subjectCounts.read++;if(rec.completed.includes('read2'))subjectCounts.read++;if(rec.completed.includes('eng1'))subjectCounts.eng++;if(rec.completed.includes('eng2'))subjectCounts.eng++;if(rec.completed.includes('math1'))subjectCounts.math++;if(rec.completed.includes('math2'))subjectCounts.math++;if(rec.completed.includes('write'))subjectCounts.write++;});const maxCount=Math.max(...Object.values(subjectCounts),1);Object.entries(subjectCounts).forEach(([k,v])=>{const bar=document.getElementById('bar-'+k);const cnt=document.getElementById('cnt-'+k);if(bar)bar.style.width=(v/maxCount*100)+'%';if(cnt)cnt.textContent=v+'회';});buildStreakCalendar();}
+const stE=document.getElementById('stat-total-accum');if(stE)stE.textContent=(monthReward+albaMonR).toLocaleString()+'원';const subjectCounts=calcV2SubjectCountsForMonth(v2State,yr,mo);const maxCount=Math.max(...Object.values(subjectCounts),1);Object.entries(subjectCounts).forEach(([k,v])=>{const bar=document.getElementById('bar-'+k);const cnt=document.getElementById('cnt-'+k);if(bar)bar.style.width=(v/maxCount*100)+'%';if(cnt)cnt.textContent=v+'회';});buildStreakCalendar();}
 
 function showScreen(name){
+  if(name==='word') name='word2';
   document.querySelectorAll('.screen').forEach(s=>{
     s.classList.remove('active');
     s.style.display='';
@@ -3340,7 +3459,7 @@ function showScreen(name){
   const el = document.getElementById('screen-'+name);
   el.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const navEl=document.getElementById('nav-'+name);
+  const navEl=document.getElementById(name==='word2' ? 'nav-word' : 'nav-'+name);
   if(navEl)navEl.classList.add('active');
   if(name==='history'){updateHistorySummary();buildMonthTabs();renderHistory();}
   if(name==='stats'){updateStatsScreen();updateLevelCard();renderBadges();}
@@ -3414,6 +3533,7 @@ let wordV2ReviewDate = null;
 let wordV2ReviewMode = 'list';
 let wordV2EditingId = null;
 let wordV2RegisterOpen = false;
+let wordV2CalendarMode = 'registered';
 
 function kstDateKey(date=new Date()) {
   const kst = new Date(date.toLocaleString('en-US', { timeZone:'Asia/Seoul' }));
@@ -3486,10 +3606,16 @@ function getWordV2TestedWordIds(state) {
   return testedIds;
 }
 
+function getWordV2CompletedDailyTestDates(state) {
+  return new Set(Object.values(state.tests || {})
+    .filter(test => test?.status === 'COMPLETED' && test.testType === 'DAILY' && test.testDate)
+    .map(test => test.testDate));
+}
+
 function getWordV2NextTestDate(state) {
-  const testedIds = getWordV2TestedWordIds(state);
+  const completedDailyDates = getWordV2CompletedDailyTestDates(state);
   const nextWord = [...(state.words || [])]
-    .filter(w => (w.reviewStatus || 'NORMAL') === 'NORMAL' && !testedIds.has(w.id))
+    .filter(w => (w.reviewStatus || 'NORMAL') === 'NORMAL' && !completedDailyDates.has(getWordV2CreatedDate(w)))
     .sort((a, b) => {
       const dateCompare = getWordV2CreatedDate(a).localeCompare(getWordV2CreatedDate(b));
       return dateCompare || String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
@@ -3498,15 +3624,15 @@ function getWordV2NextTestDate(state) {
 }
 
 function getWordV2DailyTestDate(state) {
-  return getWordV2NextTestDate(state) || (getWordV2ReviewWords(state).length ? kstDateKey() : null);
+  return getWordV2NextTestDate(state);
 }
 
-function getWordV2NewWords(state, limit=20, dateKey=null) {
-  const testedIds = getWordV2TestedWordIds(state);
+function getWordV2NewWords(state, limit=Infinity, dateKey=null) {
+  const completedDailyDates = getWordV2CompletedDailyTestDates(state);
   const targetDate = dateKey || getWordV2NextTestDate(state);
-  if (!targetDate) return [];
+  if (!targetDate || completedDailyDates.has(targetDate)) return [];
   return state.words
-    .filter(w => (w.reviewStatus || 'NORMAL') === 'NORMAL' && !testedIds.has(w.id) && getWordV2CreatedDate(w) === targetDate)
+    .filter(w => (w.reviewStatus || 'NORMAL') === 'NORMAL' && getWordV2CreatedDate(w) === targetDate)
     .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
     .slice(0, limit)
     .map(w => ({ ...w, assignedDate:targetDate }));
@@ -3721,6 +3847,77 @@ function renderWordV2RegisterState() {
   if (sub) sub.textContent = wordV2RegisterOpen ? '찾은 뒤 뜻과 예문을 확인하고 저장해요.' : '필요할 때만 열어서 새 단어를 추가해요.';
 }
 
+function getWordV2DailyTestForDate(state, dateKey) {
+  return state.tests?.[getWordV2TestId('DAILY', dateKey)] || null;
+}
+
+function getWordV2CountsForDate(state, dateKey) {
+  const registered = getWordV2WordsForDate(state, dateKey).length;
+  const preview = getWordV2NewWords(state, Infinity, dateKey).length;
+  const review = getWordV2WordsForDate(state, dateKey).length;
+  const daily = getWordV2DailyTestForDate(state, dateKey);
+  const test = daily?.status === 'COMPLETED' ? Number(daily.totalQuestions || daily.questions?.length || 0) : preview;
+  return { registered, preview, review, test };
+}
+
+function getWordV2CalendarDates(state) {
+  const dates = new Set();
+  (state.words || []).forEach(word => dates.add(getWordV2CreatedDate(word)));
+  Object.values(state.tests || {}).forEach(test => {
+    if (test?.testDate) dates.add(test.testDate);
+  });
+  dates.add(kstDateKey());
+  return [...dates].filter(Boolean).sort().reverse();
+}
+
+function getWordV2SelectedCountForMode(counts) {
+  return Number(counts[wordV2CalendarMode] || 0);
+}
+
+function getWordV2CalendarModeLabel() {
+  return ({
+    registered:'등록 날짜별 단어',
+    preview:'예습 날짜별 단어',
+    review:'복습 날짜별 단어',
+    test:'시험 날짜별 단어',
+  })[wordV2CalendarMode] || '등록 날짜별 단어';
+}
+
+function setWordV2CalendarMode(mode) {
+  wordV2CalendarMode = ['registered','preview','review','test'].includes(mode) ? mode : 'registered';
+  wordV2ListTab = 'words';
+  wordV2EditingId = null;
+  renderWordV2Screen();
+}
+
+function renderWordV2Calendar(state) {
+  const grid = document.getElementById('wv2-calendar-grid');
+  if (!grid) return;
+  ['registered','preview','review','test'].forEach(mode => {
+    document.getElementById('wv2-cal-' + mode)?.classList.toggle('on', wordV2CalendarMode === mode);
+  });
+  const dates = getWordV2CalendarDates(state).filter(dateKey => {
+    const counts = getWordV2CountsForDate(state, dateKey);
+    return dateKey === (wordV2SelectedDate || kstDateKey()) || getWordV2SelectedCountForMode(counts) > 0;
+  });
+  if (!dates.length) {
+    grid.innerHTML = '<div class="word-empty-state" style="grid-column:1/-1;padding:18px 8px"><div class="word-empty-msg">표시할 단어 날짜가 없어요.</div></div>';
+    return;
+  }
+  grid.innerHTML = '';
+  dates.slice(0, 18).forEach(dateKey => {
+    const counts = getWordV2CountsForDate(state, dateKey);
+    const d = new Date(dateKey + 'T00:00:00');
+    const label = (d.getMonth() + 1) + '/' + d.getDate();
+    const day = ['일','월','화','수','목','금','토'][d.getDay()];
+    const cell = document.createElement('button');
+    cell.className = 'wv2-day-cell' + (dateKey === wordV2SelectedDate ? ' on' : '');
+    cell.onclick = () => setWordV2Date(dateKey);
+    cell.innerHTML = `<div class="wv2-day-cell-title">${label} (${day})</div><div class="wv2-day-cell-main">${getWordV2CalendarModeLabel().replace(' 날짜별 단어','')} ${getWordV2SelectedCountForMode(counts)}개</div><div class="wv2-day-cell-sub">예습 ${counts.preview} · 복습 ${counts.review} · 시험 ${counts.test}</div>`;
+    grid.appendChild(cell);
+  });
+}
+
 function setWordV2ListTab(tab) {
   wordV2ListTab = tab;
   wordV2EditingId = null;
@@ -3767,7 +3964,7 @@ function renderWordV2Screen() {
   const daily = dailyTestDate ? state.tests[getWordV2TestId('DAILY', dailyTestDate)] : null;
   const weekly = state.tests[getWordV2TestId('WEEKLY', today)];
   const reviewWords = getWordV2ReviewWords(state);
-  const newWords = getWordV2NewWords(state, 20, dailyTestDate);
+  const newWords = getWordV2NewWords(state, Infinity, dailyTestDate);
   const weeklyWords = getWordV2WeeklyWords(state);
   const setText = (id, text) => { const el=document.getElementById(id); if(el)el.textContent=text; };
   setText('wv2-new-count', newWords.length);
@@ -3787,7 +3984,7 @@ function renderWordV2Screen() {
   }
   const dailyBtn = document.getElementById('wv2-daily-btn');
   if (dailyBtn) {
-    const dailyWords = daily?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, daily) : [...newWords, ...reviewWords];
+    const dailyWords = daily?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, daily) : newWords;
     dailyBtn.disabled = dailyWords.length === 0;
     dailyBtn.textContent = dailyTestDate ? '시험응시(' + formatWordV2ShortDate(dailyTestDate) + ')' : '시험응시';
   }
@@ -3813,9 +4010,10 @@ function renderWordV2Screen() {
   const dateInput = document.getElementById('wv2-word-date');
   const dateTitle = document.getElementById('wv2-word-date-title');
   if (!wordV2SelectedDate) wordV2SelectedDate = kstDateKey();
-  if (dateTitle) dateTitle.textContent = '등록 날짜별 단어';
+  if (dateTitle) dateTitle.textContent = getWordV2CalendarModeLabel();
   if (dateInput && dateInput.value !== wordV2SelectedDate) dateInput.value = wordV2SelectedDate;
   ['words','tests'].forEach(tab => document.getElementById('wv2-tab-'+tab)?.classList.toggle('on', wordV2ListTab === tab));
+  renderWordV2Calendar(state);
   renderWordV2List(state);
   if (document.getElementById('wv2-review-overlay')?.classList.contains('show')) renderWordV2ReviewOverlay(state);
 }
@@ -3835,8 +4033,28 @@ function renderWordV2List(state) {
     });
     return;
   }
-  const words = state.words.filter(word => getWordV2CreatedDate(word) === (wordV2SelectedDate || kstDateKey()));
+  const selectedDate = wordV2SelectedDate || kstDateKey();
+  const daily = getWordV2DailyTestForDate(state, selectedDate);
+  const words = wordV2CalendarMode === 'preview'
+    ? getWordV2NewWords(state, Infinity, selectedDate)
+    : wordV2CalendarMode === 'review'
+      ? getWordV2WordsForDate(state, selectedDate)
+      : wordV2CalendarMode === 'test' && daily?.status === 'COMPLETED'
+        ? getWordV2WordsFromTest(state, daily)
+        : state.words.filter(word => getWordV2CreatedDate(word) === selectedDate);
   if (!words.length) { list.innerHTML = '<div class="word-empty-state"><div class="word-empty-msg">표시할 단어가 없어요.</div></div>'; return; }
+  if (wordV2CalendarMode === 'preview') {
+    const intro = document.createElement('div');
+    intro.className = 'wv2-word';
+    intro.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">예습 · ${escapeV2Text(selectedDate)}</div><div class="wv2-word-ko">아래 단어 ${words.length}개를 미리 보고 연습해요.</div></div><span class="wv2-pill">${words.length}개</span></div><button class="wv2-btn primary" style="width:100%;margin-top:10px" onclick="startWordV2PracticeForDate('preview','${escapeV2Text(selectedDate)}')">예습 시작</button>`;
+    list.appendChild(intro);
+  }
+  if (wordV2CalendarMode === 'test') {
+    const intro = document.createElement('div');
+    intro.className = 'wv2-word';
+    intro.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">시험 · ${escapeV2Text(selectedDate)}</div><div class="wv2-word-ko">${daily?.status === 'COMPLETED' ? '완료 ' + (daily.correctCount || 0) + '/' + (daily.totalQuestions || words.length) : '아직 공식 시험 전'} · 단어 ${words.length}개</div></div><span class="wv2-pill">${daily?.status === 'COMPLETED' ? Math.round(((daily.correctCount||0)/(daily.totalQuestions||1))*100) + '%' : '대기'}</span></div>`;
+    list.appendChild(intro);
+  }
   words.forEach(word => {
     const count = Number(word.reviewCorrectCount || 0);
     const div = document.createElement('div');
@@ -3892,6 +4110,7 @@ function resetWordV2ReviewState(word) {
   word.firstWrongAt = null;
   word.lastTestedAt = null;
   word.masteredAt = null;
+  word.testHistory = [];
 }
 
 function recalcWordV2ReviewState(state) {
@@ -3899,7 +4118,7 @@ function recalcWordV2ReviewState(state) {
   Object.values(state.tests || {})
     .filter(test => test?.status === 'COMPLETED')
     .sort((a, b) => String(a.completedAt || a.createdAt).localeCompare(String(b.completedAt || b.createdAt)))
-    .forEach(test => (test.questions || []).forEach(q => applyWordV2ReviewResult(state, q, test.testType)));
+    .forEach(test => (test.questions || []).forEach(q => applyWordV2ReviewResult(state, q, test)));
 }
 
 function saveWordV2Edit(wordId) {
@@ -3946,8 +4165,12 @@ function deleteWordV2(wordId) {
 }
 
 function startWordV2Practice(kind) {
+  startWordV2PracticeForDate(kind, null);
+}
+
+function startWordV2PracticeForDate(kind, dateKey) {
   const state = loadWordV2State();
-  const words = kind === 'review' ? getWordV2ReviewPracticeWords(state) : getWordV2NewWords(state);
+  const words = kind === 'review' ? getWordV2ReviewPracticeWords(state) : getWordV2NewWords(state, Infinity, dateKey || null);
   if (!words.length) { alert(kind === 'review' ? '선택한 날짜에 복습할 단어가 없어요.' : '예습할 새 단어가 없어요.'); return; }
   wordV2Session = { mode:kind, test:null, questions:buildWordV2Questions(words, state, 'PRACTICE'), index:0, answered:false, practice:true };
   showWordV2Quiz();
@@ -3963,7 +4186,7 @@ function startWordV2Test(type) {
   const isOfficialAttempt = existing?.status !== 'COMPLETED';
   const words = existing?.status === 'COMPLETED'
     ? getWordV2WordsFromTest(state, existing)
-    : type === 'WEEKLY' ? getWordV2WeeklyWords(state) : [...getWordV2NewWords(state, 20, targetDate), ...getWordV2ReviewWords(state)];
+    : type === 'WEEKLY' ? getWordV2WeeklyWords(state) : getWordV2NewWords(state, Infinity, targetDate);
   if (!words.length) { alert('시험 볼 단어가 없어요.'); return; }
   const now = new Date().toISOString();
   const test = { id, testDate:targetDate, testType:type, status:'IN_PROGRESS', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:now, completedAt:null };
@@ -4058,11 +4281,33 @@ function showWordV2Feedback(q, isCorrect) {
   document.getElementById('wv2-next-btn').className = 'game-next-btn show';
 }
 
-function applyWordV2ReviewResult(state, q, testType) {
+function buildWordV2HistoryEntry(q, test) {
+  return {
+    testId:test?.id || '',
+    testType:test?.testType || q.testType || 'DAILY',
+    testDate:test?.testDate || null,
+    questionId:q.id || '',
+    questionType:q.questionType || '',
+    isCorrect:Boolean(q.isCorrect),
+    selectedAnswer:q.selectedAnswer || '',
+    correctAnswer:q.correctAnswer || '',
+    answeredAt:q.answeredAt || null,
+    completedAt:test?.completedAt || null,
+  };
+}
+
+function applyWordV2ReviewResult(state, q, testOrType) {
   const word = state.words.find(w => w.id === q.wordId);
   if (!word) return;
+  const test = typeof testOrType === 'string' ? { testType:testOrType } : (testOrType || {});
+  const testType = test.testType || q.testType;
   const now = new Date().toISOString();
   word.lastTestedAt = now;
+  word.testHistory = Array.isArray(word.testHistory) ? word.testHistory : [];
+  const historyEntry = buildWordV2HistoryEntry(q, test);
+  if (historyEntry.testId && !word.testHistory.some(entry => entry.testId === historyEntry.testId && entry.questionId === historyEntry.questionId)) {
+    word.testHistory.push(historyEntry);
+  }
   if (q.isCorrect) {
     if (word.reviewStatus === 'REVIEWING') {
       word.reviewCorrectCount = Math.min(7, Number(word.reviewCorrectCount || 0) + 1);
@@ -4098,7 +4343,7 @@ function finishWordV2Session() {
       questions:wordV2Session.questions,
       completedAt,
     };
-    wordV2Session.questions.forEach(q => applyWordV2ReviewResult(state, q, test.testType));
+    wordV2Session.questions.forEach(q => applyWordV2ReviewResult(state, q, test));
     state.tests[wordV2Session.testId] = test;
     if (test.testType === 'DAILY') wordV2ReviewDate = test.testDate;
     saveWordV2State(state);
@@ -4111,7 +4356,7 @@ function finishWordV2Session() {
   fb.innerHTML = `<div class="game-feedback-emoji">🏁</div><div class="game-feedback-msg">완료! ${correct} / ${total}</div>`;
   const next = document.getElementById('wv2-next-btn');
   next.className = 'game-next-btn show';
-  next.textContent = '단어 v2 홈으로';
+  next.textContent = '단어 홈으로';
   next.onclick = () => { next.textContent = '다음 →'; next.onclick = nextWordV2Question; exitWordV2Quiz(); };
 }
 
@@ -5046,8 +5291,9 @@ function renderBadges() {
 }
 
 function updateLevelCard() {
-  const state=loadState(); const history=state?.history||{}; const today=getTestDate();
-  const streak=calcStreak(history,today);
+  const state=loadState();
+  const v2State=loadV2PlanState();
+  const streak=calcV2Streak(v2State,getV2TodayKey());
   const streakInLevel=streak%10||(streak>0?10:0);
   const lv=Math.min(getXPLevel(xp),100);
   document.querySelectorAll('.level-badge-sync').forEach(el=>el.innerHTML='Lv<br>'+lv);
@@ -5120,6 +5366,9 @@ function migrateWordGameXP() {
   calcReward(); updateProgress(); buildStreakCalendar();
   ensureV2PlanDate();
   applyRewardMode();
+  updateV2NotificationButton();
+  maybeNotifyMissingV2MorningPlan();
+  setInterval(maybeNotifyMissingV2MorningPlan, 30 * 60 * 1000);
   initAlba();
 
   // 스트릭 마일스톤 달성 축하 알림 (아직 알림 안 보낸 경우)
