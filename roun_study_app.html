@@ -453,6 +453,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-date-day.selected { background:var(--purple); color:white; }
 .wv2-date-day:disabled { background:white; color:#D1D5DB; cursor:not-allowed; }
 .wv2-date-day.other:disabled { color:#E5E7EB; }
+.word-container:has(#wv2-quiz[style*="block"]) .wv2-layer { display:none; }
 
 @media (max-width:480px), (display-mode:standalone) {
   .wv2-layer { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
@@ -4695,6 +4696,7 @@ function startWordV2Test(type) {
 }
 
 function showWordV2Quiz() {
+  document.getElementById('wv2-preview-overlay')?.classList.remove('show');
   document.getElementById('wv2-review-overlay')?.classList.remove('show');
   document.getElementById('wv2-home').style.display = 'none';
   document.getElementById('wv2-quiz').style.display = 'block';
