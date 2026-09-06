@@ -377,6 +377,12 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .wv2-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
 .wv2-actions.main { gap:9px; }
 .wv2-actions.main .wv2-btn { min-height:48px; font-size:14px; }
+.wv2-rules-toggle { width:100%; margin-top:9px; border:1.5px solid #C4B5FD; border-radius:12px; background:#F8F7FF; color:var(--purple); padding:10px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:900; cursor:pointer; }
+.wv2-rules-card { display:none; margin-top:9px; border:1.5px solid #DDD6FE; border-radius:12px; background:#FAFAFF; padding:11px 12px; }
+.wv2-rules-card.show { display:block; }
+.wv2-rules-row { display:flex; justify-content:space-between; gap:8px; padding:5px 0; border-bottom:1px solid #EEEAFD; font-size:11px; font-weight:800; color:var(--muted); }
+.wv2-rules-row:last-child { border-bottom:none; }
+.wv2-rules-row span:last-child { color:var(--purple); font-weight:900; white-space:nowrap; }
 .wv2-btn { border:none; border-radius:12px; padding:11px 9px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:900; cursor:pointer; background:var(--purple-light); color:var(--purple); }
 .wv2-btn.primary { background:linear-gradient(135deg,#0EA5E9,#7B5CF5); color:white; }
 .wv2-btn.gold { background:linear-gradient(135deg,#F59E0B,#EF4444); color:white; }
@@ -1118,6 +1124,17 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <button class="wv2-btn green" id="wv2-review-btn" onclick="openWordV2Review()">복습하기</button>
         <button class="wv2-btn gold" id="wv2-daily-btn" onclick="startWordV2Test('DAILY')">시험응시</button>
         <button class="wv2-btn" id="wv2-weekly-btn" onclick="startWordV2Test('WEEKLY')">주말시험</button>
+      </div>
+      <button class="wv2-rules-toggle" id="wv2-rules-toggle" onclick="toggleWordV2RewardRules()">단어시험 보상 규칙 보기 ▾</button>
+      <div class="wv2-rules-card" id="wv2-reward-rules">
+        <div class="wv2-rules-row"><span>평일 80~89점</span><span>+400원</span></div>
+        <div class="wv2-rules-row"><span>평일 90~99점</span><span>+600원</span></div>
+        <div class="wv2-rules-row"><span>평일 100점</span><span>+1,000원</span></div>
+        <div class="wv2-rules-row"><span>주말 80~89점</span><span>+3,000원</span></div>
+        <div class="wv2-rules-row"><span>주말 90~94점</span><span>+5,000원</span></div>
+        <div class="wv2-rules-row"><span>주말 95~99점</span><span>+7,000원</span></div>
+        <div class="wv2-rules-row"><span>주말 100점</span><span>+10,000원</span></div>
+        <div class="wv2-sub">보상은 최초 공식 시험 결과로만 확정돼요.</div>
       </div>
     </div>
 
@@ -3734,6 +3751,7 @@ let wordV2RegisterOpen = false;
 let wordV2CalendarMode = 'registered';
 let wordV2DatePickerContext = 'word';
 let wordV2DatePickerMonth = null;
+let wordV2RewardRulesOpen = false;
 
 function kstDateKey(date=new Date()) {
   const kst = new Date(date.toLocaleString('en-US', { timeZone:'Asia/Seoul' }));
@@ -4261,8 +4279,13 @@ function syncWordV2DateInput(input, state, dateKey) {
   const dates = getWordV2WordDates(state);
   input.value = formatWordV2DateInput(dateKey);
   input.dataset.date = dateKey || '';
-  input.style.cursor = dates.length ? 'pointer' : 'not-allowed';
-  input.disabled = dates.length === 0;
+  const canOpen = dates.length > 0 || input.id === 'wv2-word-date';
+  input.style.cursor = canOpen ? 'pointer' : 'not-allowed';
+  input.disabled = !canOpen;
+}
+
+function isWordV2DatePickerEnabled(dateKey, wordDates) {
+  return wordDates.has(dateKey) || (wordV2DatePickerContext === 'word' && dateKey === kstDateKey());
 }
 
 function getWordV2DatePickerValue(context) {
@@ -4282,10 +4305,10 @@ function chooseWordV2DatePickerDate(dateKey) {
 function openWordV2DatePicker(context='word') {
   const state = loadWordV2State();
   const dates = getWordV2WordDates(state);
-  if (!dates.length) return;
+  if (!dates.length && context !== 'word') return;
   wordV2DatePickerContext = context;
-  const selected = getWordV2DatePickerValue(context) || getWordV2DefaultWordDate(state);
-  wordV2DatePickerMonth = parseWordV2DateKey(selected || dates[dates.length - 1]);
+  const selected = getWordV2DatePickerValue(context) || (context === 'word' ? kstDateKey() : getWordV2DefaultWordDate(state));
+  wordV2DatePickerMonth = parseWordV2DateKey(selected || dates[dates.length - 1] || kstDateKey());
   document.getElementById('wv2-date-picker')?.classList.add('show');
   renderWordV2DatePicker(state);
 }
@@ -4305,7 +4328,7 @@ function renderWordV2DatePicker(state=loadWordV2State()) {
   const monthLabel = document.getElementById('wv2-date-month');
   if (!grid) return;
   const wordDates = new Set(getWordV2WordDates(state));
-  const selected = getWordV2DatePickerValue(wordV2DatePickerContext);
+  const selected = getWordV2DatePickerValue(wordV2DatePickerContext) || (wordV2DatePickerContext === 'word' ? kstDateKey() : '');
   const monthDate = wordV2DatePickerMonth || parseWordV2DateKey(selected || getWordV2DefaultWordDate(state));
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -4319,18 +4342,18 @@ function renderWordV2DatePicker(state=loadWordV2State()) {
     const day = new Date(start);
     day.setDate(start.getDate() + i);
     const dateKey = makeWordV2DateKey(day);
-    const hasWords = wordDates.has(dateKey);
+    const canSelect = isWordV2DatePickerEnabled(dateKey, wordDates);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = [
       'wv2-date-day',
       day.getMonth() !== month ? 'other' : '',
-      hasWords ? 'has' : '',
+      canSelect ? 'has' : '',
       dateKey === selected ? 'selected' : '',
     ].filter(Boolean).join(' ');
     button.textContent = day.getDate();
-    button.disabled = !hasWords;
-    if (hasWords) button.onclick = () => chooseWordV2DatePickerDate(dateKey);
+    button.disabled = !canSelect;
+    if (canSelect) button.onclick = () => chooseWordV2DatePickerDate(dateKey);
     grid.appendChild(button);
   }
 }
@@ -4400,9 +4423,20 @@ function setWordV2ReviewDate(dateKey) {
 }
 
 function setWordV2Date(dateKey) {
-  wordV2SelectedDate = validateWordV2WordDate(dateKey, wordV2SelectedDate);
+  wordV2SelectedDate = dateKey === kstDateKey() ? dateKey : validateWordV2WordDate(dateKey, wordV2SelectedDate);
   wordV2EditingId = null;
   renderWordV2Screen();
+}
+
+function toggleWordV2RewardRules() {
+  wordV2RewardRulesOpen = !wordV2RewardRulesOpen;
+  renderWordV2RewardRulesState();
+}
+
+function renderWordV2RewardRulesState() {
+  document.getElementById('wv2-reward-rules')?.classList.toggle('show', wordV2RewardRulesOpen);
+  const btn = document.getElementById('wv2-rules-toggle');
+  if (btn) btn.textContent = wordV2RewardRulesOpen ? '단어시험 보상 규칙 닫기 ▴' : '단어시험 보상 규칙 보기 ▾';
 }
 
 function renderWordV2Screen() {
@@ -4458,9 +4492,11 @@ function renderWordV2Screen() {
   if (dateCard) dateCard.style.display = wordV2ListTab === 'words' ? 'block' : 'none';
   const dateInput = document.getElementById('wv2-word-date');
   const dateTitle = document.getElementById('wv2-word-date-title');
-  if (!wordV2SelectedDate || !getWordV2WordDates(state).includes(wordV2SelectedDate)) wordV2SelectedDate = getWordV2DefaultWordDate(state);
+  const wordDates = getWordV2WordDates(state);
+  if (!wordV2SelectedDate || (!wordDates.includes(wordV2SelectedDate) && wordV2SelectedDate !== today)) wordV2SelectedDate = getWordV2DefaultWordDate(state) || today;
   if (dateTitle) dateTitle.textContent = '등록 날짜별 단어';
   syncWordV2DateInput(dateInput, state, wordV2SelectedDate);
+  renderWordV2RewardRulesState();
   ['words','tests'].forEach(tab => document.getElementById('wv2-tab-'+tab)?.classList.toggle('on', wordV2ListTab === tab));
   renderWordV2List(state);
   if (document.getElementById('wv2-preview-overlay')?.classList.contains('show')) renderWordV2PreviewOverlay(state);
