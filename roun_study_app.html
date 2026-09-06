@@ -507,6 +507,9 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .v2-summary-card { background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 10px; text-align:center; min-height:66px; }
 .v2-summary-val { font-size:20px; font-weight:900; color:var(--purple); }
 .v2-summary-label { font-size:10px; font-weight:800; color:var(--muted); margin-top:3px; }
+.v2-month-stats-head { margin:12px 16px 0; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.v2-month-stats-title { font-size:13px; font-weight:900; color:var(--text); }
+.v2-month-stats-sub { font-size:10px; font-weight:800; color:var(--muted); }
 .v2-complete-banner { display:none; margin:10px 16px 0; background:linear-gradient(135deg,#FEF3C7,#DCFCE7); border:1.5px solid #FCD34D; border-radius:var(--radius); padding:13px 14px; text-align:center; font-size:15px; font-weight:900; color:#854D0E; }
 .v2-complete-banner.show { display:block; }
 .v2-plan-card { margin:10px 16px 0; background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:13px 14px; }
@@ -608,9 +611,20 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   ════════════════════════════════════════ -->
   <div id="v2-home-panel" class="v2-beta-panel">
     <div class="v2-beta-note">
-      <div class="v2-note-title">🧪 계획 베타</div>
-      <div class="v2-note-sub">이제 홈과 통계는 새 계획 기준으로 표시돼요.</div>
+      <div class="v2-note-title">📋 오늘의 계획</div>
+      <div class="v2-note-sub">계획과 보상을 한눈에 확인해요.</div>
       <button class="v2-edit-toggle" id="v2-notification-btn" style="margin-top:8px" onclick="enableV2PlanNotifications()">아침 알림 켜기</button>
+    </div>
+
+    <div class="v2-month-stats-head">
+      <div class="v2-month-stats-title">이달 통계</div>
+      <div class="v2-month-stats-sub" id="v2-month-stats-label">0월</div>
+    </div>
+    <div class="v2-summary-grid">
+      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-study">0원</div><div class="v2-summary-label">공부 보상</div></div>
+      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-alba">0원</div><div class="v2-summary-label">알바 보상</div></div>
+      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-total">0원</div><div class="v2-summary-label">총 보상</div></div>
+      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-goals">0/0</div><div class="v2-summary-label">목표 완료 달성/시도</div></div>
     </div>
 
     <div class="v2-summary-grid">
@@ -2787,6 +2801,45 @@ function calcV2MonthCompletedCount(state, year, month) {
     .reduce((sum, dateKey) => sum + getV2CompletedCount(state[dateKey]), 0);
 }
 
+function calcLegacyStudyRewardForMonth(year, month) {
+  const history = loadState()?.history || {};
+  return Object.entries(history)
+    .filter(([dateKey, record]) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !record || record.isStreakBonus || record.isHabitBonus) return false;
+      const [y, m] = dateKey.split('-').map(Number);
+      return y === year && m === month;
+    })
+    .reduce((sum, [, record]) => sum + Number(record.reward || 0), 0);
+}
+
+function calcV2MonthGoalStats(state, year, month) {
+  const attempted = getV2MonthKeysForStats(state, year, month)
+    .filter(dateKey => {
+      const day = state[dateKey];
+      return day && !day.isRestDay && getV2PlannedCount(day) > 0;
+    });
+  return {
+    achieved:attempted.filter(dateKey => isV2FullyComplete(state[dateKey])).length,
+    attempted:attempted.length,
+  };
+}
+
+function renderHomeMonthStats() {
+  const today = getTestDate();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  const v2State = loadV2PlanState();
+  const studyReward = calcLegacyStudyRewardForMonth(year, month) + getV2MonthRewardForStats(year, month) + getWordV2MonthRewardForStats(year, month);
+  const albaReward = calcAlbaMonthAccum(year, month);
+  const goalStats = calcV2MonthGoalStats(v2State, year, month);
+  const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  setText('v2-month-stats-label', year + '년 ' + month + '월');
+  setText('home-month-study', studyReward.toLocaleString() + '원');
+  setText('home-month-alba', albaReward.toLocaleString() + '원');
+  setText('home-month-total', (studyReward + albaReward).toLocaleString() + '원');
+  setText('home-month-goals', goalStats.achieved + '/' + goalStats.attempted);
+}
+
 function calcV2BestStreak(state) {
   const dates = Object.keys(state || {}).filter(dateKey => /^\d{4}-\d{2}-\d{2}$/.test(dateKey)).sort();
   if (!dates.length) return 0;
@@ -2843,6 +2896,7 @@ function renderV2Home() {
   const state = loadV2PlanState();
   const viewDay = getV2Day(state, viewDate);
   saveV2PlanState(state, false);
+  renderHomeMonthStats();
 
   const restBtn = document.getElementById('v2-rest-btn');
   if (restBtn) {
