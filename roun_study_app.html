@@ -4117,8 +4117,13 @@ function getWordV2DailyTestForDate(state, dateKey) {
   return state.tests?.[getWordV2TestId('DAILY', dateKey)] || null;
 }
 
+function isWordV2WeekendExamDay(dateKey=kstDateKey()) {
+  const day = new Date(dateKey + 'T00:00:00').getDay();
+  return day === 0 || day === 6;
+}
+
 function getWordV2Score(correct, total) {
-  return Math.round(getWordV2ScoreValue(correct, total));
+  return Math.ceil(getWordV2ScoreValue(correct, total));
 }
 
 function getWordV2ScoreValue(correct, total) {
@@ -4147,7 +4152,7 @@ function getWordV2ExamRewardLabel(type) {
 
 function buildWordV2ExamReward(test, completedAt) {
   const score = getWordV2Score(test.correctCount, test.totalQuestions);
-  const rewardAmount = getWordV2ExamRewardAmount(test.testType, getWordV2ScoreValue(test.correctCount, test.totalQuestions));
+  const rewardAmount = getWordV2ExamRewardAmount(test.testType, score);
   return {
     examId:test.id,
     examType:test.testType,
@@ -4473,13 +4478,13 @@ function renderWordV2Screen() {
   }
   const weekCard = document.getElementById('wv2-week-card');
   const weekBtn = document.getElementById('wv2-weekly-btn');
-  const isSunday = new Date(today + 'T00:00:00').getDay() === 0;
-  if (weekCard) weekCard.style.display = isSunday ? 'block' : 'none';
+  const isWeekendExamDay = isWordV2WeekendExamDay(today);
+  if (weekCard) weekCard.style.display = isWeekendExamDay ? 'block' : 'none';
   setText('wv2-week-sub', '이번 주말 시험 단어 ' + weeklyWords.length + '개');
   if (weekBtn) {
     const retryWeeklyWords = weekly?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, weekly) : weeklyWords;
-    weekBtn.disabled = !isSunday || retryWeeklyWords.length === 0;
-    weekBtn.textContent = !isSunday ? '일요일 주말시험' : weekly?.status === 'COMPLETED' ? '주말시험 다시 풀기' : '주말시험';
+    weekBtn.disabled = !isWeekendExamDay || retryWeeklyWords.length === 0;
+    weekBtn.textContent = !isWeekendExamDay ? '토/일 주말시험' : weekly?.status === 'COMPLETED' ? '주말시험 다시 풀기' : '주말시험';
   }
   renderWordV2RegisterState();
   document.querySelectorAll('.wv2-flow-chip').forEach((chip, index) => {
@@ -4673,6 +4678,7 @@ function startWordV2PracticeForDate(kind, dateKey) {
 function startWordV2Test(type) {
   const state = loadWordV2State();
   const today = kstDateKey();
+  if (type === 'WEEKLY' && !isWordV2WeekendExamDay(today)) { alert('주말시험은 토요일이나 일요일에 볼 수 있어요.'); return; }
   const targetDate = type === 'DAILY' ? getWordV2DailyTestDate(state) : today;
   if (!targetDate) { alert('시험 볼 단어가 없어요.'); return; }
   const id = getWordV2TestId(type, targetDate);
@@ -4729,7 +4735,7 @@ function renderWordV2Question() {
     const input = document.getElementById('wv2-answer'); input.value = ''; input.disabled = false; setTimeout(() => input.focus(), 80);
   } else {
     document.getElementById('wv2-question').textContent = q.questionType === 'WORD_TO_MEANING' ? q.word : (q.example || q.word);
-    document.getElementById('wv2-question-sub').textContent = q.exampleKo || '';
+    document.getElementById('wv2-question-sub').textContent = '';
     answerArea.style.display = 'none'; choiceArea.style.display = 'grid'; choiceArea.innerHTML = '';
     q.choices.forEach(choice => {
       const btn = document.createElement('button');
