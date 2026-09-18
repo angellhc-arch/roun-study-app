@@ -1,0 +1,34 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const html = fs.readFileSync(require('node:path').join(__dirname,'../roun_study_app.html'),'utf8');
+const names = ['kstDateKey','getWordV2WeekRange','getWordV2TestId','getWordV2WeeklyWords','getWordV2AvailableWeeklyDates','getWordV2WordsFromTest','getWordV2ById','isWordV2WeekendExamDay','getWordV2Score','getWordV2ScoreValue','getWordV2ExamRewardAmount','getWordV2ExamRewardLabel','isWordV2LateWeeklyTest','buildWordV2ExamReward','grantWordV2ExamReward'];
+const c = vm.createContext({});
+vm.runInContext(names.map(name => { const a=html.indexOf('function '+name+'('); assert(a>=0); return html.slice(a,html.indexOf('\n}',a)+2); }).join('\n'),c);
+const state = { words:[{id:'a'},{id:'b'},{id:'c'}], tests:{}, rewardLedger:{} };
+for(const [date,id] of [['2026-09-04','a'],['2026-09-11','b'],['2026-09-15','c']]) state.tests['DAILY-'+date]={testType:'DAILY',status:'COMPLETED',testDate:date,questions:[{wordId:id}]};
+assert.deepEqual(Array.from(c.getWordV2AvailableWeeklyDates(state,'2026-09-15')),['2026-09-06','2026-09-13']);
+assert.deepEqual(Array.from(c.getWordV2WeeklyWords(state,'2026-09-13'),w=>w.id),['b']);
+assert.deepEqual(Array.from(c.getWordV2AvailableWeeklyDates(state,'2026-09-19')),['2026-09-06','2026-09-13','2026-09-20']);
+state.tests['WEEKLY-2026-09-06']={testType:'WEEKLY',status:'COMPLETED',testDate:'2026-09-05',questions:[{wordId:'a'}]};
+assert.deepEqual(Array.from(c.getWordV2AvailableWeeklyDates(state,'2026-09-15')),['2026-09-13']);
+assert.equal(c.getWordV2TestId('WEEKLY','2026-12-31'),'WEEKLY-2027-01-03');
+assert.equal(c.getWordV2TestId('WEEKLY','2026-09-12'),'WEEKLY-2026-09-13');
+for(const [score,normal,late] of [[100,10000,8000],[95,7000,5000],[90,5000,3000],[80,3000,1000],[79,0,0]]) {
+ const test={id:'WEEKLY-2026-09-13',testType:'WEEKLY',testDate:'2026-09-14',scheduledWeekEnd:'2026-09-13',correctCount:score,totalQuestions:100};
+ assert.equal(c.buildWordV2ExamReward(test,'2026-09-13T14:59:59Z').rewardAmount,normal);
+ assert.equal(c.buildWordV2ExamReward(test,'2026-09-13T15:00:00Z').rewardAmount,late);
+ assert.equal(c.buildWordV2ExamReward(test,'2026-10-20T01:00:00Z').rewardAmount,late);
+}
+const test={id:'WEEKLY-2026-09-13',testType:'WEEKLY',testDate:'2026-09-14',correctCount:100,totalQuestions:100};
+const reward=c.grantWordV2ExamReward(state,test,'2026-09-14T01:00:00Z');
+assert.equal(reward.rewardAmount,8000);
+assert.equal(c.grantWordV2ExamReward(state,{...test,correctCount:80},'2026-09-15T01:00:00Z'),reward);
+assert.equal(c.buildWordV2ExamReward({...test,testType:'DAILY'},'2026-09-15T01:00:00Z').rewardAmount,1000);
+assert.equal(c.getWordV2AvailableWeeklyDates({words:[],tests:{}},'2026-09-15').length,0);
+console.log('PASS: missed week selection, per-week words, completed exclusion, year/KST boundaries, all reward tiers, zero floor, unchanged daily rewards and first reward lock');
+state.tests['WEEKLY-2026-09-13']={testType:'WEEKLY',status:'COMPLETED',testDate:'2026-09-15',questions:[{wordId:'b'}]};
+assert.equal(c.getWordV2AvailableWeeklyDates(state,'2026-09-15').length,0);
+state.tests['WEEKLY-2026-09-20']={testType:'WEEKLY',status:'COMPLETED',testDate:'2026-09-19',questions:[{wordId:'c'}]};
+assert.equal(c.getWordV2AvailableWeeklyDates(state,'2026-09-19').length,0);
+console.log('PASS: completed backlog advances to next week; completed current weekend is excluded');

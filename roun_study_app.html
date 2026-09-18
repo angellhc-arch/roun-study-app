@@ -24,7 +24,47 @@
 }
 html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; justify-content:center; font-family:'Nunito',sans-serif; }
 .phone-shell { width:min(390px,100vw); height:min(844px,100dvh); background:var(--bg); border-radius:40px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.25); position:relative; display:flex; flex-direction:column; }
-.screen { display:none; flex-direction:column; flex:1; overflow-y:auto; padding-bottom:80px; }
+.screen { display:none; flex-direction:column; flex:1; min-height:0; overflow-y:auto; padding-bottom:80px; }
+#screen-word2 > * { flex-shrink:0; }
+#screen-word2 { -webkit-overflow-scrolling:touch; }
+#wv2-quiz { position:absolute; inset:0; z-index:210; background:var(--bg); flex-direction:column; overflow:hidden; padding-top:env(safe-area-inset-top); }
+#wv2-quiz[style*="block"] { display:flex !important; }
+.wv2-quiz-scroll { flex:1; min-height:0; overflow-y:auto; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch; padding-bottom:6px; }
+#wv2-quiz > .game-top-bar { flex-shrink:0; }
+#wv2-answer-area { flex-shrink:0; margin:6px 16px; }
+#wv2-quiz.keyboard-open { padding-top:0; }
+#wv2-quiz.keyboard-open .wv2-quiz-actions { padding-bottom:10px; }
+.wv2-quiz-actions { position:relative; z-index:1; flex-shrink:0; background:white; border-top:1px solid var(--border); padding:10px 0 calc(12px + env(safe-area-inset-bottom)); }
+#wv2-feedback { margin:0 16px 6px; padding:8px 10px; }
+#wv2-feedback .game-feedback-emoji { display:inline; font-size:16px; margin:0 5px 0 0; }
+#wv2-feedback .game-feedback-msg { display:inline; font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
+#wv2-quiz .wv2-quiz-card { padding:10px 12px; margin-top:4px; }
+#wv2-quiz .wv2-question { font-size:18px; line-height:1.3; margin-top:4px; }
+#wv2-quiz .wv2-choices { gap:6px; margin-top:4px; }
+#wv2-quiz .wv2-choice { padding:8px 10px; min-height:40px; }
+#wv2-quiz .game-next-btn { margin-top:4px; padding:12px; }
+.wv2-quiz-actions .game-btn-row { margin-top:0; }
+.wv2-choice.selected { background:var(--purple-light); border-color:var(--purple); }
+#wv2-quiz button:disabled { opacity:.55; }
+#v2-plan-dialog { width:min(440px,calc(100vw - 20px)); max-height:calc(100dvh - 24px); margin:auto; padding:0; border:0; border-radius:22px; background:var(--bg); color:var(--text); overflow:hidden; }
+#v2-plan-dialog[open] { display:flex; flex-direction:column; }
+#v2-plan-dialog::backdrop { background:rgba(30,27,75,.55); }
+.v2-dialog-header { display:flex; align-items:center; justify-content:space-between; padding:16px; flex-shrink:0; background:white; border-bottom:1px solid var(--border); }
+.v2-dialog-header h2 { font-size:19px; }
+.v2-dialog-header button { width:44px; height:44px; border:0; border-radius:50%; background:var(--purple-light); color:var(--purple); font-size:20px; cursor:pointer; }
+.v2-dialog-body { overflow-y:auto; min-height:0; padding:12px 16px; -webkit-overflow-scrolling:touch; }
+#v2-plan-dialog .v2-plan-card { margin:12px 0; }
+#v2-plan-dialog .v2-input { font-size:16px; }
+.v2-dialog-footer { flex-shrink:0; padding:12px 16px max(12px,env(safe-area-inset-bottom)); background:white; }
+.v2-dialog-footer button { width:100%; }
+.v2-estimate { margin:12px 16px; padding:16px; border:2px solid #F5C65B; border-radius:16px; background:linear-gradient(120deg,#FFF3D4,#FFFBEF); }
+.v2-estimate strong { display:block; font-size:28px; color:#9A6200; margin:4px 0; }
+.v2-estimate [hidden] { display:none; }
+.v2-estimate.is-empty { display:none; }
+.v2-estimate.is-empty #v2-estimate-heading { font-size:17px; font-weight:900; line-height:1.6; color:#9A6200; }
+.v2-estimate p { font-size:12px; line-height:1.7; color:#795518; }
+#v2-plan-form-sub.has-reward { font-size:22px; font-weight:900; border:1px solid #F5C65B; }
+#v2-plan-form-sub { color:#9A6200; background:#FFF3D4; padding:10px; border-radius:10px; font-size:15px; margin-top:8px; }
 .screen.active { display:flex; }
 
 @media (max-width:480px), (display-mode:standalone) {
@@ -500,13 +540,24 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .mode-btn.active { background:var(--purple); border-color:var(--purple); color:white; }
 .v2-beta-panel { display:none; }
 .v2-beta-panel.show { display:block; }
-.v2-beta-note { margin:10px 16px 0; background:#F0F9FF; border:1.5px solid #BAE6FD; border-radius:var(--radius); padding:12px 14px; }
-.v2-note-title { font-size:13px; font-weight:900; color:#0369A1; }
-.v2-note-sub { font-size:11px; font-weight:700; color:#0C4A6E; line-height:1.5; margin-top:3px; }
 .v2-summary-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:10px 16px 0; }
 .v2-summary-card { background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 10px; text-align:center; min-height:66px; }
 .v2-summary-val { font-size:20px; font-weight:900; color:var(--purple); }
 .v2-summary-label { font-size:10px; font-weight:800; color:var(--muted); margin-top:3px; }
+.v2-month-compact { margin:10px 16px; padding:14px 14px; background:white; border:1px solid var(--border); border-radius:12px; }
+.v2-month-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:15px; line-height:1.6; }
+.v2-month-row strong { color:var(--purple); }
+.v2-month-breakdown { margin-top:6px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+.v2-plan-rules summary { display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; list-style:none; min-height:28px; }
+.v2-plan-rules summary::-webkit-details-marker { display:none; }
+.v2-plan-rules summary::after { content:'▾'; color:var(--muted); }
+.v2-plan-rules[open] summary::after { content:'▴'; }
+.v2-reward-summary { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:900; list-style:none; min-height:28px; }
+.v2-reward-summary::-webkit-details-marker { display:none; }
+.v2-reward-summary strong { margin-left:auto; color:var(--purple); }
+.v2-reward-summary::after { content:'▾'; color:var(--muted); }
+#v2-reward-details[open] .v2-reward-summary::after { content:'▴'; }
+#v2-reward-details[open] #v2-reward-lines { margin-top:10px; border-top:1px solid var(--border); padding-top:6px; }
 .v2-month-stats-head { margin:12px 16px 0; display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .v2-month-stats-title { font-size:13px; font-weight:900; color:var(--text); }
 .v2-month-stats-sub { font-size:10px; font-weight:800; color:var(--muted); }
@@ -551,8 +602,20 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 .v2-rule-list { margin:0; padding-left:16px; }
 .v2-rule-list li { margin:4px 0; }
 .v2-habit-list { margin:10px 16px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.v2-habit-card { background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 10px; cursor:pointer; }
+.v2-habit-card { display:block; background:white; border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 10px; cursor:pointer; transition:border-color .15s, background .15s; }
+.v2-habit-card:hover { border-color:#7B5CF5; }
+.v2-habit-card:focus-within { outline:3px solid #C4B5FD; outline-offset:2px; }
+.v2-habit-heading { display:flex; align-items:center; gap:8px; }
+.v2-habit-checkbox { width:22px; height:22px; margin:0; flex-shrink:0; accent-color:#16A34A; cursor:pointer; }
+.v2-habit-action { display:block; margin-top:10px; font-size:11px; font-weight:800; color:var(--purple); }
+.v2-habit-card.done .v2-habit-action { color:#15803D; }
 .v2-habit-card.done { background:#F0FDF4; border-color:#86EFAC; }
+.v2-habit-card.miracle { border:2px solid #F5B83D; background:linear-gradient(145deg,#FFF9E9,#FFF0C4); }
+.v2-miracle-reward { display:block; margin:12px 0 8px; color:#9A5700; }
+.v2-miracle-reward small { display:block; font-size:11px; font-weight:800; margin-bottom:3px; }
+.v2-miracle-reward strong { display:block; font-size:26px; line-height:1.2; font-weight:900; white-space:nowrap; }
+.v2-habit-card.miracle.done { border-color:#86EFAC; background:#F0FDF4; }
+.v2-habit-card.miracle.done .v2-miracle-reward { color:#15803D; }
 .v2-habit-title { font-size:13px; font-weight:900; color:var(--text); }
 .v2-habit-sub { font-size:10px; font-weight:700; color:var(--muted); margin-top:4px; line-height:1.4; }
 .v2-edit-meta { margin:8px 16px 0; color:var(--muted); font-size:10px; font-weight:800; text-align:right; }
@@ -563,9 +626,106 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 /* ════════════════════════════════════════
    V2 BETA END
 ════════════════════════════════════════ */
+#reading-dialog { width:min(680px,calc(100vw - 24px)); max-height:calc(var(--reading-viewport-height,100dvh) - 24px); top:var(--reading-viewport-top,12px); bottom:auto; margin:0 auto; padding:0; border:0; border-radius:22px; color:var(--text); background:var(--bg); overflow:hidden; }
+#reading-dialog[open] { display:flex; flex-direction:column; }
+#reading-dialog::backdrop { background:rgba(30,27,75,.55); }
+.reading-dialog-header { display:flex; align-items:center; gap:12px; justify-content:space-between; padding:16px 20px; background:white; flex-shrink:0; }
+.reading-dialog-header h2 { font-size:22px; line-height:1.4; }
+.reading-dialog-header button { width:48px; height:48px; flex-shrink:0; border:0; border-radius:50%; background:var(--purple-light); color:var(--purple); font-size:28px; cursor:pointer; }
+.reading-dialog-body { overflow-y:auto; min-height:0; padding:16px 20px; font-size:18px; line-height:1.7; overscroll-behavior:contain; }
+.reading-dialog-body p { margin-bottom:16px; }
+#reading-item-label { font-size:16px; color:var(--muted); overflow-wrap:anywhere; }
+.reading-guide { padding:14px; background:var(--purple-light); border-radius:12px; font-weight:800; margin-bottom:16px; }
+.reading-examples { padding:14px; background:white; border-radius:12px; margin-bottom:16px; }
+.reading-examples p:last-child { margin-bottom:0; }
+.reading-dialog-body label { display:block; font-weight:800; margin-bottom:8px; }
+#reading-text { width:100%; min-height:150px; padding:14px; border:2px solid var(--border); border-radius:14px; font:inherit; background:white; color:var(--text); resize:vertical; }
+#reading-text:focus { outline:2px solid var(--purple); }
+#reading-error { color:#B91C1C; margin:8px 0 0; }
+.reading-dialog-actions { display:flex; gap:12px; padding:14px 20px max(14px,env(safe-area-inset-bottom)); background:white; flex-shrink:0; }
+.reading-dialog-actions button { padding:14px 18px; min-height:52px; border:0; border-radius:14px; font:inherit; font-size:18px; font-weight:800; background:var(--purple-light); color:var(--purple); cursor:pointer; }
+#reading-save { flex:1; color:white; background:var(--purple); }
+.reading-note-button { min-height:44px; padding:10px 14px; margin-top:10px; border:0; border-radius:10px; color:var(--purple); background:var(--purple-light); font-size:16px; font-weight:800; cursor:pointer; }
+#reading-history-controls { margin:4px 16px 16px; }
+#reading-history-controls input, #reading-history-controls button { min-height:44px; font-size:16px; padding:8px; border:1px solid var(--border); border-radius:10px; background:white; color:var(--text); max-width:100%; }
+#reading-history-controls label { display:block; font-size:16px; margin-bottom:8px; }
+.reading-day { margin-bottom:20px; }
+.reading-day h3 { font-size:18px; margin-bottom:10px; }
+.reading-record { width:100%; display:block; text-align:left; border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:10px; background:white; color:var(--text); font:inherit; cursor:pointer; }
+.reading-record strong { font-size:18px; overflow-wrap:anywhere; }
+.reading-record p { white-space:pre-wrap; overflow-wrap:anywhere; font-size:18px; line-height:1.7; margin-top:10px; }
+.reading-empty { padding:24px 8px; font-size:18px; line-height:1.7; color:var(--muted); }
+#hf-reading { flex:1; padding:7px; border-radius:10px; border:1.5px solid var(--border); background:white; color:var(--muted); font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
 </style>
 </head>
 <body>
+<dialog id="v2-plan-dialog" aria-labelledby="v2-plan-dialog-heading" oncancel="event.preventDefault();closeV2PlanDialog()">
+  <div class="v2-dialog-header"><h2 id="v2-plan-dialog-heading">📋 계획 세우기</h2><button type="button" onclick="closeV2PlanDialog()" aria-label="계획 입력 닫기">✕</button></div>
+  <div class="v2-dialog-body">
+    <label class="v2-small" for="v2-dialog-date">계획 날짜</label>
+    <input class="v2-date-input" id="v2-dialog-date" type="date" onchange="changeV2DialogDate(this.value)">
+    <div class="v2-plan-card" id="v2-plan-form-card">
+      <div class="v2-plan-head">
+        <div>
+          <div class="v2-card-title" id="v2-plan-form-title">🌙 하루 계획 세우기</div>
+          <div class="v2-small" id="v2-plan-form-sub">선택한 날짜에 계획을 추가해요.</div>
+          <div class="v2-small" id="v2-plan-form-breakdown" style="margin-top:8px;line-height:1.7" aria-live="polite" hidden></div>
+        </div>
+      </div>
+      <div class="v2-form-grid">
+        <select class="v2-select" id="v2-category" onchange="onV2CategoryChange()">
+          <option value="study">📚 학습</option>
+          <option value="vocabulary">🔤 영어 단어공부 (1회 10분)</option>
+          <option value="reading">📖 독서</option>
+          <option value="nap">😴 낮잠 (30분)</option>
+          <option value="exercise">🏃 운동</option>
+          <option value="hobby">🎨 취미</option>
+          <option value="etc">✏️ 기타</option>
+        </select>
+        <input class="v2-input" id="v2-title" placeholder="무엇을 할까요? 예: 수학 최상위 문제집">
+        <div class="v2-inline-grid">
+          <input class="v2-input" id="v2-minutes" type="number" min="1" value="40" placeholder="분">
+          <input class="v2-input" id="v2-count" type="number" min="1" value="1" placeholder="계획 횟수">
+        </div>
+        <button class="v2-add-btn" onclick="addV2PlanItem()">+ 계획 추가하기</button>
+      </div>
+      <div class="v2-rest-row">
+        <div>
+          <div class="v2-card-title" style="font-size:12px">🏖️ 계획 휴식일</div>
+          <div class="v2-small">보상은 없지만 연속 달성 기록은 유지돼요.</div>
+        </div>
+        <button class="v2-rest-btn" id="v2-rest-btn" onclick="toggleV2RestDay()">휴식일</button>
+      </div>
+    </div>
+
+    <div class="section-title">등록한 계획</div><div id="v2-dialog-list"></div>
+  </div>
+  <div class="v2-dialog-footer"><button class="v2-add-btn" onclick="closeV2PlanDialog()">완료 · 홈으로</button></div>
+</dialog>
+<dialog id="reading-dialog" aria-labelledby="reading-dialog-title" oncancel="readingDialogContext=null" onclose="readingDialogContext=null">
+  <header class="reading-dialog-header">
+    <h2 id="reading-dialog-title">오늘 읽은 책, 한 줄 생각</h2>
+    <button type="button" aria-label="독서록 닫기" onclick="closeV2ReadingDialog()" autofocus>×</button>
+  </header>
+  <div class="reading-dialog-body">
+    <p id="reading-item-label"></p>
+    <p>로운아, 처음 27분은 책을 읽고 마지막 3분은 네 생각을 적어보자. 😊<br>
+    기억에 남는 장면이나 신기한 사실, 궁금해진 것도 좋아!<br>
+    길게 쓰지 않아도 괜찮아. 네 생각이 담긴 한두 문장이면 충분해.</p>
+    <div class="reading-guide">오늘은 ___이 기억에 남았다. 왜냐하면 ___이기 때문이다.</div>
+    <div class="reading-examples">
+      <p>① 오늘은 강아지가 신발을 숨긴 장면이 기억에 남았다. 왜냐하면 주인은 찾지 못하는데 강아지만 아는 게 웃겼기 때문이다.</p>
+      <p>② 오늘은 주인공이 혼자 밥 먹는 장면이 기억에 남았다. 왜냐하면 외로워 보여서 같이 먹어주고 싶었기 때문이다.</p>
+    </div>
+    <label for="reading-text">로운이의 생각</label>
+    <textarea id="reading-text" rows="5" placeholder="기억에 남는 장면과 내 생각을 자유롭게 적어봐요." aria-describedby="reading-error"></textarea>
+    <p id="reading-error" role="alert" aria-live="polite"></p>
+  </div>
+  <footer class="reading-dialog-actions">
+    <button type="button" onclick="closeV2ReadingDialog()">취소</button>
+    <button type="button" id="reading-save" onclick="saveV2ReadingDialog()">저장하고 완료</button>
+  </footer>
+</dialog>
 <div class="phone-shell">
 <div class="pwa-install" id="pwa-install">
   <div class="pwa-install-text">
@@ -578,6 +738,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 
 <!-- ══════════════════ HOME ══════════════════ -->
 <div class="screen active" id="screen-home">
+
   <div class="header" style="padding-bottom:0;overflow:visible">
     <div class="header-top" style="margin-bottom:8px">
       <div>
@@ -610,69 +771,20 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
        계획 기반 학습 보상 시스템
   ════════════════════════════════════════ -->
   <div id="v2-home-panel" class="v2-beta-panel">
-    <div class="v2-beta-note">
-      <div class="v2-note-title">📋 오늘의 계획</div>
-      <div class="v2-note-sub">계획과 보상을 한눈에 확인해요.</div>
-      <button class="v2-edit-toggle" id="v2-notification-btn" style="margin-top:8px" onclick="enableV2PlanNotifications()">아침 알림 켜기</button>
+
+    <div class="v2-month-compact">
+      <div class="v2-month-row"><span>📊 <span id="v2-month-stats-label">이달</span></span><strong>총 <span id="home-month-total">0원</span></strong></div>
+      <div class="v2-month-row v2-month-breakdown"><span>공부 <b id="home-month-study">0원</b></span><span>알바 <b id="home-month-alba">0원</b></span><span>목표 <b id="home-month-goals">0/0</b></span></div>
     </div>
 
-    <div class="v2-month-stats-head">
-      <div class="v2-month-stats-title">이달 통계</div>
-      <div class="v2-month-stats-sub" id="v2-month-stats-label">0월</div>
-    </div>
-    <div class="v2-summary-grid">
-      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-study">0원</div><div class="v2-summary-label">공부 보상</div></div>
-      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-alba">0원</div><div class="v2-summary-label">알바 보상</div></div>
-      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-total">0원</div><div class="v2-summary-label">총 보상</div></div>
-      <div class="v2-summary-card"><div class="v2-summary-val" id="home-month-goals">0/0</div><div class="v2-summary-label">목표 완료 달성/시도</div></div>
-    </div>
-
-    <div class="v2-summary-grid">
-      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-planned">0개</div><div class="v2-summary-label" id="v2-sum-planned-label">선택 날짜 계획</div></div>
-      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-done">0 / 0</div><div class="v2-summary-label">완료</div></div>
-      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-rate">0%</div><div class="v2-summary-label">달성률</div></div>
-      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-reward">0원</div><div class="v2-summary-label">예상 보상</div></div>
-    </div>
-    <div class="v2-summary-grid" style="grid-template-columns:1fr;margin-top:8px">
-      <div class="v2-summary-card"><div class="v2-summary-val" id="v2-sum-streak">🔥 0일</div><div class="v2-summary-label">연속 달성</div></div>
-    </div>
+    <div class="v2-estimate is-empty" id="v2-estimate" aria-live="polite"><div id="v2-estimate-heading"></div><strong id="v2-estimate-total" hidden></strong><p id="v2-estimate-detail" hidden></p><p id="v2-estimate-rules" hidden>계획 5개 이상 · 최종 수정 시각 기준 · 전날까지 2,000원 / 당일 오전 500원 / 당일 오후 0원 (한국 시간)</p></div>
     <div class="v2-complete-banner" id="v2-complete-banner">🎉 오늘 계획 완전 달성!</div>
-    <div class="v2-reward-lines" id="v2-reward-lines"></div>
-    <button class="v2-plan-cta" id="v2-plan-cta" onclick="openV2PlanFormForMissingDay()">내일 계획 세우기</button>
 
     <div class="section-title" style="padding:14px 16px 0">🌅 기본 습관</div>
     <div class="v2-habit-list" id="v2-habit-list"></div>
 
-    <div class="v2-plan-card collapsed" id="v2-plan-form-card">
-      <div class="v2-plan-head">
-        <div>
-          <div class="v2-card-title" id="v2-plan-form-title">🌙 하루 계획 세우기</div>
-          <div class="v2-small" id="v2-plan-form-sub">선택한 날짜에 계획을 추가해요.</div>
-        </div>
-      </div>
-      <div class="v2-form-grid">
-        <select class="v2-select" id="v2-category" onchange="onV2CategoryChange()">
-          <option value="study">📚 학습</option>
-          <option value="reading">📖 독서</option>
-          <option value="exercise">🏃 운동</option>
-          <option value="hobby">🎨 취미</option>
-          <option value="etc">✏️ 기타</option>
-        </select>
-        <input class="v2-input" id="v2-title" placeholder="무엇을 할까요? 예: 수학 최상위 문제집">
-        <div class="v2-inline-grid">
-          <input class="v2-input" id="v2-minutes" type="number" min="1" value="40" placeholder="분">
-          <input class="v2-input" id="v2-count" type="number" min="1" value="1" placeholder="계획 횟수">
-        </div>
-        <button class="v2-add-btn" onclick="addV2PlanItem()">+ 계획 추가하기</button>
-      </div>
-      <div class="v2-rest-row">
-        <div>
-          <div class="v2-card-title" style="font-size:12px">🏖️ 계획 휴식일</div>
-          <div class="v2-small">보상은 없지만 연속 달성 기록은 유지돼요.</div>
-        </div>
-        <button class="v2-rest-btn" id="v2-rest-btn" onclick="toggleV2RestDay()">휴식일</button>
-      </div>
-    </div>
+    <button class="v2-plan-cta" id="v2-plan-cta" onclick="openV2PlanFormForMissingDay()">내일 계획 세우기</button>
+
 
     <div class="v2-plan-card">
       <div class="v2-plan-head">
@@ -686,17 +798,17 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     </div>
     <div class="v2-edit-meta" id="v2-edit-meta"></div>
 
-    <div class="v2-plan-card">
-      <div class="v2-card-title">🐸 로운이의 계획 달성 규칙</div>
+    <details class="v2-plan-card v2-plan-rules">
+      <summary class="v2-card-title">🐸 로운이의 계획 달성 규칙</summary>
       <div class="v2-small" style="margin-top:8px">
-        🌙 내일 할 일을 5개 이상 정해요. 계획을 다 만들면 💰 +1,000원<br>
+        🌙 계획 5개 이상 · 최종 수정 시각 기준: 전날까지 +2,000원 · 당일 오전(12시 전) +500원 · 당일 오후 +0원<br>
         ✅ 평일은 계획 1개당 +500원, 주말은 1개당 +1,000원<br>
         🎉 평일에는 전부 성공하면 완료 보상의 +50%<br>
         🚀 평일 많이 도전: 8개 +1,000원, 10개 +2,000원, 12개 이상 +3,000원<br>
         🏆 주말 프리미엄: 11개 +2,000원, 12개 +4,000원, 13개 이상 +7,000원<br>
         🔥 10일 +10,000원, 20일 +20,000원, 30일 이후 10일마다 +30,000원
       </div>
-    </div>
+    </details>
 
     <div class="section-title" style="padding:14px 16px 0" id="v2-list-title">✅ 오늘 계획 실행</div>
     <div id="v2-today-list" class="v2-item-list"></div>
@@ -753,8 +865,8 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           </tr>
           <tr style="border-bottom:1px solid #F3F4F6">
             <td style="padding:7px 6px;font-weight:800;font-size:11px">🌅 미라클 모닝</td>
-            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:#F59E0B">500원/일</td>
-            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:var(--green)">+5,000원</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:#F59E0B">4,000원/일</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:900;font-size:11px;color:var(--green)">+10,000원</td>
           </tr>
           <tr style="border-bottom:1px solid #F3F4F6">
             <td style="padding:7px 6px;font-weight:800;font-size:11px">🚿 아침 샤워</td>
@@ -845,7 +957,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
           <div class="task-name" id="name-miracle">🌅 미라클 모닝</div>
           <div class="task-sub" id="sub-miracle">6:15 이전 기상 · 연속 0일</div>
         </div>
-        <div class="task-badge gold" id="badge-miracle">+500원</div>
+        <div class="task-badge gold" id="badge-miracle">+4,000원</div>
         <span style="font-size:9px;font-weight:700;color:#A78BFA;background:#EDE9FE;padding:2px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0">+30XP</span>
       </div>
     </div>
@@ -1149,7 +1261,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
         <div class="wv2-rules-row"><span>주말 90~94점</span><span>+5,000원</span></div>
         <div class="wv2-rules-row"><span>주말 95~99점</span><span>+7,000원</span></div>
         <div class="wv2-rules-row"><span>주말 100점</span><span>+10,000원</span></div>
-        <div class="wv2-sub">보상은 최초 공식 시험 결과로만 확정돼요.</div>
+        <div class="wv2-sub">지난 미응시 주말시험도 볼 수 있어요. 일요일 이후 완료하면 점수별 보상에서 2,000원을 한 번 차감해요 (최소 0원).<br>지연 보상: 80점 1,000원 · 90점 3,000원 · 95점 5,000원 · 100점 8,000원.<br>보상은 최초 공식 시험 결과로만 확정돼요.</div>
       </div>
     </div>
 
@@ -1175,6 +1287,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
 
     <div class="wv2-card" id="wv2-week-card" style="display:none">
       <div class="wv2-title">주말 단어 챌린지</div>
+      <div class="wv2-sub" id="wv2-week-target"></div>
       <div class="wv2-sub" id="wv2-week-sub">이번 주말 시험 단어 0개</div>
     </div>
 
@@ -1261,18 +1374,25 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
       </div>
       <div class="game-xp-display" id="wv2-quiz-kind">단어</div>
     </div>
+    <div class="wv2-quiz-scroll">
     <div class="wv2-quiz-card">
       <div class="game-stage-badge" id="wv2-qtype">문제</div>
       <div class="wv2-question" id="wv2-question"></div>
       <div class="wv2-sub" id="wv2-question-sub"></div>
     </div>
-    <div id="wv2-answer-area" class="game-input-area">
-      <input class="game-answer-input" id="wv2-answer" placeholder="답을 입력해봐요" onkeydown="if(event.key==='Enter')submitWordV2Answer()">
-      <div class="game-btn-row"><button class="game-submit-btn" onclick="submitWordV2Answer()">제출</button></div>
-    </div>
     <div class="wv2-choices" id="wv2-choice-area" style="display:none;padding:10px 16px 0"></div>
-    <div class="game-feedback" id="wv2-feedback"></div>
+    </div>
+    <div id="wv2-answer-area" class="game-input-area">
+      <input class="game-answer-input" id="wv2-answer" aria-label="단어 정답" placeholder="답을 입력해봐요" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" onkeydown="if(event.key==='Enter' &amp;&amp; !event.isComposing){event.preventDefault();submitWordV2Answer()}">
+    </div>
+    <div class="wv2-quiz-actions">
+      <div class="game-feedback" id="wv2-feedback" aria-live="polite"></div>
+      <div class="game-btn-row" id="wv2-submit-row">
+        <button class="game-skip-btn" id="wv2-skip-btn" onclick="submitWordV2Resolved('모름')">모름</button>
+        <button class="game-submit-btn" id="wv2-submit-btn" onclick="submitWordV2Answer()">제출</button>
+      </div>
     <button class="game-next-btn" id="wv2-next-btn" onclick="nextWordV2Question()">다음 →</button>
+    </div>
   </div>
 </div>
 
@@ -1289,7 +1409,7 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
   </div>
 
   <!-- 스크롤 가능한 콘텐츠 영역 -->
-  <div id="game-scroll-area" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:40px">
+  <div id="game-scroll-area" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(40px + env(safe-area-inset-bottom))">
 
     <!-- 퀴즈 메인 영역 -->
     <div id="game-main-area">
@@ -1486,7 +1606,9 @@ html,body { height:100%; background:#E8E4FF; display:flex; align-items:center; j
     <button id="hf-all"   onclick="setHistFilter('all')"   style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--purple);background:var(--purple);color:white;font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">전체</button>
     <button id="hf-study" onclick="setHistFilter('study')" style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--border);background:white;color:var(--muted);font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">📚 학습</button>
     <button id="hf-alba"  onclick="setHistFilter('alba')"  style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--border);background:white;color:var(--muted);font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">💼 알바</button>
+    <button id="hf-reading" onclick="setHistFilter('reading')">📖 독서</button>
   </div>
+  <div id="reading-history-controls" hidden><label for="reading-history-date">독서한 날짜</label><input id="reading-history-date" type="date" onchange="renderHistory()"> <button type="button" onclick="document.getElementById('reading-history-date').value='';renderHistory()">전체 날짜</button></div>
   <div class="month-summary" id="month-summary"></div>
   <div class="month-summary" id="subj-summary" style="margin-top:6px"></div>
   <!-- 이전 달 요약 -->
@@ -1959,7 +2081,7 @@ function calculateRecordReward(date, completed, extraCount) {
   const weekend = isWeekendDate(new Date(date + 'T00:00:00'));
   const sessions = calculateRecordSessions(date, completed);
   let reward = sessions >= 7 ? 5000 : sessions === 6 ? 4000 : sessions * 500;
-  if ((completed || []).includes('miracle')) reward += 500;
+  if ((completed || []).includes('miracle')) reward += getMiracleBonus();
   if ((completed || []).includes('shower')) reward += 1000;
   if ((completed || []).includes('write')) reward += weekend ? 2000 : 1000;
   return reward + Number(extraCount || 0) * 2000;
@@ -2091,6 +2213,7 @@ async function bootstrapSupabaseSync() {
   catch (error) { console.warn('Supabase XP 동기화 실패', error); }
   await syncFromSupabase();
   await syncWordV2FromSupabase();
+  maybeRemindWordV2WeekendExam();
   await syncV2FromSupabase();
   const state = loadState();
   if (state) {
@@ -2225,7 +2348,7 @@ function saveState() {
 
   // 미라클 모닝 습관 마일스톤 보상
   const mStreak = calcHabitStreak('miracle', history, d);
-  const mHabitReward = getHabitMilestoneReward(mStreak);
+  const mHabitReward = getHabitMilestoneReward(mStreak, 'miracle');
   if (mHabitReward > 0 && completedToday.includes('miracle')) addStreakBonus(history, claimedBonuses, todayKey, 'miracle', mStreak, mHabitReward);
 
   // 아침 샤워 습관 마일스톤 보상
@@ -2244,14 +2367,14 @@ function saveState() {
 // ════════════════════════════════════════
 const REWARD_MODE_KEY = 'rowoon_reward_mode_v1';
 const PLAN_V2_STORE_KEY = 'rowoon_plan_v2_beta';
-const PLAN_V2_NOTIFY_KEY = 'rowoon_plan_v2_morning_notify';
-const PLAN_V2_NOTIFY_SENT_KEY = 'rowoon_plan_v2_morning_notify_sent';
 const SUPABASE_V2_SOURCE = 'rowoon-plan-v2-beta';
 let _supabaseV2SyncTimer = null;
 let _v2PlanEditMode = false;
 const V2_CATEGORIES = {
   study: { label:'학습', icon:'📚', unitMinutes:40 },
+  vocabulary: { label:'영어 단어공부', icon:'🔤', unitMinutes:10 },
   reading: { label:'독서', icon:'📖', unitMinutes:30 },
+  nap: { label:'낮잠', icon:'😴', unitMinutes:30 },
   exercise: { label:'운동', icon:'🏃', unitMinutes:60 },
   hobby: { label:'취미', icon:'🎨', unitMinutes:40 },
   etc: { label:'기타', icon:'✏️', unitMinutes:40 },
@@ -2279,63 +2402,6 @@ function applyRewardMode() {
   renderV2Home();
 }
 
-function isV2PlanNotificationEnabled() {
-  return localStorage.getItem(PLAN_V2_NOTIFY_KEY) === '1';
-}
-
-function updateV2NotificationButton() {
-  const btn = document.getElementById('v2-notification-btn');
-  if (!btn) return;
-  const unsupported = !('Notification' in window);
-  const enabled = isV2PlanNotificationEnabled() && !unsupported;
-  btn.textContent = unsupported ? '알림 미지원' : enabled ? '아침 알림 켜짐' : '아침 알림 켜기';
-  btn.classList.toggle('on', enabled);
-  btn.disabled = unsupported;
-}
-
-async function enableV2PlanNotifications() {
-  if (!('Notification' in window)) {
-    alert('이 브라우저에서는 알림을 지원하지 않아요.');
-    updateV2NotificationButton();
-    return;
-  }
-  let permission = Notification.permission;
-  if (permission === 'default') permission = await Notification.requestPermission();
-  if (permission !== 'granted') {
-    localStorage.setItem(PLAN_V2_NOTIFY_KEY, '0');
-    alert('브라우저 알림 권한을 허용하면 아침 계획 알림을 받을 수 있어요.');
-    updateV2NotificationButton();
-    return;
-  }
-  localStorage.setItem(PLAN_V2_NOTIFY_KEY, '1');
-  updateV2NotificationButton();
-  maybeNotifyMissingV2MorningPlan();
-}
-
-function showV2PlanNotification(title, body) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  if (navigator.serviceWorker?.ready) {
-    navigator.serviceWorker.ready
-      .then(reg => reg.showNotification(title, { body, icon:'/icons/frog-192.png', badge:'/icons/frog-192.png', tag:'rowoon-v2-plan-morning', renotify:false }))
-      .catch(() => new Notification(title, { body, icon:'/icons/frog-192.png', tag:'rowoon-v2-plan-morning' }));
-    return;
-  }
-  new Notification(title, { body, icon:'/icons/frog-192.png', tag:'rowoon-v2-plan-morning' });
-}
-
-function maybeNotifyMissingV2MorningPlan(force=false) {
-  if (!isV2PlanNotificationEnabled() || !('Notification' in window) || Notification.permission !== 'granted') return;
-  const now = getTestDate();
-  const hour = now.getHours();
-  if (!force && (hour < 6 || hour >= 11)) return;
-  const todayKey = getV2TodayKey();
-  const state = loadV2PlanState();
-  if (hasV2Plan(state[todayKey])) return;
-  if (!force && localStorage.getItem(PLAN_V2_NOTIFY_SENT_KEY) === todayKey) return;
-  localStorage.setItem(PLAN_V2_NOTIFY_SENT_KEY, todayKey);
-  showV2PlanNotification('로운이 오늘 계획이 비어 있어요', '홈에서 오늘 계획을 먼저 세워볼까요?');
-}
-
 function v2DateKey(date) {
   return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
 }
@@ -2351,7 +2417,7 @@ function loadV2PlanState() {
 function sanitizeV2PlanState(state) {
   Object.keys(state || {}).forEach(dateKey => {
     const day = state[dateKey];
-    const isBlank = day && !day.isRestDay && (!Array.isArray(day.items) || day.items.length === 0) && !day.updatedAt && !day.planUpdatedAt;
+    const isBlank = day && !day.isRestDay && (!Array.isArray(day.items) || day.items.length === 0) && !Object.keys(day.readingRecords || {}).length && !day.updatedAt && !day.planUpdatedAt;
     if (isBlank) delete state[dateKey];
   });
   return state || {};
@@ -2428,16 +2494,33 @@ function openV2PlanFormForMissingDay() {
   const target = getV2MissingPlanTarget(state) || { dateKey:getV2TomorrowKey(), label:'내일 계획 세우기' };
   const viewInput = document.getElementById('v2-view-date');
   if (viewInput) viewInput.value = target.dateKey;
+  openV2PlanDialog();
+}
+
+function openV2PlanDialog() {
+  const dialog = document.getElementById('v2-plan-dialog');
   _v2PlanEditMode = true;
-  document.getElementById('v2-plan-form-card')?.classList.remove('collapsed');
-  setTimeout(() => document.getElementById('v2-title')?.focus(), 50);
+  document.getElementById('v2-dialog-date').value = ensureV2ViewDate();
+  document.getElementById('v2-dialog-list').appendChild(document.getElementById('v2-today-list'));
+  renderV2Home();
+  if (!dialog.open) dialog.showModal();
+}
+
+function closeV2PlanDialog() {
+  document.getElementById('v2-plan-dialog').close();
+  _v2PlanEditMode = false;
+  document.getElementById('v2-list-title').after(document.getElementById('v2-today-list'));
+  renderV2Home();
+}
+
+function changeV2DialogDate(value) {
+  if (!value) return;
+  document.getElementById('v2-view-date').value = value;
   renderV2Home();
 }
 
 function toggleV2PlanEditMode() {
-  _v2PlanEditMode = !_v2PlanEditMode;
-  document.getElementById('v2-plan-form-card')?.classList.toggle('collapsed', !_v2PlanEditMode);
-  renderV2Home();
+  openV2PlanDialog();
 }
 
 function onV2CategoryChange() {
@@ -2445,7 +2528,7 @@ function onV2CategoryChange() {
   const minutes = document.getElementById('v2-minutes');
   const title = document.getElementById('v2-title');
   if (minutes) minutes.value = V2_CATEGORIES[category]?.unitMinutes || 40;
-  if (title) title.placeholder = category === 'etc' ? '직접 입력해요' : '무엇을 할까요? 예: 수학 최상위 문제집';
+  if (title) title.placeholder = category === 'nap' ? '낮잠' : category === 'etc' ? '직접 입력해요' : '무엇을 할까요? 예: 수학 최상위 문제집';
 }
 
 function addV2PlanItem() {
@@ -2454,7 +2537,7 @@ function addV2PlanItem() {
   const titleEl = document.getElementById('v2-title');
   const minutesEl = document.getElementById('v2-minutes');
   const countEl = document.getElementById('v2-count');
-  const title = (titleEl?.value || '').trim();
+  const title = (titleEl?.value || '').trim() || (category === 'vocabulary' ? '영어 단어공부' : category === 'nap' ? '낮잠' : '');
   const plannedCount = Math.max(1, Number(countEl?.value || 1));
   const unitMinutes = Math.max(1, Number(minutesEl?.value || V2_CATEGORIES[category]?.unitMinutes || 40));
   if (!title) { alert('무엇을 할지 제목을 입력해주세요.'); return; }
@@ -2492,16 +2575,8 @@ function toggleV2RestDay() {
 }
 
 function updateV2Completed(dateKey, itemId, delta) {
-  const state = loadV2PlanState();
-  const day = getV2Day(state, dateKey);
-  const item = day.items.find(i => i.id === itemId);
-  if (!item) return;
-  const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(item.completedCount || 0) + delta));
-  item.completedCount = next;
-  touchV2Record(day);
-  refreshV2RewardSnapshot(state, dateKey);
-  saveV2PlanState(state);
-  renderV2Home();
+  const item = loadV2PlanState()[dateKey]?.items?.find(item => item.id === itemId);
+  if (item) setV2CompletedCount(dateKey, itemId, Number(item.completedCount || 0) + delta);
 }
 
 function setV2CompletedCount(dateKey, itemId, count) {
@@ -2510,11 +2585,146 @@ function setV2CompletedCount(dateKey, itemId, count) {
   const item = day.items.find(i => i.id === itemId);
   if (!item) return;
   const next = Math.max(0, Math.min(Number(item.plannedCount || 1), Number(count || 0)));
+  if (next > Number(item.completedCount || 0) && isV2ReadingItem(item)) {
+    renderV2Home(); // Undo the visual checkbox change until the record is saved.
+    openV2ReadingDialog(dateKey, itemId, next);
+    return;
+  }
   item.completedCount = next;
   touchV2Record(day);
   refreshV2RewardSnapshot(state, dateKey);
   saveV2PlanState(state);
   renderV2Home();
+}
+
+// Reading notes share the plan's durable save and day-level cloud payload.
+let readingDialogContext = null;
+
+function isV2ReadingItem(item) {
+  if (!item || item.categoryKey === 'nap' || String(item.title || '').includes('낮잠')) return false;
+  return item.categoryKey === 'reading' || String(item.title || '').includes('독서');
+}
+
+function mergeV2ReadingRecords(local={}, remote={}) {
+  const merged = {...local};
+  Object.entries(remote || {}).forEach(([id, record]) => {
+    if (!merged[id] || (Date.parse(record.updatedAt) || 0) > (Date.parse(merged[id].updatedAt) || 0)) merged[id] = record;
+  });
+  return merged;
+}
+
+function getV2ReadingRecords(state=loadV2PlanState()) {
+  return Object.entries(state).filter(([date]) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .flatMap(([dateKey, day]) => Object.entries(day.readingRecords || {}).map(([itemId, record]) => ({
+      ...record, dateKey, itemId,
+      title:day.items?.find(item => item.id === itemId)?.title || record.title || '독서',
+    })))
+    .filter(record => typeof record.text === 'string' && record.text.trim())
+    .sort((a,b) => b.dateKey.localeCompare(a.dateKey) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+}
+
+function openV2ReadingDialog(dateKey, itemId, completeTo=null) {
+  const day = loadV2PlanState()[dateKey];
+  const item = day?.items?.find(item => item.id === itemId);
+  const record = day?.readingRecords?.[itemId];
+  if (!item && !record) return;
+  readingDialogContext = { dateKey, itemId, completeTo };
+  document.getElementById('reading-item-label').textContent = dateKey + ' · ' + (item?.title || record.title);
+  document.getElementById('reading-text').value = record?.text || '';
+  document.getElementById('reading-error').textContent = '';
+  document.getElementById('reading-save').textContent = completeTo === null ? '저장' : '저장하고 완료';
+  const dialog = document.getElementById('reading-dialog');
+  updateV2ReadingViewport();
+  if (!dialog.open) dialog.showModal();
+}
+
+function updateV2ReadingViewport() {
+  const dialog = document.getElementById('reading-dialog');
+  const viewport = window.visualViewport;
+  if (!dialog || !viewport) return;
+  dialog.style.setProperty('--reading-viewport-height', viewport.height + 'px');
+  dialog.style.setProperty('--reading-viewport-top', (viewport.offsetTop + 12) + 'px');
+}
+
+function closeV2ReadingDialog() {
+  document.getElementById('reading-dialog').close();
+  readingDialogContext = null;
+}
+
+function commitV2ReadingRecord(context, text) {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error('로운이의 생각을 짧게 적어줘 😊');
+  const {dateKey, itemId, completeTo} = context;
+  const state = loadV2PlanState();
+  const day = state[dateKey];
+  const item = day?.items?.find(item => item.id === itemId);
+  const previous = day?.readingRecords?.[itemId];
+  if (!day || (!item && (!previous || completeTo !== null))) throw new Error('학습 항목을 찾을 수 없어요. 입력한 내용은 남겨 두었어요.');
+  const now = new Date().toISOString();
+  day.readingRecords = { ...day.readingRecords, [itemId]:{
+    ...previous, itemId, dateKey, title:item?.title || previous.title, text:trimmed,
+    createdAt:previous?.createdAt || now, updatedAt:now,
+  }};
+  if (completeTo !== null) {
+    item.completedCount = Math.min(Number(item.plannedCount || 1), Math.max(Number(item.completedCount || 0), completeTo));
+    refreshV2RewardSnapshot(state, dateKey);
+  }
+  touchV2Record(day);
+  // One localStorage write commits both the note and completion, or neither.
+  saveV2PlanState(state);
+}
+
+function saveV2ReadingDialog() {
+  if (!readingDialogContext) return;
+  const input = document.getElementById('reading-text');
+  const error = document.getElementById('reading-error');
+  if (!input.value.trim()) { error.textContent = '로운이의 생각을 짧게 적어줘 😊'; return; }
+  try {
+    commitV2ReadingRecord(readingDialogContext, input.value);
+  } catch (e) {
+    error.textContent = '저장하지 못했어요. 입력한 내용은 그대로 있어요. 다시 저장해줘.';
+    return;
+  }
+  closeV2ReadingDialog();
+  renderV2Home();
+  if (document.getElementById('screen-history').classList.contains('active')) renderHistory();
+}
+
+function renderV2ReadingHistory() {
+  const list = document.getElementById('hist-list');
+  list.replaceChildren();
+  const selectedDate = document.getElementById('reading-history-date').value;
+  const records = getV2ReadingRecords().filter(record => !selectedDate || record.dateKey === selectedDate);
+  if (!records.length) {
+    const empty = document.createElement('p');
+    empty.className = 'reading-empty';
+    empty.textContent = '아직 독서록이 없어요. 책을 읽고 첫 생각을 남겨보자! 📚';
+    list.appendChild(empty);
+    return;
+  }
+  let date = null;
+  let group;
+  records.forEach(record => {
+    if (date !== record.dateKey) {
+      date = record.dateKey;
+      group = document.createElement('section');
+      group.className = 'reading-day';
+      const heading = document.createElement('h3');
+      heading.textContent = date;
+      group.appendChild(heading);
+      list.appendChild(group);
+    }
+    const button = document.createElement('button');
+    button.className = 'reading-record';
+    button.type = 'button';
+    const title = document.createElement('strong');
+    title.textContent = record.title;
+    const text = document.createElement('p');
+    text.textContent = record.text;
+    button.append(title, text);
+    button.onclick = () => openV2ReadingDialog(record.dateKey, record.itemId);
+    group.appendChild(button);
+  });
 }
 
 function setV2CompletedFromBox(dateKey, itemId, count, checked) {
@@ -2546,7 +2756,16 @@ function editV2PlanItem(dateKey, itemId) {
   if (countText === null) return;
   const plannedCount = Math.max(1, Number(countText || 1));
   if (!Number.isFinite(plannedCount)) { alert('횟수는 숫자로 입력해주세요.'); return; }
+  const minutesText = prompt('한 번에 할 시간을 분으로 수정해주세요.', String(item.unitMinutes || 30));
+  if (minutesText === null) return;
+  const minutes = Number(minutesText);
+  if (!Number.isFinite(minutes) || minutes < 1) { alert('시간은 1분 이상의 숫자로 입력해주세요.'); return; }
+  item.unitMinutes = Math.floor(minutes);
   item.title = nextTitle;
+  if (day.readingRecords?.[itemId]) {
+    day.readingRecords[itemId].title = nextTitle;
+    day.readingRecords[itemId].updatedAt = new Date().toISOString();
+  }
   item.plannedCount = Math.floor(plannedCount);
   item.completedCount = Math.min(Number(item.completedCount || 0), item.plannedCount);
   touchV2Plan(day);
@@ -2558,8 +2777,16 @@ function editV2PlanItem(dateKey, itemId) {
 function getV2PlanReward(day, dateKey) {
   const planned = getV2PlannedCount(day);
   if (!day || day.isRestDay || planned < 5) return 0;
-  if (isV2Weekend(dateKey)) return 0;
-  return 1000;
+  // 완료 체크의 updatedAt은 계획 수정 시각에 영향을 주지 않아요.
+  const itemTimes = (day.items || []).map(item => Date.parse(item.createdAt)).filter(Number.isFinite);
+  const lastEdited = day.planUpdatedAt || (itemTimes.length ? new Date(Math.max(...itemTimes)).toISOString() : day.updatedAt);
+  if (!lastEdited) return 0;
+  const timestamp = Date.parse(lastEdited);
+  if (!Number.isFinite(timestamp)) return 0;
+  const kst = new Date(timestamp + 9 * 60 * 60 * 1000);
+  const editedDate = kst.toISOString().slice(0,10);
+  if (editedDate < dateKey) return 2000;
+  return editedDate === dateKey && kst.getUTCHours() < 12 ? 500 : 0;
 }
 
 function getV2CompletedReward(day) {
@@ -2628,12 +2855,33 @@ function getV2WeekendPremiumText(completed, baseReward, premium) {
   return (next - completed) + '개 더 달성하면 ' + next + '개 프리미엄 → 총 ' + nextTotal.toLocaleString() + '원';
 }
 
-function getV2PlanCompletionEstimate(day, dateKey) {
-  if (!day || day.isRestDay) return 0;
-  const planned = getV2PlannedCount(day);
-  if (isV2Weekend(dateKey)) return planned * 1000 + getV2WeekendPremium(planned);
-  const base = planned * 500;
-  return base + Math.round(base * 0.5) + getV2ChallengeBonus(planned);
+function getV2PlanCompletionBreakdown(day, dateKey, state={}) {
+  const completeDay = day && !day.isRestDay
+    ? {...day, items:(day.items || []).map(item => ({...item, completedCount:Number(item.plannedCount || 0)}))}
+    : day;
+  const reward = calcV2LiveReward(completeDay, {...state, [dateKey]:completeDay}, dateKey);
+  return {...reward, total:reward.total - reward.habitReward.total};
+}
+
+function getV2PlanCompletionEstimate(day, dateKey, state={}) {
+  return getV2PlanCompletionBreakdown(day, dateKey, state).total;
+}
+
+function getV2PlanEstimateDetail(reward) {
+  const parts = ['실행 보상 ' + reward.completedReward.toLocaleString() + '원'];
+  if (!reward.isWeekend) {
+    parts.push(reward.fullBonus > 0
+      ? '🎉 완료보상 50% +' + reward.fullBonus.toLocaleString() + '원'
+      : '완료보상 50%는 계획 5개 이상 모두 달성 시 적용');
+  } else if (reward.weekendPremium > 0) {
+    parts.push('주말 프리미엄 +' + reward.weekendPremium.toLocaleString() + '원');
+  } else {
+    parts.push('주말은 50% 대신 주말 프리미엄 적용');
+  }
+  if (reward.planReward > 0) parts.push('계획 작성 +' + reward.planReward.toLocaleString() + '원');
+  if (reward.challengeBonus > 0) parts.push('도전 +' + reward.challengeBonus.toLocaleString() + '원');
+  if (reward.streakBonus > 0) parts.push('연속 달성 +' + reward.streakBonus.toLocaleString() + '원');
+  return parts.join(' · ');
 }
 
 function getV2StreakMilestoneReward(streak) {
@@ -2707,15 +2955,16 @@ function calcV2LiveReward(day, state, dateKey) {
 function getV2StoredReward(day, dateKey) {
   const snapshot = day?.rewardSnapshot;
   if (!snapshot || dateKey >= getV2TodayKey()) return null;
+  const habitReward = getV2HabitReward(dateKey);
   return {
-    total:Number(snapshot.total || 0),
+    total:Number(snapshot.total || 0) - Number(snapshot.habitReward?.total || 0) + habitReward.total,
     planReward:Number(snapshot.planReward || 0),
     completedReward:Number(snapshot.completedReward || 0),
     fullBonus:Number(snapshot.fullBonus || 0),
     challengeBonus:Number(snapshot.challengeBonus || 0),
     weekendPremium:Number(snapshot.weekendPremium || 0),
     streakBonus:Number(snapshot.streakBonus || 0),
-    habitReward:snapshot.habitReward || { total:0, miracle:0, shower:0, milestone:0 },
+    habitReward,
     unitReward:Number(snapshot.unitReward || getV2UnitRewardForDate(dateKey)),
     rewardCompletedCount:Number(snapshot.rewardCompletedCount || getV2CompletedCount(day)),
     isWeekend:Boolean(snapshot.isWeekend ?? isV2Weekend(dateKey)),
@@ -2737,10 +2986,10 @@ function refreshV2RewardSnapshot(state, dateKey) {
 }
 
 function getV2HabitReward(dateKey) {
-  if (dateKey !== getV2TodayKey()) return { total:0, miracle:0, shower:0, milestone:0 };
-  const miracle = tasks.miracle.done ? getMiracleBonus() : 0;
-  const shower = tasks.shower.done ? getShowerBonus() : 0;
   const state = loadState();
+  const completed = state?.history?.[dateKey]?.completed || [];
+  const miracle = completed.includes('miracle') ? getMiracleBonus() : 0;
+  const shower = completed.includes('shower') ? getShowerBonus() : 0;
   const todayBonuses = state?.history?.[dateKey]?.streakBonuses || [];
   const milestone = todayBonuses
     .filter(bonus => bonus.type === 'miracle' || bonus.type === 'shower')
@@ -2867,27 +3116,56 @@ function renderV2Habits() {
   if (!list) return;
   const state = loadState();
   const history = state?.history || {};
-  const today = getTestDate();
+  const dateKey = ensureV2ViewDate();
+  const today = new Date(dateKey + 'T00:00:00');
   const mStreak = calcHabitStreak('miracle', history, today);
   const sStreak = calcHabitStreak('shower', history, today);
   const habits = [
-    { key:'miracle', title:'🌅 미라클 모닝', sub:'6:15 이전 기상 · 기존 보상 별도 유지', streak:mStreak },
-    { key:'shower', title:'🚿 아침 샤워', sub:'기존 보상 별도 유지', streak:sStreak },
+    { key:'miracle', title:'🌅 미라클 모닝', sub:'6:15 이전 기상 · 상쾌하게 하루 시작!', streak:mStreak },
+    { key:'shower', title:'🚿 아침 샤워', sub:'하루 +' + getShowerBonus().toLocaleString() + '원', streak:sStreak },
   ];
   list.innerHTML = '';
   habits.forEach(habit => {
-    const done = Boolean(tasks[habit.key]?.done);
+    const done = Boolean(history[dateKey]?.completed?.includes(habit.key));
     const next = Math.ceil((habit.streak + 1) / 10) * 10;
-    const card = document.createElement('div');
-    card.className = 'v2-habit-card' + (done ? ' done' : '');
-    card.onclick = () => toggleV2Habit(habit.key);
-    card.innerHTML = `<div class="v2-habit-title">${habit.title} ${done ? '✓' : ''}</div><div class="v2-habit-sub">${habit.streak}일 연속 · ${next - habit.streak}일 후 +5,000원<br>${habit.sub}</div>`;
+    const card = document.createElement('label');
+    card.className = 'v2-habit-card' + (habit.key === 'miracle' ? ' miracle' : '') + (done ? ' done' : '');
+    card.innerHTML = `<div class="v2-habit-heading"><input class="v2-habit-checkbox" type="checkbox" ${done ? 'checked' : ''} aria-label="${habit.title} 완료"><span class="v2-habit-title">${habit.title}</span></div>${habit.key === 'miracle' ? `<span class="v2-miracle-reward"><small>${done ? '오늘의 일찍 일어나기 성공!' : '일찍 일어난 나에게, 하루 보상'}</small><strong>+4,000원</strong></span>` : ''}<div class="v2-habit-sub">${habit.streak}일 연속 · ${next - habit.streak}일 후 +${getHabitMilestoneReward(next, habit.key).toLocaleString()}원<br>${habit.sub}</div><span class="v2-habit-action">${done ? '완료했어요 · 누르면 취소' : '눌러서 완료 체크'}</span>`;
+    card.querySelector('input').onchange = () => toggleV2Habit(habit.key);
     list.appendChild(card);
   });
 }
 
 function toggleV2Habit(key) {
-  toggleTask(key);
+  if (!['miracle', 'shower'].includes(key)) return;
+  const dateKey = ensureV2ViewDate();
+  const state = loadState() || {};
+  const history = state.history || {};
+  const record = history[dateKey] || { date:dateKey, completed:[], sessions:0, reward:0, extraItems:[], streakBonuses:[] };
+  const completed = new Set(record.completed || []);
+  const done = !completed.has(key);
+  const amount = key === 'miracle' ? getMiracleBonus() : getShowerBonus();
+  if (done) completed.add(key);
+  else completed.delete(key);
+  record.completed = [...completed];
+  record.reward = Number(record.reward || 0) + (done ? amount : -amount);
+  const claimedBonuses = state.claimedBonuses || {};
+  const removedBonuses = (record.streakBonuses || []).filter(bonus => bonus.type === key);
+  record.reward -= removedBonuses.reduce((sum, bonus) => sum + Number(bonus.reward || 0), 0);
+  removedBonuses.forEach(bonus => delete claimedBonuses[bonus.key]);
+  record.streakBonuses = (record.streakBonuses || []).filter(bonus => bonus.type !== key);
+  history[dateKey] = record;
+  const streak = calcHabitStreak(key, history, new Date(dateKey + 'T00:00:00'));
+  if (done) addStreakBonus(history, claimedBonuses, dateKey, key, streak, getHabitMilestoneReward(streak, key));
+  xp = Math.max(0, xp + (done ? 1 : -1) * (XP_GAINS[key] || 0));
+  if (dateKey === getV2TodayKey()) {
+    tasks[key].done = done;
+    ['check-', 'name-', 'badge-'].forEach(prefix => document.getElementById(prefix + key)?.classList.toggle('done', done));
+  }
+  localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, xp, history, claimedBonuses, totalAccum:calcTotalAccum(history) }));
+  syncStudyDayToSupabase(dateKey, record).catch(error => console.warn('Supabase 저장 실패', error));
+  syncXpToSupabase().catch(error => console.warn('Supabase XP 저장 실패', error));
+  updateProgress();
   renderV2Home();
 }
 
@@ -2911,17 +3189,9 @@ function renderV2Home() {
   const wordReward = getWordV2RewardForDate(viewDate);
   const streak = calcV2Streak(state, viewDate);
   const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-  setText('v2-sum-planned', planned + '개');
-  setText('v2-sum-planned-label', getV2DayLabel(viewDate) + ' 계획');
-  setText('v2-sum-done', reward.rewardCompletedCount + ' / ' + planned);
-  setText('v2-sum-rate', rate + '%');
-  setText('v2-sum-reward', (Number(reward.total || 0) + wordReward).toLocaleString() + '원');
-  setText('v2-sum-streak', '🔥 ' + streak + '일');
   setText('v2-edit-meta', '계획 마지막 수정: ' + formatV2DateTime(viewDay.planUpdatedAt || viewDay.updatedAt));
   document.getElementById('v2-complete-banner')?.classList.toggle('show', isV2FullyComplete(viewDay));
-  renderV2RewardLines(reward, wordReward);
   renderV2Habits();
-  updateV2NotificationButton();
 
   const missingTarget = getV2MissingPlanTarget(state);
   const cta = document.getElementById('v2-plan-cta');
@@ -2929,16 +3199,31 @@ function renderV2Home() {
     cta.classList.toggle('show', Boolean(missingTarget));
     if (missingTarget) cta.textContent = missingTarget.label;
   }
-  const formCard = document.getElementById('v2-plan-form-card');
-  if (formCard) formCard.classList.toggle('collapsed', !_v2PlanEditMode);
   const editToggle = document.getElementById('v2-edit-toggle');
   if (editToggle) {
     editToggle.classList.toggle('on', _v2PlanEditMode);
     editToggle.textContent = _v2PlanEditMode ? '수정 종료' : '계획 수정';
   }
   setText('v2-plan-form-title', _v2PlanEditMode ? '✏️ ' + getV2DayLabel(viewDate) + ' 계획 수정' : '🌙 하루 계획 세우기');
-  const plannedReward = getV2PlanCompletionEstimate(viewDay, viewDate);
-  setText('v2-plan-form-sub', getV2DayLabel(viewDate) + ' 모두 달성 시 ' + plannedReward.toLocaleString() + '원 예상');
+  const estimate = getV2PlanCompletionBreakdown(viewDay, viewDate, state);
+  const plannedReward = estimate.total;
+  const estimateDetail = getV2PlanEstimateDetail(estimate);
+  const hasEstimate = plannedReward > 0;
+  document.getElementById('v2-estimate')?.classList.toggle('is-empty', !hasEstimate);
+  setText('v2-estimate-heading', hasEstimate ? '🎯 등록한 계획 모두 달성하면' : viewDay.isRestDay ? '🌿 오늘은 충전하는 날! 다음 도전도 가볍게 준비해봐요.' : '');
+  ['v2-estimate-total', 'v2-estimate-detail', 'v2-estimate-rules'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = !hasEstimate;
+  });
+  setText('v2-estimate-total', plannedReward.toLocaleString() + '원');
+  setText('v2-estimate-detail', estimateDetail + ' (습관·단어시험 별도)');
+  setText('v2-plan-form-breakdown', estimateDetail);
+  const breakdown = document.getElementById('v2-plan-form-breakdown');
+  if (breakdown) breakdown.hidden = !hasEstimate;
+  const formEstimate = document.getElementById('v2-plan-form-sub');
+  formEstimate?.classList.toggle('has-reward', hasEstimate);
+  formEstimate?.setAttribute('aria-live', 'polite');
+  setText('v2-plan-form-sub', hasEstimate ? '🎯 모두 달성하면 ' + plannedReward.toLocaleString() + '원!' : '✨ 하고 싶은 공부 하나부터! 계획을 추가하며 보상을 키워봐요.');
 
   const title = document.getElementById('v2-list-title');
   if (title) title.textContent = '✅ ' + getV2DayLabel(viewDate) + ' 계획 실행';
@@ -2949,14 +3234,13 @@ function renderV2RewardLines(reward, wordReward=0) {
   const el = document.getElementById('v2-reward-lines');
   if (!el) return;
   const lines = [
-    ['🧪 선택 날짜 총 보상', Number(reward.total || 0) + Number(wordReward || 0)],
     ['✅ 계획 달성 보상 (' + reward.rewardCompletedCount + '개 × ' + reward.unitReward.toLocaleString() + '원)', reward.completedReward],
   ];
+  lines.splice(1, 0, ['🌙 계획 작성', reward.planReward]);
   if (reward.isWeekend) {
     if (reward.weekendPremium > 0) lines.push(['🏆 주말 프리미엄', reward.weekendPremium]);
     if (reward.premiumText) lines.push([reward.premiumText, null]);
   } else {
-    lines.splice(1, 0, ['🌙 계획 작성', reward.planReward]);
     lines.push(['🎉 모두 성공', reward.fullBonus]);
     lines.push(['🚀 많이 도전', reward.challengeBonus]);
     lines.push(['🔥 연속 달성', reward.streakBonus]);
@@ -3003,7 +3287,14 @@ function renderV2TodayList(day, dateKey) {
           return `<label class="v2-check-label${checked ? ' done' : ''}"><input type="checkbox" ${checked ? 'checked' : ''} onchange="setV2CompletedFromBox('${dateKey}','${item.id}',${index + 1},this.checked);"> ${index + 1}회</label>`;
         }).join('')}
       </div>
-      ${_v2PlanEditMode ? `<div class="v2-item-actions"><button class="v2-edit" onclick="editV2PlanItem('${dateKey}','${item.id}')">이름/횟수 수정</button><button class="v2-del" onclick="deleteV2PlanItem('${dateKey}','${item.id}')">항목 삭제</button></div>` : ''}`;
+      ${_v2PlanEditMode ? `<div class="v2-item-actions"><button class="v2-edit" onclick="editV2PlanItem('${dateKey}','${item.id}')">이름/횟수/시간 수정</button><button class="v2-del" onclick="deleteV2PlanItem('${dateKey}','${item.id}')">항목 삭제</button></div>` : ''}`;
+    if (day.readingRecords?.[item.id]) {
+      const noteButton = document.createElement('button');
+      noteButton.className = 'reading-note-button';
+      noteButton.textContent = '📖 독서록 보기 · 수정';
+      noteButton.onclick = () => openV2ReadingDialog(dateKey, item.id);
+      div.appendChild(noteButton);
+    }
     list.appendChild(div);
   });
 }
@@ -3017,6 +3308,7 @@ function v2PayloadForDate(dateKey, day) {
     date: dateKey,
     isRestDay: Boolean(day?.isRestDay),
     items: (day?.items || []),
+    readingRecords: day?.readingRecords || {},
     reward: snapshot,
     rewardSnapshot: snapshot,
     updatedAt: day?.updatedAt || null,
@@ -3091,6 +3383,7 @@ async function syncV2FromSupabase() {
         local[row.date] = {
           isRestDay: Boolean(payload.isRestDay),
           items: Array.isArray(payload.items) ? payload.items : [],
+          readingRecords: mergeV2ReadingRecords(local[row.date]?.readingRecords, payload.readingRecords),
           rewardSnapshot: payload.rewardSnapshot || payload.reward || null,
           updatedAt: payload.updatedAt || null,
           planUpdatedAt: payload.planUpdatedAt || payload.updatedAt || null,
@@ -3291,7 +3584,7 @@ const POPUPS={
     const _h=loadState()?.history||{}; const _td=getTestDate();
     const ms=calcHabitStreak('miracle',_h,_td);
     const next=Math.ceil((ms+1)/10)*10;
-    return ms>0 ? `${ms}일 연속 달성! · ${next-ms}일 후 축하금 +5,000원 🎁` : `6:15 이전 기상! +500원`;
+    return ms>0 ? `${ms}일 연속 달성! · ${next-ms}일 후 축하금 +10,000원 🎁` : `6:15 이전 기상! +4,000원`;
   }],
   shower:['🚿','아침 샤워!', () => {
     const _h=loadState()?.history||{}; const _td=getTestDate();
@@ -3382,7 +3675,7 @@ let histFilter='all';
 
 function setHistFilter(f){
   histFilter=f;
-  ['all','study','alba'].forEach(id=>{
+  ['all','study','alba','reading'].forEach(id=>{
     const btn=document.getElementById('hf-'+id);
     if(!btn)return;
     const active=id===f;
@@ -3447,6 +3740,16 @@ function navigateMonth(dir){
 }
 
 function renderHistory(){
+  const reading = histFilter === 'reading';
+  document.getElementById('reading-history-controls').hidden = !reading;
+  document.querySelector('#screen-history .month-nav-bar').style.display = reading ? 'none' : '';
+  document.getElementById('month-summary').style.display = reading ? 'none' : '';
+  if (reading) {
+    document.getElementById('subj-summary').style.display = 'none';
+    document.getElementById('prev-month-summary').style.display = 'none';
+    renderV2ReadingHistory();
+    return;
+  }
   const[y,mo]=selectedMonth.split('-').map(Number);
   const allData=getHistoryData();
   const now=getTestDate();
@@ -3877,11 +4180,7 @@ function makeWordV2DateKey(date) {
 
 function getWordV2TestId(type, dateKey=kstDateKey()) {
   if (type === 'WEEKLY') {
-    const d = new Date(dateKey + 'T00:00:00');
-    const day = d.getDay();
-    const sunday = new Date(d);
-    sunday.setDate(d.getDate() + (7 - day) % 7);
-    return 'WEEKLY-' + kstDateKey(sunday);
+    return 'WEEKLY-' + getWordV2WeekRange(dateKey).end;
   }
   return 'DAILY-' + dateKey;
 }
@@ -3931,23 +4230,37 @@ function getWordV2NewWords(state, limit=Infinity, dateKey=null) {
 }
 
 function getWordV2WeekRange(dateKey=kstDateKey()) {
-  const d = new Date(dateKey + 'T00:00:00');
-  const day = d.getDay() || 7;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - day + 1);
+  // Date keys already represent Korean calendar dates; avoid host timezone shifts.
+  const monday = new Date(dateKey + 'T00:00:00Z');
+  monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() || 7) + 1);
   const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  return { start:kstDateKey(monday), end:kstDateKey(sunday) };
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  return { start:monday.toISOString().slice(0,10), end:sunday.toISOString().slice(0,10) };
 }
 
-function getWordV2WeeklyWords(state) {
-  const range = getWordV2WeekRange();
+function getWordV2WeeklyWords(state, dateKey=kstDateKey()) {
+  const range = getWordV2WeekRange(dateKey);
   const ids = new Set();
   Object.values(state.tests || {}).forEach(test => {
     if (test.status !== 'COMPLETED' || test.testType !== 'DAILY' || !test.testDate || test.testDate < range.start || test.testDate > range.end) return;
     (test.questions || []).forEach(q => ids.add(q.wordId));
   });
   return state.words.filter(w => ids.has(w.id));
+}
+
+function getWordV2AvailableWeeklyDates(state, today=kstDateKey()) {
+  const currentWeek = getWordV2WeekRange(today).end;
+  const dates = new Set(Object.values(state.tests || {})
+    .filter(test => test.status === 'COMPLETED' && test.testType === 'DAILY' && test.testDate)
+    .map(test => getWordV2WeekRange(test.testDate).end));
+  if (isWordV2WeekendExamDay(today)) dates.add(currentWeek);
+  return [...dates].filter(date => {
+    const test = state.tests[getWordV2TestId('WEEKLY', date)];
+    const current = date === currentWeek && isWordV2WeekendExamDay(today);
+    if (test?.status === 'COMPLETED' || (!current && date >= today)) return false;
+    const words = test?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, test) : getWordV2WeeklyWords(state, date);
+    return words.length > 0;
+  }).sort();
 }
 
 function getWordV2WordsFromTest(state, test) {
@@ -4177,6 +4490,23 @@ function isWordV2WeekendExamDay(dateKey=kstDateKey()) {
   return day === 0 || day === 6;
 }
 
+// 앱을 새로 열거나 백그라운드에서 돌아왔을 때 미응시 주말시험을 안내합니다.
+function maybeRemindWordV2WeekendExam() {
+  if (document.visibilityState === 'hidden' || wordV2Session) return;
+  const today = kstDateKey();
+  const state = loadWordV2State();
+  const date = getWordV2AvailableWeeklyDates(state, today)
+    .find(date => state.tests[getWordV2TestId('WEEKLY', date)]?.status !== 'COMPLETED');
+  if (!date) return;
+  const message = date < today
+    ? date + ' 주말시험을 아직 보지 않았어요.\n지연 응시는 점수별 보상에서 2,000원이 차감돼요. 지금 시험을 볼까요?'
+    : '아직 이번 주말 단어시험을 보지 않았어요!\n토요일이나 일요일 중 한 번 응시하면 돼요. 지금 시험을 볼까요?';
+  if (confirm(message)) {
+    showScreen('word2');
+    startWordV2Test('WEEKLY');
+  }
+}
+
 function getWordV2Score(correct, total) {
   return Math.ceil(getWordV2ScoreValue(correct, total));
 }
@@ -4205,14 +4535,27 @@ function getWordV2ExamRewardLabel(type) {
   return type === 'WEEKLY' ? '주말 단어 종합시험' : '평일 단어시험';
 }
 
+function isWordV2LateWeeklyTest(test, dateKey) {
+  if (test.testType !== 'WEEKLY') return false;
+  const deadline = test.scheduledWeekEnd || (String(test.id || '').startsWith('WEEKLY-') ? test.id.slice(7) : getWordV2WeekRange(test.testDate).end);
+  return dateKey > deadline;
+}
+
 function buildWordV2ExamReward(test, completedAt) {
   const score = getWordV2Score(test.correctCount, test.totalQuestions);
-  const rewardAmount = getWordV2ExamRewardAmount(test.testType, score);
+  const baseRewardAmount = getWordV2ExamRewardAmount(test.testType, score);
+  const late = isWordV2LateWeeklyTest(test, kstDateKey(new Date(completedAt)));
+  const latePenaltyAmount = late ? Math.min(2000, baseRewardAmount) : 0;
+  const rewardAmount = baseRewardAmount - latePenaltyAmount;
   return {
     examId:test.id,
     examType:test.testType,
     examDate:test.testDate,
     rewardType:getWordV2ExamRewardLabel(test.testType),
+    scheduledWeekEnd:test.scheduledWeekEnd || null,
+    baseRewardAmount,
+    late,
+    latePenaltyAmount,
     score,
     correctCount:Number(test.correctCount || 0),
     totalCount:Number(test.totalQuestions || 0),
@@ -4504,10 +4847,11 @@ function renderWordV2Screen() {
   const today = kstDateKey();
   const dailyTestDate = getWordV2DailyTestDate(state);
   const daily = dailyTestDate ? state.tests[getWordV2TestId('DAILY', dailyTestDate)] : null;
-  const weekly = state.tests[getWordV2TestId('WEEKLY', today)];
+  const weeklyDates = getWordV2AvailableWeeklyDates(state, today);
+  const wordV2WeeklyDate = weeklyDates[0] || null;
   const reviewWords = getWordV2ReviewWords(state);
   const newWords = getWordV2NewWords(state, Infinity, dailyTestDate);
-  const weeklyWords = getWordV2WeeklyWords(state);
+  const weeklyWords = wordV2WeeklyDate ? getWordV2WeeklyWords(state, wordV2WeeklyDate) : [];
   const setText = (id, text) => { const el=document.getElementById(id); if(el)el.textContent=text; };
   setText('wv2-new-count', newWords.length);
   setText('wv2-review-count', reviewWords.length);
@@ -4533,13 +4877,12 @@ function renderWordV2Screen() {
   }
   const weekCard = document.getElementById('wv2-week-card');
   const weekBtn = document.getElementById('wv2-weekly-btn');
-  const isWeekendExamDay = isWordV2WeekendExamDay(today);
-  if (weekCard) weekCard.style.display = isWeekendExamDay ? 'block' : 'none';
-  setText('wv2-week-sub', '이번 주말 시험 단어 ' + weeklyWords.length + '개');
+  if (weekCard) weekCard.style.display = weeklyDates.length ? 'block' : 'none';
+  setText('wv2-week-target', wordV2WeeklyDate ? wordV2WeeklyDate + ' 주말시험 · 가장 오래된 미응시 시험부터 응시해요.' : '미응시 주말시험이 없어요.');
+  setText('wv2-week-sub', '시험 단어 ' + weeklyWords.length + '개' + (wordV2WeeklyDate < today && wordV2WeeklyDate ? ' · 지연 응시: 점수별 보상에서 2,000원 차감 (최소 0원)' : ' · 일요일까지 완료하면 정상 보상'));
   if (weekBtn) {
-    const retryWeeklyWords = weekly?.status === 'COMPLETED' ? getWordV2WordsFromTest(state, weekly) : weeklyWords;
-    weekBtn.disabled = !isWeekendExamDay || retryWeeklyWords.length === 0;
-    weekBtn.textContent = !isWeekendExamDay ? '토/일 주말시험' : weekly?.status === 'COMPLETED' ? '주말시험 다시 풀기' : '주말시험';
+    weekBtn.disabled = !wordV2WeeklyDate;
+    weekBtn.textContent = !wordV2WeeklyDate ? '주말시험 없음' : '주말시험(' + formatWordV2ShortDate(wordV2WeeklyDate) + ')';
   }
   renderWordV2RegisterState();
   document.querySelectorAll('.wv2-flow-chip').forEach((chip, index) => {
@@ -4575,8 +4918,8 @@ function renderWordV2List(state) {
       div.className = 'wv2-word';
       const reward = test.examReward || state.rewardLedger?.[test.id] || null;
       const score = getWordV2Score(test.correctCount, test.totalQuestions);
-      const rewardText = reward ? ' · +' + Number(reward.rewardAmount || 0).toLocaleString() + '원' : '';
-      div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${test.testType === 'WEEKLY' ? '주말 단어 종합시험' : '평일 단어시험'} · ${test.testDate}</div><div class="wv2-word-ko">${test.status} · ${test.correctCount || 0}/${test.totalQuestions || 0}${rewardText}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${score}점</span><button class="wv2-delete" title="시험 결과 삭제" onclick="deleteWordV2Test('${escapeV2Text(test.id)}')">×</button></div></div>`;
+      const rewardText = reward ? ' · +' + Number(reward.rewardAmount || 0).toLocaleString() + '원' + (reward.late ? ' · 지연 패널티 적용' : '') : '';
+      div.innerHTML = `<div class="wv2-word-top"><div><div class="wv2-word-en">${test.testType === 'WEEKLY' ? '주말 단어 종합시험' : '평일 단어시험'} · ${test.testDate}</div><div class="wv2-word-ko">${test.scheduledWeekEnd ? escapeV2Text(test.scheduledWeekEnd) + ' 주말 · ' : ''}${test.status} · ${test.correctCount || 0}/${test.totalQuestions || 0}${rewardText}</div></div><div class="wv2-word-actions"><span class="wv2-pill">${score}점</span><button class="wv2-delete" title="시험 결과 삭제" onclick="deleteWordV2Test('${escapeV2Text(test.id)}')">×</button></div></div>`;
       list.appendChild(div);
     });
     return;
@@ -4733,23 +5076,28 @@ function startWordV2PracticeForDate(kind, dateKey) {
 function startWordV2Test(type) {
   const state = loadWordV2State();
   const today = kstDateKey();
-  if (type === 'WEEKLY' && !isWordV2WeekendExamDay(today)) { alert('주말시험은 토요일이나 일요일에 볼 수 있어요.'); return; }
-  const targetDate = type === 'DAILY' ? getWordV2DailyTestDate(state) : today;
+  const weeklyDates = type === 'WEEKLY' ? getWordV2AvailableWeeklyDates(state, today) : [];
+  const targetDate = type === 'DAILY' ? getWordV2DailyTestDate(state)
+    : weeklyDates[0];
   if (!targetDate) { alert('시험 볼 단어가 없어요.'); return; }
   const id = getWordV2TestId(type, targetDate);
   const existing = state.tests[id];
   const isOfficialAttempt = existing?.status !== 'COMPLETED';
   const words = existing?.status === 'COMPLETED'
     ? getWordV2WordsFromTest(state, existing)
-    : type === 'WEEKLY' ? getWordV2WeeklyWords(state) : getWordV2NewWords(state, Infinity, targetDate);
+    : type === 'WEEKLY' ? getWordV2WeeklyWords(state, targetDate) : getWordV2NewWords(state, Infinity, targetDate);
   if (!words.length) { alert('시험 볼 단어가 없어요.'); return; }
   const now = new Date().toISOString();
-  const test = { id, testDate:targetDate, testType:type, status:'IN_PROGRESS', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:now, completedAt:null };
+  const test = { id, testDate:type === 'WEEKLY' ? today : targetDate, scheduledWeekEnd:type === 'WEEKLY' ? targetDate : null, testType:type, status:'IN_PROGRESS', totalQuestions:words.length, correctCount:0, currentIndex:0, questions:buildWordV2Questions(words, state, type), createdAt:now, startedAt:now, completedAt:null };
   wordV2Session = { mode:type, testId:id, test, questions:test.questions, index:0, answered:false, practice:false, official:isOfficialAttempt };
   showWordV2Quiz();
 }
 
 function showWordV2Quiz() {
+  // Keep the overlay outside the scrolling word screen: Safari may scroll
+  // that ancestor when focusing an input, displacing the entire quiz.
+  const quiz = document.getElementById('wv2-quiz');
+  document.querySelector('.phone-shell').appendChild(quiz);
   document.getElementById('wv2-preview-overlay')?.classList.remove('show');
   document.getElementById('wv2-review-overlay')?.classList.remove('show');
   document.getElementById('wv2-home').style.display = 'none';
@@ -4764,10 +5112,12 @@ function showWordV2Quiz() {
           ? '복습'
           : '예습';
   }
+  updateWordV2Viewport();
   renderWordV2Question();
 }
 
 function exitWordV2Quiz() {
+  document.getElementById('wv2-answer').blur();
   document.getElementById('wv2-quiz').style.display = 'none';
   document.getElementById('wv2-home').style.display = 'block';
   wordV2Session = null;
@@ -4777,6 +5127,11 @@ function exitWordV2Quiz() {
 function renderWordV2Question() {
   const q = wordV2Session.questions[wordV2Session.index];
   const total = wordV2Session.questions.length;
+  wordV2Session.selectedChoice = null;
+  document.getElementById('wv2-submit-row').style.display = 'flex';
+  document.getElementById('wv2-submit-btn').disabled = false;
+  document.getElementById('wv2-skip-btn').disabled = false;
+  document.querySelector('.wv2-quiz-scroll').scrollTop = 0;
   document.getElementById('wv2-quiz-progress').textContent = (wordV2Session.index + 1) + ' / ' + total + ' 문제';
   document.getElementById('wv2-quiz-fill').style.width = ((wordV2Session.index / total) * 100) + '%';
   document.getElementById('wv2-next-btn').className = 'game-next-btn';
@@ -4788,12 +5143,14 @@ function renderWordV2Question() {
     document.getElementById('wv2-question').textContent = q.meaningKo;
     document.getElementById('wv2-question-sub').textContent = '';
     answerArea.style.display = 'block'; choiceArea.style.display = 'none';
-    const input = document.getElementById('wv2-answer'); input.value = ''; input.disabled = false; setTimeout(() => input.focus(), 80);
+    const input = document.getElementById('wv2-answer'); input.value = ''; input.disabled = false;
+    document.getElementById('wv2-skip-btn').disabled = false;
+
   } else {
     document.getElementById('wv2-question').textContent = q.questionType === 'WORD_TO_MEANING' ? q.word : (q.example || q.word);
     document.getElementById('wv2-question-sub').textContent = '';
     answerArea.style.display = 'none'; choiceArea.style.display = 'grid'; choiceArea.innerHTML = '';
-    q.choices.forEach(choice => {
+    q.choices.filter(choice => choice !== '모름').forEach(choice => {
       const btn = document.createElement('button');
       btn.className = 'wv2-choice';
       btn.textContent = choice;
@@ -4804,19 +5161,23 @@ function renderWordV2Question() {
 }
 
 function submitWordV2Answer() {
-  const value = (document.getElementById('wv2-answer')?.value || '').trim();
+  if (!wordV2Session) return;
+  const q = wordV2Session.questions[wordV2Session.index];
+  const value = q.questionType === 'MEANING_TO_WORD' ? (document.getElementById('wv2-answer')?.value || '').trim() : wordV2Session.selectedChoice;
   if (!value) return;
   submitWordV2Resolved(value);
 }
 
 function submitWordV2Choice(choice) {
-  submitWordV2Resolved(choice);
+  wordV2Session.selectedChoice = choice;
+  document.querySelectorAll('#wv2-choice-area button').forEach(btn => btn.classList.toggle('selected', btn.textContent === choice));
 }
 
 function submitWordV2Resolved(answer) {
+  if (!wordV2Session) return;
   const q = wordV2Session.questions[wordV2Session.index];
   if (q.answeredAt) return;
-  const isCorrect = normalizeWordV2(answer) === normalizeWordV2(q.correctAnswer);
+  const isCorrect = answer.trim() !== '모름' && normalizeWordV2(answer) === normalizeWordV2(q.correctAnswer);
   q.selectedAnswer = answer;
   q.isCorrect = isCorrect;
   q.answeredAt = new Date().toISOString();
@@ -4831,9 +5192,13 @@ function showWordV2Feedback(q, isCorrect) {
   });
   const input = document.getElementById('wv2-answer');
   if (input) input.disabled = true;
+  document.getElementById('wv2-skip-btn').disabled = true;
+  document.getElementById('wv2-submit-row').style.display = 'none';
+  document.getElementById('wv2-answer').blur();
   const fb = document.getElementById('wv2-feedback');
   fb.className = 'game-feedback ' + (isCorrect ? 'correct' : 'wrong') + ' show';
-  fb.innerHTML = `<div class="game-feedback-emoji">${isCorrect ? '🎉' : '🤔'}</div><div class="game-feedback-msg">${isCorrect ? '정답!' : '정답: ' + q.correctAnswer}</div>`;
+  const answerLabel = [q.word || q.correctAnswer, q.meaningKo].filter(Boolean).join(' · ');
+  fb.innerHTML = `<span class="game-feedback-emoji">${isCorrect ? '🎉' : '🤔'}</span><span class="game-feedback-msg">${isCorrect ? '정답! ' : '정답: '}${escapeV2Text(answerLabel)}</span>`;
   document.getElementById('wv2-next-btn').className = 'game-next-btn show';
 }
 
@@ -4900,6 +5265,7 @@ function finishWordV2Session() {
       currentIndex:total,
       questions:wordV2Session.questions,
       completedAt,
+      testDate:wordV2Session.test.testType === 'WEEKLY' ? kstDateKey(new Date(completedAt)) : wordV2Session.test.testDate,
     };
     examReward = grantWordV2ExamReward(state, test, completedAt);
     test.examReward = examReward;
@@ -4914,6 +5280,8 @@ function finishWordV2Session() {
     const state = loadWordV2State();
     examReward = state.rewardLedger?.[wordV2Session.testId] || wordV2Session.test?.examReward || null;
   }
+  document.getElementById('wv2-submit-row').style.display = 'none';
+  document.getElementById('wv2-answer').blur();
   const fb = document.getElementById('wv2-feedback');
   document.getElementById('wv2-quiz-fill').style.width = '100%';
   document.getElementById('wv2-answer-area').style.display = 'none';
@@ -4923,7 +5291,7 @@ function finishWordV2Session() {
   const rewardAmount = Number(examReward?.rewardAmount || 0);
   const rewardLabel = wordV2Session.mode === 'WEEKLY' ? '이번 시험 보상' : '오늘 단어시험 보상';
   const rewardHtml = !wordV2Session.practice
-    ? `<div class="game-feedback-xp">${isRewardOfficial ? rewardLabel : '최초 시험 보상 고정'}<br>+${rewardAmount.toLocaleString()}원</div>`
+    ? `<div class="game-feedback-xp">${isRewardOfficial ? rewardLabel : '최초 시험 보상 고정'}<br>+${rewardAmount.toLocaleString()}원${examReward?.late ? '<br>지연 응시 패널티 적용 (점수별 2,000원 차감, 최소 0원)' : ''}</div>`
     : '';
   fb.innerHTML = `<div class="game-feedback-emoji">🏁</div><div class="game-feedback-msg">완료! ${score}점 · ${correct} / ${total}</div>${rewardHtml}`;
   const next = document.getElementById('wv2-next-btn');
@@ -5425,7 +5793,7 @@ function showGameResult() {
 // ════════════════════════════════════════
 const ALL_TASKS = [
   { key:'write',    label:'✏️ 글쓰기',        sub:'평일 +1,000원 / 주말 +2,000원' },
-  { key:'miracle',  label:'🌅 미라클 모닝',   sub:'+500원' },
+  { key:'miracle',  label:'🌅 미라클 모닝',   sub:'+4,000원' },
   { key:'shower',   label:'🚿 아침 샤워',     sub:'+1,000원' },
   { key:'read1',    label:'📖 독서 1회',       sub:'30분' },
   { key:'read2',    label:'📖 독서 2회',       sub:'30분' },
@@ -5938,9 +6306,6 @@ function migrateWordGameXP() {
   calcReward(); updateProgress(); buildStreakCalendar();
   ensureV2PlanDate();
   applyRewardMode();
-  updateV2NotificationButton();
-  maybeNotifyMissingV2MorningPlan();
-  setInterval(maybeNotifyMissingV2MorningPlan, 30 * 60 * 1000);
   initAlba();
 
   // 스트릭 마일스톤 달성 축하 알림 (아직 알림 안 보낸 경우)
@@ -5958,6 +6323,10 @@ function migrateWordGameXP() {
   // 앱을 열면 DB 기록과 현재 기기 기록을 먼저 합친 뒤 DB에 백업합니다.
   bootstrapSupabaseSync();
 })();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') maybeRemindWordV2WeekendExam();
+});
 
 // ════════════════════════════════════════
 //  알바 시스템
@@ -6186,7 +6555,7 @@ function renderStreakDashboard(mStreak, sStreak) {
     ? '🎉 달성!' : `${mNext - missionStreak}일 후 보상`;
   if (sdMi) { sdMi.textContent = mStreak + '일'; sdMi.style.color = mStreak >= 10 ? '#F59E0B' : '#F59E0B'; }
   if (sdMiN) sdMiN.textContent = mStreak % 10 === 0 && mStreak > 0
-    ? '🎉 달성!' : `${miNext - mStreak}일 후 +5,000원`;
+    ? '🎉 달성!' : `${miNext - mStreak}일 후 +10,000원`;
   if (sdS) sdS.textContent = sStreak + '일';
   if (sdSN) sdSN.textContent = sStreak % 10 === 0 && sStreak > 0
     ? '🎉 달성!' : `${sNext - sStreak}일 후 +5,000원`;
@@ -6231,12 +6600,12 @@ function calcHabitStreak(habitKey, history, today) {
   return streak;
 }
 
-function getMiracleBonus() { return 500; }  // 평일/주말 동일 500원
+function getMiracleBonus() { return 4000; }  // 평일/주말 동일 4,000원
 function getShowerBonus()  { return 1000; } // 평일/주말 동일 1,000원
 
-// 미라클/샤워 10일 연속 축하금 (10·20·30일마다 5,000원)
-function getHabitMilestoneReward(streak) {
-  return (streak > 0 && streak % 10 === 0) ? 5000 : 0;
+// 10일마다 미라클 모닝 10,000원, 샤워 5,000원
+function getHabitMilestoneReward(streak, key='shower') {
+  return (streak > 0 && streak % 10 === 0) ? (key === 'miracle' ? 10000 : 5000) : 0;
 }
 
 function updateHabitStreakUI() {
@@ -6253,11 +6622,11 @@ function updateHabitStreakUI() {
   const subM = document.getElementById('sub-miracle');
   if (subM) {
     subM.textContent = mStreak > 0
-      ? `🔥 ${mStreak}일 연속 · ${mNextMilestone - mStreak}일 후 축하금 +5,000원`
-      : `6:15 이전 기상 · 10일 연속마다 +5,000원`;
+      ? `🔥 ${mStreak}일 연속 · ${mNextMilestone - mStreak}일 후 축하금 +10,000원`
+      : `6:15 이전 기상 · 10일 연속마다 +10,000원`;
   }
   const badgeM = document.getElementById('badge-miracle');
-  if (badgeM) badgeM.textContent = '+500원';
+  if (badgeM) badgeM.textContent = '+4,000원';
 
   // 샤워 카드 sub 텍스트
   const subS = document.getElementById('sub-shower');
@@ -6349,11 +6718,44 @@ function scrollToInput() {
   }, 100);
 }
 
+function updateWordV2Viewport() {
+  const quiz = document.getElementById('wv2-quiz');
+  if (!quiz || quiz.style.display === 'none') return;
+  const shell = document.querySelector('.phone-shell').getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const top = viewport ? Math.max(0, viewport.offsetTop - shell.top) : 0;
+  const bottom = viewport ? Math.min(shell.height, viewport.offsetTop + viewport.height - shell.top) : shell.height;
+  quiz.classList.toggle('keyboard-open', !!viewport && window.innerHeight - viewport.height > 120);
+  quiz.style.top = top + 'px';
+  quiz.style.height = Math.max(0, bottom - top) + 'px';
+  quiz.style.bottom = 'auto';
+}
+// Coalesce keyboard animation events; never scroll the document in response.
+let wordV2ViewportFrame = 0;
+function scheduleWordV2Viewport() {
+  if (wordV2ViewportFrame) return;
+  wordV2ViewportFrame = requestAnimationFrame(() => {
+    wordV2ViewportFrame = 0;
+    updateWordV2Viewport();
+  });
+}
+window.addEventListener('resize', scheduleWordV2Viewport);
+window.addEventListener('resize', updateV2ReadingViewport);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', scheduleWordV2Viewport);
+  window.visualViewport.addEventListener('scroll', scheduleWordV2Viewport);
+  window.visualViewport.addEventListener('resize', updateV2ReadingViewport);
+  window.visualViewport.addEventListener('scroll', updateV2ReadingViewport);
+}
+
 // 모바일 키보드 올라올 때 게임 스크롤 영역 조정
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     const active = document.activeElement;
     if (!active) return;
+    // The quiz owns its visible viewport and pinned input/actions.
+    // scrollIntoView here makes Safari pan again during keyboard animation.
+    if (document.getElementById('wv2-quiz').style.display !== 'none' || document.getElementById('reading-dialog').open) return;
     const isGameScreen = document.getElementById('screen-game').classList.contains('active');
 
     if (isGameScreen && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
